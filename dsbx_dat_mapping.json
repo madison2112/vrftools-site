@@ -1,0 +1,59 @@
+{
+  "_comment": "Edit this file to correct mappings. Changes take effect on the next run of dsbx_to_dat.py — no code changes needed.",
+
+  "icon_rules": [
+    {
+      "_comment": "Rules are evaluated IN ORDER. First match wins.",
+      "match": "contains",
+      "pattern": "LEV KIT",
+      "case_sensitive": false,
+      "icon": 53
+    },
+    { "match": "startswith", "pattern": "PKFY", "icon": 10 },
+    { "match": "startswith", "pattern": "PKA",  "icon": 10 },
+    { "match": "startswith", "pattern": "PLFY", "icon": 0  },
+    { "match": "startswith", "pattern": "PCFY", "icon": 6  },
+    { "match": "startswith", "pattern": "PVFY", "icon": 8  },
+    { "match": "startswith", "pattern": "PFFY", "icon": 11 },
+    { "match": "startswith", "pattern": "PMFY", "icon": 3  },
+    { "match": "startswith", "pattern": "PEFY", "icon": 4  }
+  ],
+
+  "default_icon": 0,
+
+  "temp_unit_map": {
+    "Fahrenheit": "F",
+    "Celsius": "C"
+  },
+
+  "pressure_unit_map": {
+    "PoundPerSquareInch": "PSI",
+    "Kilopascal": "kPa"
+  },
+
+  "system_data_defaults": {
+    "LocationID":    "000001",
+    "TimeMaster":    "MASTER",
+    "HoldType":      "NORMAL",
+    "OldTypeMode":   "OFF",
+    "FilterSign":    "ON",
+    "Prohibit":      "SC_ALL",
+    "DecimalPoint":  "DOT",
+    "CSVSeparator":  "COMMA",
+    "DateFormat":    "MMDDYYYY",
+    "TimeFormat":    "12",
+    "Occupancy":     "OCCUPIEDONLY",
+    "Brightness":    "OFF",
+    "OutTempAdrs":   "",
+    "TestRun":       "DISABLE",
+    "External":      "WITHOUT",
+    "ExOutput2":     "WITHOUT",
+    "RefLeakAlarm":  "ENABLE",
+    "RefSensorFA":   "ENABLE",
+    "Number":        "",
+    "Version":       "",
+    "VersionIF":     "",
+    "UseMnet":       "USE",
+    "Apportion":     "OFF"
+  }
+}

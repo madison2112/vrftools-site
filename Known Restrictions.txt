@@ -1,0 +1,7 @@
+- Groups with more than 1 unit will be named after the unit with the lowest M-Net address
+- No support for databases with multiple central controllers yet.
+- All .dat files will default to an AE-C400A at IP address 192.168.1.1
+- Icons selected based on unit type. Not all units will automatically update their icons.
+- No interlocked Lossnay Settings.
+- Blocks will be made of IDUs on a given system.
+- Lossnay ERVs will have their own block.

@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Packet>
+  <Command>setRequest</Command>
+  <DatabaseManager>
+    <SystemData Name="" LocationID="000001" TimeMaster="MASTER" HoldType="NORMAL" OldTypeMode="OFF" TempUnit="F" PressUnit="PSI" FilterSign="ON" Prohibit="SC_ALL" DecimalPoint="DOT" CSVSeparator="COMMA" DateFormat="MMDDYYYY" TimeFormat="12" MnetAdrs="0" Occupancy="OCCUPIEDONLY" Brightness="OFF" OutTempAdrs="" TestRun="DISABLE" External="WITHOUT" ExOutput2="WITHOUT" RefLeakAlarm="ENABLE" RefSensorFA="ENABLE" Model="EW-C50A" IPAdrsLan="192.168.1.1" Number="" Version="" VersionIF="" UseMnet="USE" Apportion="OFF" />
+    <ScSystem>
+      <ScSystemDataList>
+        <ScSystemDataRecord ScNo="1" HostName="" TotalMaster="ON" Apportion="OFF" />
+      </ScSystemDataList>
+    </ScSystem>
+    <ScheduleControl SeasonType="ENABLE" />
+    <ISTool ISToolVersion="3.20" />
+    <ControlGroup>
+      <McList />
+      <MnetGroupList />
+      <DdcInfoList />
+      <ViewInfoList />
+      <MnetList />
+      <InterlockList />
+      <AreaGroupList />
+      <AreaList />
+      <OcNameList />
+      <McNameList />
+      <ModbusList />
+    </ControlGroup>
+    <HpControl>
+      <HpSystemNoList />
+      <HpViewList />
+    </HpControl>
+    <ModbusSystem BaudRate="19200" StopBit="1" ParityBit="EVEN" />
+    <MeasureSelf Name1="" Name2="" Name3="" Name4="" />
+    <InterlockControl ModeAll="ENABLE" />
+    <InterlockControl>
+      <InterlockIndexList />
+    </InterlockControl>
+    <AutoChangeover>
+      <ChangeoverList />
+    </AutoChangeover>
+    <EnergyManagement TimeSource="SAVE_VALUE" />
+    <EnergyManagement>
+      <UnitSourceList />
+    </EnergyManagement>
+    <Web>
+      <ControlScList MasterType="WEB">
+        <ControlScRecord ScNo="1" ConnectionIP="" />
+      </ControlScList>
+      <WebDisplayDataList MasterType="WEB">
+        <WebDisplayDataRecord Model="IC" SubModel="" FloorInfo1="ROOM_TEMP" FloorInfo2="SET_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="LC" SubModel="" FloorInfo1="VENT_MODE" FloorInfo2="CO2_AVERAGE" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="IC" SubModel="HH" FloorInfo1="ROOM_TEMP" FloorInfo2="SET_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="BU" SubModel="" FloorInfo1="WATER_TEMP" FloorInfo2="SET_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="OC" SubModel="" FloorInfo1="OUTDOOR_TEMP" FloorInfo2="" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="CEh" SubModel="" FloorInfo1="SET_TEMP" FloorInfo2="HEAD_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="CEW" SubModel="" FloorInfo1="SET_TEMP" FloorInfo2="HEAD_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="CHE" SubModel="" FloorInfo1="SET_TEMP" FloorInfo2="HEAD_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+        <WebDisplayDataRecord Model="CHM" SubModel="" FloorInfo1="SET_TEMP" FloorInfo2="HEAD_TEMP" RoomTemp="SHOW_ALWAYS" RoomHumidity="SHOW_ALWAYS" />
+      </WebDisplayDataList>
+      <WebFList MasterType="WEB" />
+      <WebFGroupList MasterType="WEB" />
+      <WebFAddressList MasterType="WEB" />
+      <WebFSystemNoList MasterType="WEB" />
+      <WebFContactMcList MasterType="WEB" />
+      <WebFContactAhcList MasterType="WEB" />
+    </Web>
+    <Web MasterType="WEB" FloorNum="0" />
+    <EneBlock>
+      <EneBlockAreaList />
+      <EneBlockList />
+    </EneBlock>
+    <Apportion>
+      <ApportionRefSystemList ScNo="1" />
+      <ApportionRefSystemList ScNo="2" />
+      <ApportionRefSystemList ScNo="3" />
+      <ApportionRefSystemList ScNo="4" />
+      <ApportionRefSystemList ScNo="5" />
+      <ApportionRefSystemList ScNo="6" />
+      <ApportionRefSystemList ScNo="7" />
+      <ApportionRefSystemList ScNo="8" />
+      <ApportionRefSystemList ScNo="9" />
+      <ApportionRefSystemList ScNo="10" />
+      <ApportionRefSystemList ScNo="11" />
+      <ApportionRefSystemList ScNo="12" />
+      <ApportionRefSystemList ScNo="13" />
+      <ApportionRefSystemList ScNo="14" />
+      <ApportionRefSystemList ScNo="15" />
+      <ApportionRefSystemList ScNo="16" />
+      <ApportionRefSystemList ScNo="17" />
+      <ApportionRefSystemList ScNo="18" />
+      <ApportionRefSystemList ScNo="19" />
+      <ApportionRefSystemList ScNo="20" />
+      <ApportionRefSystemList ScNo="21" />
+      <ApportionRefSystemList ScNo="22" />
+      <ApportionRefSystemList ScNo="23" />
+      <ApportionRefSystemList ScNo="24" />
+      <ApportionRefSystemList ScNo="25" />
+      <ApportionRefSystemList ScNo="26" />
+      <ApportionRefSystemList ScNo="27" />
+      <ApportionRefSystemList ScNo="28" />
+      <ApportionRefSystemList ScNo="29" />
+      <ApportionRefSystemList ScNo="30" />
+      <ApportionRefSystemList ScNo="31" />
+      <ApportionRefSystemList ScNo="32" />
+      <ApportionRefSystemList ScNo="33" />
+      <ApportionRefSystemList ScNo="34" />
+      <ApportionRefSystemList ScNo="35" />
+      <ApportionRefSystemList ScNo="36" />
+      <ApportionRefSystemList ScNo="37" />
+      <ApportionRefSystemList ScNo="38" />
+      <ApportionRefSystemList ScNo="39" />
+      <ApportionRefSystemList ScNo="40" />
+    </Apportion>
+  </DatabaseManager>
+</Packet>

@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Packet>
+  <Command>setRequest</Command>
+  <DatabaseManager>
+    <SystemData Name="" LocationID="000001" TimeMaster="MASTER" HoldType="NORMAL" OldTypeMode="OFF" TempUnit="F" PressUnit="PSI" FilterSign="ON" ShortName="OFF" DecimalPoint="DOT" CSVSeparator="COMMA" DateFormat="MMDDYYYY" TimeFormat="12" RoomTemp="SHOW_ALWAYS" Occupancy="OCCUPIEDONLY" Brightness="OFF" RoomHumidity="ON" OutTempAdrs="" MnetAdrs="0" Prohibit="SC_ALL" External="WITHOUT" Model="AE-200A" IPAdrsLan="192.168.1.1" Number="" Version="" VersionIF="" UseMnet="USE" Apportion="OFF" />
+    <GuiData RoomTemp="SHOW_ALWAYS" />
+    <ScheduleControl SeasonType="ENABLE" />
+    <ISTool ISToolVersion="1.90" />
+    <ControlGroup>
+      <McList />
+      <MnetGroupList />
+      <DdcInfoList />
+      <ViewInfoList />
+      <MnetList />
+      <InterlockList />
+      <AreaGroupList />
+      <AreaList />
+      <OcNameList />
+      <McNameList />
+      <FloorList />
+      <FloorGroupList />
+    </ControlGroup>
+    <Measure>
+      <MailRouteList Type="0" />
+      <MailTitleList />
+    </Measure>
+    <MeasureSelf Pulse1="" Unit1="" Name1="" Pulse2="" Unit2="" Name2="" Pulse3="" Unit3="" Name3="" Pulse4="" Unit4="" Name4="" />
+    <InterlockControl ModeAll="ENABLE" />
+    <InterlockControl>
+      <InterlockIndexList />
+    </InterlockControl>
+    <AutoChangeover>
+      <ChangeoverList />
+    </AutoChangeover>
+    <EnergyManagement TimeSource="SAVE_VALUE" />
+    <EnergyManagement>
+      <UnitSourceList />
+    </EnergyManagement>
+    <Web FloorNum="0" />
+    <Web>
+      <WebFGList />
+      <WebFList />
+      <ControlAeList>
+        <ControlAeRecord AeNo="1" AeSubNo="0" ConnectionIP="" />
+      </ControlAeList>
+    </Web>
+    <EneBlock>
+      <EneBlockAreaList />
+      <EneBlockList />
+    </EneBlock>
+    <Apportion>
+      <ApportionRefSystemList AeSubNo="0" />
+      <ApportionRefSystemList AeSubNo="1" />
+      <ApportionRefSystemList AeSubNo="2" />
+      <ApportionRefSystemList AeSubNo="3" />
+      <ApportionRefSystemList AeSubNo="4" />
+    </Apportion>
+  </DatabaseManager>
+</Packet>
