@@ -26,10 +26,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PASSWORD   = b"MELCO"
 
 EMPTY_CONFIGS = {
-    "AE-C400A": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-C400 Config Empty.dat"),
-    "AE-200":   os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
-    "EW-C50":   os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
-    "EW-50":    os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
+    "AE-C400A": os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "AE-C400 Config Empty.dat"),
+    "AE-200":   os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "AE-200 Config Empty.dat"),
+    "EW-C50":   os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "EW-C50 Config Empty.dat"),
+    "EW-50":    os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "EW-50 Config Empty.dat"),
 }
 
 # Data-bearing lists to carry over — same meaning across all controller types

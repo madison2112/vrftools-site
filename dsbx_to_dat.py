@@ -27,10 +27,17 @@ import pyzipper
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_MAP = os.path.join(SCRIPT_DIR, "dsbx_dat_mapping.json")
 EMPTY_CONFIGS = {
-    "AE-C400A": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-C400 Config Empty.dat"),
-    "AE-200":   os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
-    "EW-C50":   os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
-    "EW-50":    os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
+    "AE-C400A": os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "AE-C400 Config Empty.dat"),
+    "AE-200":   os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "AE-200 Config Empty.dat"),
+    "EW-C50":   os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "EW-C50 Config Empty.dat"),
+    "EW-50":    os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "EW-50 Config Empty.dat"),
+}
+
+# When --controller is a primary type (AE-C400A or AE-200), EW-type DSB blocks
+# are automatically mapped to the equivalent EW controller for that tool family.
+FAMILY_MAP = {
+    "AE-C400A": {"AE": "AE-C400A", "EW": "EW-C50"},
+    "AE-200":   {"AE": "AE-200",   "EW": "EW-50"},
 }
 PASSWORD = b"MELCO"
 
@@ -340,8 +347,8 @@ def build_control_group(groupof50, mapping):
 def main():
     parser = argparse.ArgumentParser(description="Convert .dsbx to AE-C400 .dat")
     parser.add_argument("dsbx",    help="Input .dsbx file")
-    parser.add_argument("output", nargs="?", default=None,
-                        help="Output .dat file (default: '{DSB name} {controller}.dat' in current dir)")
+    parser.add_argument("output_dir", nargs="?", default=None,
+                        help="Output folder (default: current directory). One .dat per Groupof50 block.")
     parser.add_argument("--controller", default="AE-C400A",
                         help="Controller type (default: AE-C400A). Must match a file in templates/")
     parser.add_argument("--mapping", default=DEFAULT_MAP, help="Path to mapping JSON")
@@ -350,60 +357,67 @@ def main():
     if args.controller not in EMPTY_CONFIGS:
         print(f"ERROR: unknown controller '{args.controller}'. Choose from: {', '.join(EMPTY_CONFIGS)}")
         sys.exit(1)
-    template_xml_path = os.path.join(SCRIPT_DIR, "templates", f"{args.controller}.xml")
-    if not os.path.exists(template_xml_path):
-        print(f"ERROR: template not found: {template_xml_path}")
-        sys.exit(1)
 
     with open(args.mapping, encoding="utf-8") as f:
         mapping = json.load(f)
 
-    dsb_root  = parse_dsbx(args.dsbx)
-    project   = dsb_root.find("Project")
-    groupof50 = project.find("Groupof50")
+    dsb_root = parse_dsbx(args.dsbx)
+    project  = dsb_root.find("Project")
+    g50_list = project.findall("Groupof50")
 
-    # Load template and make only the two allowed changes
-    tmpl_tree = ET.parse(template_xml_path)
-    tmpl_root = tmpl_tree.getroot()
+    out_dir = args.output_dir or "."
+    os.makedirs(out_dir, exist_ok=True)
 
-    # 1. Set SystemData/@Name only
-    sd = tmpl_root.find(".//SystemData")
-    sd.set("Name", _text(groupof50, "Name"))
+    print(f"Found {len(g50_list)} controller block(s) in DSB.")
 
-    # 2. Replace ControlGroup with freshly built one
-    db = tmpl_root.find(".//DatabaseManager")
-    old_cg = db.find("ControlGroup")
-    cg_index = list(db).index(old_cg)
-    db.remove(old_cg)
-    new_cg = build_control_group(groupof50, mapping)
-    db.insert(cg_index, new_cg)
+    for groupof50 in g50_list:
+        # Resolve per-block controller type: EW-type DSB blocks get the EW
+        # equivalent when a primary family type (AE-C400A / AE-200) is selected.
+        family = FAMILY_MAP.get(args.controller)
+        if family is not None:
+            src_model = _text(groupof50.find("SystemRemoteController"), "ModelNumber") or ""
+            block_controller = family["EW"] if src_model.upper().startswith("EW") else family["AE"]
+        else:
+            block_controller = args.controller
 
-    out = io.BytesIO()
-    tmpl_tree.write(out, encoding="utf-8", xml_declaration=True)
-    xml_bytes = out.getvalue()
-    print(f"XML built ({len(xml_bytes)} bytes)")
+        template_xml_path = os.path.join(SCRIPT_DIR, "templates", f"{block_controller}.xml")
+        empty_dat = EMPTY_CONFIGS[block_controller]
+        with pyzipper.AESZipFile(empty_dat) as z:
+            available = z.namelist()
+            net_xml   = z.read("NetworkSetting.xml", pwd=PASSWORD) if "NetworkSetting.xml" in available else None
+        has_img = any(n.endswith("/") for n in available)
 
-    # Pull extra entries (NetworkSetting.xml, IMG/) from the controller's empty config
-    empty_dat = EMPTY_CONFIGS[args.controller]
-    entries = [("1", xml_bytes, True)]
-    with pyzipper.AESZipFile(empty_dat) as z:
-        available = z.namelist()
-        if "NetworkSetting.xml" in available:
-            entries.append(("NetworkSetting.xml", z.read("NetworkSetting.xml", pwd=PASSWORD), True))
-    if any(n.endswith("/") for n in available):
-        entries.append(("IMG/", None, False))
+        # Load a fresh copy of the template for each block
+        tmpl_tree = ET.parse(template_xml_path)
+        tmpl_root = tmpl_tree.getroot()
 
-    # Auto-generate output filename if not supplied: "{Name} {controller}.dat"
-    if args.output:
-        out_path = args.output
-    else:
+        sd = tmpl_root.find(".//SystemData")
+        sd.set("Name", _text(groupof50, "Name"))
+
+        db       = tmpl_root.find(".//DatabaseManager")
+        old_cg   = db.find("ControlGroup")
+        cg_index = list(db).index(old_cg)
+        db.remove(old_cg)
+        db.insert(cg_index, build_control_group(groupof50, mapping))
+
+        out_buf = io.BytesIO()
+        tmpl_tree.write(out_buf, encoding="utf-8", xml_declaration=True)
+        xml_bytes = out_buf.getvalue()
+
+        entries = [("1", xml_bytes, True)]
+        if net_xml is not None:
+            entries.append(("NetworkSetting.xml", net_xml, True))
+        if has_img:
+            entries.append(("IMG/", None, False))
+
         safe_name = _text(groupof50, "Name")
         for ch in r'\/:*?"<>|':
             safe_name = safe_name.replace(ch, "_")
-        out_path = f"{safe_name} {args.controller}.dat"
+        out_path = os.path.join(out_dir, f"{safe_name} {block_controller}.dat")
 
-    write_zipcrypto(out_path, entries, PASSWORD)
-    print(f"Written: {out_path}")
+        write_zipcrypto(out_path, entries, PASSWORD)
+        groups = len(tmpl_root.findall(".//MnetRecord"))
+        print(f"  [{block_controller}] '{_text(groupof50, 'Name')}' ({groups} groups) -> {os.path.basename(out_path)}")
 
 
 if __name__ == "__main__":
