@@ -63,21 +63,18 @@ function uploadFile(file, url, zone, onSuccess) {
 
 function resetZone(zone, filename, success = false) {
   const accept = zone.dataset.accept || '.dat';
+  zone.style.borderColor = '';
+  zone.style.color       = '';
+
   if (success) {
-    zone.innerHTML = `<div class="icon">&#10003;</div><p><strong>${escHtml(filename)}</strong> uploaded</p>`;
-    zone.style.borderColor = 'var(--green)';
-    zone.style.color       = 'var(--green)';
+    zone.innerHTML = `
+      <div class="icon" style="color:var(--green)">&#10003;</div>
+      <p><strong>${escHtml(filename)}</strong> uploaded</p>
+      <small>Drag &amp; drop or click to upload a different file</small>`;
   } else {
-    zone.style.borderColor = '';
-    zone.style.color       = '';
     zone.innerHTML = `
       <div class="icon">&#128196;</div>
-      <p>Drag &amp; drop your <strong>${accept}</strong> file here, or
-        <label class="link-btn">browse
-          <input type="file" accept="${accept}" style="display:none"
-            onchange="this.closest('.drop-zone').dispatchEvent(Object.assign(new Event('_reselect'),{_file:this.files[0]}))">
-        </label>
-      </p>
+      <p>Drag &amp; drop your <strong>${accept}</strong> file here, or <label for="${zone.closest('.card')?.querySelector('input[type=file]')?.id}" class="link-btn">browse</label></p>
       <small>Maximum 5 MB</small>`;
   }
 }
