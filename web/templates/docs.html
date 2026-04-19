@@ -8,13 +8,13 @@
 <div class="card">
   <div class="card-title">DSBX to DAT</div>
   <ol class="doc-list">
-    <li>Open your Design Build project in Design Build software and export or locate the <strong>.dsbx</strong> file.</li>
+    <li>Export a <strong>.dsbx</strong> file from Diamond System Builder.</li>
     <li>Upload the file on the <a href="{{ url_for('page_dsbx_to_dat') }}">DSBX to DAT</a> page.</li>
     <li>Optionally expand the group list to review or drag-and-drop groups into a different order.</li>
     <li>Click <strong>Download for AE-C400 Tool</strong> or <strong>Download for AE-200 Tool</strong> depending on your controller hardware.</li>
-    <li>Load the resulting <strong>.dat</strong> file into ISToolAEC (AE-C400A) or ISToolAE (AE-200) as normal.</li>
+    <li>Run the Initial Settings Tool and open the <strong>.dat</strong> file like normal.</li>
   </ol>
-  <p class="muted-text" style="margin-top:12px">If your project file contains multiple Groupof50 blocks (one per controller), a ZIP file will be returned with one .dat per block.</p>
+  <p class="muted-text" style="margin-top:12px">If your project file contains multiple Centralized Systems a ZIP file will be returned with one .dat file per block.</p>
 </div>
 
 <div class="card">
@@ -34,7 +34,7 @@
     <li>The tool automatically detects the source type and converts to its opposite: AE-200 &harr; AE-C400A and EW-50 &harr; EW-C50.</li>
     <li>Click <strong>Download Converted DAT</strong>. All group data is preserved; only the controller schema changes.</li>
   </ol>
-  <p class="muted-text" style="margin-top:12px">If the file contains multiple controllers they will each be converted and returned as a ZIP.</p>
+  <p class="muted-text" style="margin-top:12px">If the file contains multiple controllers they will each be converted and returned as multiple .dat files in a ZIP file.</p>
 </div>
 
 <div class="card">
@@ -45,15 +45,5 @@
     <li>Click <strong>Download ZIP</strong> to receive all individual files in a single archive.</li>
   </ol>
   <p class="muted-text" style="margin-top:12px">If you upload a single-controller file an error will be shown — nothing to split.</p>
-</div>
-
-<div class="card">
-  <div class="card-title">File Format Notes</div>
-  <ul class="doc-list">
-    <li><strong>.dsbx</strong> — Mitsubishi Electric Design Build project. An unencrypted ZIP containing an XML entry named <code>xml</code>.</li>
-    <li><strong>.dat</strong> — Controller configuration export from ISToolAEC / ISToolAE. A ZipCrypto-encrypted ZIP (password: MELCO) containing one XML entry per controller plus optional <code>NetworkSetting.xml</code> and <code>IMG/</code> entries.</li>
-    <li>All tools preserve M-Net addresses and unit assignments exactly. Only group slot numbers are changed when rearranging.</li>
-    <li>Groups with invalid or N/A M-Net addresses are silently skipped, consistent with ISTool behavior.</li>
-  </ul>
 </div>
 {% endblock %}

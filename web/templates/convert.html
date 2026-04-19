@@ -33,6 +33,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 const state = { sessionId: null };
 
@@ -68,5 +69,4 @@ document.getElementById('btn-download').addEventListener('click', () => {
   window.location.href = `/api/download/convert/${state.sessionId}`;
 });
 </script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
