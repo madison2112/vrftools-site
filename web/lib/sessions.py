@@ -1,58 +1,82 @@
 """
-Simple in-memory session store with 1-hour auto-expiry.
-Sessions hold uploaded file bytes and parsed state for a user's workflow.
+File-based session store — works correctly across multiple gunicorn workers.
+Each session is a pickle file in SESSION_DIR, auto-expired after TTL seconds.
 """
+import os
+import pickle
 import threading
 import time
 import uuid
 
+SESSION_DIR = "/tmp/ccct-sessions"
+_TTL = 3600
 
-_sessions: dict = {}
-_lock = threading.Lock()
-_TTL  = 3600  # seconds
+
+def _session_path(sid: str) -> str:
+    return os.path.join(SESSION_DIR, f"{sid}.pkl")
 
 
 def _cleanup_loop():
     while True:
         time.sleep(300)
-        now = time.time()
-        with _lock:
-            expired = [k for k, v in _sessions.items() if v["expires"] <= now]
-            for k in expired:
-                del _sessions[k]
+        try:
+            now = time.time()
+            for fname in os.listdir(SESSION_DIR):
+                path = os.path.join(SESSION_DIR, fname)
+                try:
+                    with open(path, "rb") as f:
+                        data = pickle.load(f)
+                    if data.get("expires", 0) <= now:
+                        os.unlink(path)
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 
 threading.Thread(target=_cleanup_loop, daemon=True).start()
 
 
 def create(data: dict) -> str:
+    os.makedirs(SESSION_DIR, exist_ok=True)
     sid = str(uuid.uuid4())
-    with _lock:
-        _sessions[sid] = {**data, "expires": time.time() + _TTL}
+    payload = {**data, "expires": time.time() + _TTL}
+    with open(_session_path(sid), "wb") as f:
+        pickle.dump(payload, f)
     return sid
 
 
 def get(sid: str) -> dict | None:
-    with _lock:
-        s = _sessions.get(sid)
-        if s is None:
+    try:
+        with open(_session_path(sid), "rb") as f:
+            data = pickle.load(f)
+        if data.get("expires", 0) <= time.time():
+            os.unlink(_session_path(sid))
             return None
-        if s["expires"] <= time.time():
-            del _sessions[sid]
-            return None
-        return dict(s)
+        return data
+    except (FileNotFoundError, pickle.UnpicklingError, EOFError):
+        return None
 
 
 def update(sid: str, patch: dict) -> bool:
-    with _lock:
-        s = _sessions.get(sid)
-        if s is None or s["expires"] <= time.time():
+    path = _session_path(sid)
+    try:
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        if data.get("expires", 0) <= time.time():
+            os.unlink(path)
             return False
-        s.update(patch)
-        s["expires"] = time.time() + _TTL  # refresh on activity
+        data.update(patch)
+        data["expires"] = time.time() + _TTL
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
         return True
+    except (FileNotFoundError, pickle.UnpicklingError, EOFError):
+        return False
 
 
 def delete(sid: str):
-    with _lock:
-        _sessions.pop(sid, None)
+    try:
+        os.unlink(_session_path(sid))
+    except FileNotFoundError:
+        pass

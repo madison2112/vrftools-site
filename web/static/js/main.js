@@ -1,6 +1,6 @@
 /**
  * Shared JS for Central Controller Config Tools.
- * Depends on SortableJS (loaded from CDN in base.html — loaded per-page when needed).
+ * Depends on SortableJS (loaded from CDN in base.html).
  */
 
 // ---------------------------------------------------------------------------
@@ -17,8 +17,8 @@ function setupDropZone(zoneId, inputId, uploadUrl, onSuccess) {
     if (input.files[0]) uploadFile(input.files[0], uploadUrl, zone, onSuccess);
   });
 
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragging'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragging'); });
+  zone.addEventListener('dragleave', ()  => zone.classList.remove('dragging'));
   zone.addEventListener('drop', e => {
     e.preventDefault();
     zone.classList.remove('dragging');
@@ -28,16 +28,16 @@ function setupDropZone(zoneId, inputId, uploadUrl, onSuccess) {
 }
 
 function uploadFile(file, url, zone, onSuccess) {
-  const errId = zone.closest('.card')?.querySelector('[id$="-error"]')?.id;
+  const errEl = zone.closest('.card')?.querySelector('[id$="-error"]');
 
   if (file.size > 5 * 1024 * 1024) {
-    if (errId) showError(errId, 'File exceeds the 5 MB limit.');
+    if (errEl) showError(errEl.id, 'File exceeds the 5 MB limit.');
     return;
   }
 
   zone.classList.add('uploading');
   zone.innerHTML = `<div class="icon"><span class="spinner"></span></div><p>Uploading…</p>`;
-  if (errId) hideError(errId);
+  if (errEl) hideError(errEl.id);
 
   const fd = new FormData();
   fd.append('file', file);
@@ -48,16 +48,16 @@ function uploadFile(file, url, zone, onSuccess) {
       zone.classList.remove('uploading');
       if (!ok) {
         resetZone(zone, file.name);
-        if (errId) showError(errId, data.error || 'Upload failed.');
+        if (errEl) showError(errEl.id, data.error || 'Upload failed.');
         return;
       }
       resetZone(zone, file.name, true);
       onSuccess(data);
     })
-    .catch(err => {
+    .catch(() => {
       zone.classList.remove('uploading');
       resetZone(zone, file.name);
-      if (errId) showError(errId, 'Network error — please try again.');
+      if (errEl) showError(errEl.id, 'Network error — please try again.');
     });
 }
 
@@ -66,114 +66,183 @@ function resetZone(zone, filename, success = false) {
   if (success) {
     zone.innerHTML = `<div class="icon">&#10003;</div><p><strong>${escHtml(filename)}</strong> uploaded</p>`;
     zone.style.borderColor = 'var(--green)';
-    zone.style.color = 'var(--green)';
+    zone.style.color       = 'var(--green)';
   } else {
+    zone.style.borderColor = '';
+    zone.style.color       = '';
     zone.innerHTML = `
       <div class="icon">&#128196;</div>
-      <p>Drag &amp; drop your <strong>${accept}</strong> file here, or <label class="link-btn">browse
-        <input type="file" accept="${accept}" style="display:none" onchange="this.parentElement.closest('.drop-zone').dispatchEvent(new Event('reselect'))">
-      </label></p>
+      <p>Drag &amp; drop your <strong>${accept}</strong> file here, or
+        <label class="link-btn">browse
+          <input type="file" accept="${accept}" style="display:none"
+            onchange="this.closest('.drop-zone').dispatchEvent(Object.assign(new Event('_reselect'),{_file:this.files[0]}))">
+        </label>
+      </p>
       <small>Maximum 5 MB</small>`;
   }
 }
 
 
 // ---------------------------------------------------------------------------
-// Sortable group list
+// Slot grid renderer (50 fixed slots, two-column layout)
 // ---------------------------------------------------------------------------
 
-// Maps blockIdx -> current order array (list of old slot numbers)
-const _orderState = {};
+/**
+ * Render the two-column slot grid and return HTML string.
+ * groups: [{slot, tag, mnet_addresses, unit_types, icon}, ...]
+ * listIdPrefix: used to generate column element IDs
+ * blockIdx: which Groupof50 block this belongs to
+ */
+function renderGroupGrid(groups, listIdPrefix, blockIdx) {
+  const bySlot = {};
+  groups.forEach(g => { bySlot[g.slot] = g; });
 
-function initSortable(listId, blockIdx) {
-  const el = document.getElementById(listId);
-  if (!el || typeof Sortable === 'undefined') return;
+  const makeItem = (slotNum) => {
+    const g = bySlot[slotNum];
+    if (!g) {
+      return `<div class="slot-item" data-original-slot="">
+        <span class="slot-num">${slotNum}</span>
+        <div class="slot-empty-card"></div>
+      </div>`;
+    }
+    const mnets = (g.mnet_addresses || []).join(', ');
+    const types = (g.unit_types || []).join(', ');
+    return `<div class="slot-item" data-original-slot="${g.slot}">
+      <span class="slot-num">${slotNum}</span>
+      <div class="group-card">
+        <span class="group-tag">${escHtml(g.tag || '(unnamed)')}</span>
+        <span class="group-mnets">${escHtml(mnets)}</span>
+        <span class="group-types">${escHtml(types)}</span>
+      </div>
+    </div>`;
+  };
 
-  // Capture initial order from DOM
-  _orderState[blockIdx] = [...el.querySelectorAll('.group-card')].map(c => parseInt(c.dataset.slot));
+  let col1 = '', col2 = '';
+  for (let i = 1;  i <= 25; i++) col1 += makeItem(i);
+  for (let i = 26; i <= 50; i++) col2 += makeItem(i);
 
-  Sortable.create(el, {
-    handle: '.drag-handle',
-    animation: 150,
-    ghostClass: 'sortable-ghost',
+  return `<div class="slots-grid">
+    <div class="slots-col" id="${listIdPrefix}-col1" data-block="${blockIdx}">${col1}</div>
+    <div class="slots-col" id="${listIdPrefix}-col2" data-block="${blockIdx}">${col2}</div>
+  </div>`;
+}
+
+/**
+ * Initialise SortableJS on both columns with cross-column drag enabled.
+ */
+function initSlotGrid(listIdPrefix, blockIdx) {
+  const col1 = document.getElementById(`${listIdPrefix}-col1`);
+  const col2 = document.getElementById(`${listIdPrefix}-col2`);
+  if (!col1 || !col2 || typeof Sortable === 'undefined') return;
+
+  const opts = {
+    group:       `slots-block-${blockIdx}`,
+    animation:   120,
+    ghostClass:  'sortable-ghost',
     chosenClass: 'sortable-chosen',
+    draggable:   '.slot-item',
     onEnd() {
-      const newOrder = [...el.querySelectorAll('.group-card')].map(c => parseInt(c.dataset.slot));
-      _orderState[blockIdx] = newOrder;
-      updateSlotNumbers(el);
-      persistOrder(blockIdx, newOrder);
+      rebalanceColumns(col1, col2);
+      _updateSlotNums(col1, 1);
+      _updateSlotNums(col2, 26);
+      _persistSlotOrder(blockIdx, col1, col2);
     },
-  });
+  };
 
-  // Sort-by-tag button
+  Sortable.create(col1, opts);
+  Sortable.create(col2, opts);
+
+  // Sort button
   document.querySelectorAll(`.sort-btn[data-idx="${blockIdx}"]`).forEach(btn => {
-    btn.addEventListener('click', () => sortByTag(blockIdx, listId));
+    btn.addEventListener('click', () => _sortByTag(blockIdx, listIdPrefix, col1, col2));
   });
 }
 
-function updateSlotNumbers(listEl) {
-  listEl.querySelectorAll('.group-card').forEach((card, i) => {
-    const slotEl = card.querySelector('.group-slot');
-    if (slotEl) slotEl.textContent = i + 1;
+/** Keep each column at exactly 25 items by moving overflow to the other column. */
+function rebalanceColumns(col1, col2) {
+  // If col1 has more than 25, move excess to top of col2
+  while (col1.children.length > 25) {
+    col2.insertBefore(col1.lastElementChild, col2.firstElementChild);
+  }
+  // If col2 has more than 25, move excess to bottom of col1
+  while (col2.children.length > 25) {
+    col1.appendChild(col2.firstElementChild);
+  }
+  _updateSlotNums(col1, 1);
+  _updateSlotNums(col2, 26);
+}
+
+function _updateSlotNums(colEl, startNum) {
+  [...colEl.children].forEach((item, i) => {
+    const numEl = item.querySelector('.slot-num');
+    if (numEl) numEl.textContent = startNum + i;
   });
 }
 
-function persistOrder(blockIdx, newOrder) {
+function _persistSlotOrder(blockIdx, col1, col2) {
   const sid = window.state?.sessionId;
   if (!sid) return;
+
+  const newOrder = [...col1.children, ...col2.children]
+    .map(item => parseInt(item.dataset.originalSlot) || 0)
+    .filter(s => s > 0);
+
   fetch(`/api/session/${sid}/groups`, {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ block_index: blockIdx, new_order: newOrder }),
+    body:    JSON.stringify({ block_index: blockIdx, new_order: newOrder }),
   }).catch(() => {});
 }
 
-function sortByTag(blockIdx, listId) {
+function _sortByTag(blockIdx, listIdPrefix, col1, col2) {
   const sid = window.state?.sessionId;
   if (!sid) return;
+
   fetch(`/api/session/${sid}/sort`, {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ block_index: blockIdx }),
+    body:    JSON.stringify({ block_index: blockIdx }),
   })
   .then(r => r.json())
   .then(data => {
     if (!data.new_order) return;
-    const listEl = document.getElementById(listId);
-    if (!listEl) return;
-    // Re-order DOM cards according to new_order
-    const cards = {};
-    listEl.querySelectorAll('.group-card').forEach(c => { cards[parseInt(c.dataset.slot)] = c; });
-    data.new_order.forEach(slot => {
-      if (cards[slot]) listEl.appendChild(cards[slot]);
+
+    // Rebuild card elements indexed by original slot
+    const allItems = [...col1.children, ...col2.children];
+    const byOrigSlot = {};
+    allItems.forEach(item => {
+      const s = parseInt(item.dataset.originalSlot) || 0;
+      if (s > 0) byOrigSlot[s] = item;
     });
-    updateSlotNumbers(listEl);
-    _orderState[blockIdx] = data.new_order;
+    const empties = allItems.filter(item => !parseInt(item.dataset.originalSlot));
+
+    // Place filled cards in new_order sequence, then pad with empties to 50
+    const ordered = data.new_order
+      .map(s => byOrigSlot[s])
+      .filter(Boolean);
+    const all50 = ordered.concat(empties).slice(0, 50);
+
+    // Clear and repopulate
+    col1.innerHTML = '';
+    col2.innerHTML = '';
+    all50.slice(0,  25).forEach(el => col1.appendChild(el));
+    all50.slice(25, 50).forEach(el => col2.appendChild(el));
+
+    _updateSlotNums(col1, 1);
+    _updateSlotNums(col2, 26);
+    _persistSlotOrder(blockIdx, col1, col2);
   })
   .catch(() => {});
 }
 
 
 // ---------------------------------------------------------------------------
-// Group card renderer
+// Warning banners
 // ---------------------------------------------------------------------------
-
-function renderGroupCard(g) {
-  const types = (g.unit_types || []).join(', ');
-  const mnets = (g.mnet_addresses || []).join(', ');
-  return `
-    <div class="group-card" data-slot="${g.slot}">
-      <span class="drag-handle">&#9776;</span>
-      <span class="group-slot">${g.slot}</span>
-      <span class="group-tag">${escHtml(g.tag || '(unnamed)')}</span>
-      <span class="group-mnets">${escHtml(mnets)}</span>
-      <span class="group-types">${escHtml(types)}</span>
-    </div>`;
-}
 
 function renderWarnings(w) {
   const msgs = [];
-  if (w?.sequential_mnet) msgs.push('Group slots match M-Net addresses sequentially — rearranging is recommended if groups do not need to be in address order.');
+  if (w?.sequential_mnet) msgs.push('Group slots match M-Net addresses sequentially — consider rearranging if address order does not reflect intended group order.');
   if (w?.unsorted_tags)   msgs.push('IC group tag names are not in ascending order — use "Sort by Tag Name" to alphabetize.');
   if (!msgs.length) return '';
   return `<div class="alert alert-warn">${msgs.map(m => `<div>&#9888; ${m}</div>`).join('')}</div>`;

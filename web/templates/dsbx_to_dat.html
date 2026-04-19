@@ -59,12 +59,10 @@ function onUploaded(data) {
         <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>
       </div>
       ${renderWarnings(block.warnings)}
-      <div class="group-list sortable-list" id="group-list-${idx}" data-block="${idx}">
-        ${block.groups.map(g => renderGroupCard(g)).join('')}
-      </div>`;
+      ${renderGroupGrid(block.groups, `group-grid-${idx}`, idx)}`;
     container.appendChild(div);
 
-    initSortable(`group-list-${idx}`, idx);
+    initSlotGrid(`group-grid-${idx}`, idx);
   });
 
   document.getElementById('results-section').style.display = '';
