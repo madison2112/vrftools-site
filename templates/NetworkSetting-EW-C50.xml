@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<NetworkSetting xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Items>
+    <Item>
+      <CcNo>1</CcNo>
+      <NetworkXML>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;Packet&gt;
+  &lt;Command&gt;setRequest&lt;/Command&gt;
+  &lt;DatabaseManager&gt;
+    &lt;SystemData Dhcp="OFF" IPAdrsLan="" SubnetMaskLan="" GwLan="" MacAddress="" DnsAuto="OFF" DNSPri="" DNSSec="" Dhcp2="OFF" IPAdrsLan2="" SubnetMaskLan2="" GwLan2="" MacAddress2="" DnsAuto2="OFF" DNSPri2="" DNSSec2="" Proxy="OFF" ProxyAddress="" ProxyUser="" ProxyPass="" APNOnOff="OFF" APN="" APNAuthType="NONE" APNUser="" APNPass="" /&gt;
+  &lt;/DatabaseManager&gt;
+&lt;/Packet&gt;</NetworkXML>
+      <CloudXML>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;Packet&gt;
+  &lt;Command&gt;setRequest&lt;/Command&gt;
+  &lt;DatabaseManager&gt;
+    &lt;DCCSystemData CloudConnect="DISABLE" /&gt;
+  &lt;/DatabaseManager&gt;
+&lt;/Packet&gt;</CloudXML>
+    </Item>
+  </Items>
+</NetworkSetting>

@@ -27,10 +27,10 @@ import pyzipper
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_MAP = os.path.join(SCRIPT_DIR, "dsbx_dat_mapping.json")
 EMPTY_CONFIGS = {
-    "AE-C400A": os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "AE-C400 Config Empty.dat"),
-    "AE-200":   os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "AE-200 Config Empty.dat"),
-    "EW-C50":   os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "EW-C50 Config Empty.dat"),
-    "EW-50":    os.path.join(SCRIPT_DIR, "Testing files", "Empty Configs", "EW-50 Config Empty.dat"),
+    "AE-C400A": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-C400 Config Empty.dat"),
+    "AE-200":   os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
+    "EW-C50":   os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
+    "EW-50":    os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
 }
 
 # When --controller is a primary type (AE-C400A or AE-200), EW-type DSB blocks
