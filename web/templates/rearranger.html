@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Group Rearranger{% endblock %}
+{% block breadcrumb %} / <span>Group Rearranger</span>{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Group Rearranger</h1>
+<p class="page-subtitle">Upload a single-controller .dat file, drag groups into your preferred order, then download.</p>
+
+<div class="card" id="upload-card">
+  <div class="card-title">1. Upload Configuration File</div>
+  <div class="drop-zone" id="drop-zone" data-accept=".dat">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop your <strong>.dat</strong> file here, or <label for="file-input" class="link-btn">browse</label></p>
+    <small>Single-controller .dat only &mdash; maximum 5 MB</small>
+    <input type="file" id="file-input" accept=".dat" style="display:none">
+  </div>
+  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+</div>
+
+<div id="results-section" style="display:none">
+
+  <div class="card">
+    <div class="card-title">2. Rearrange Groups</div>
+    <div id="blocks-container"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">3. Download</div>
+    <button class="btn btn-primary" id="btn-download">Download Modified DAT</button>
+    <div id="download-error" class="alert alert-error" style="display:none"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const state = { sessionId: null };
+
+setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
+
+function onUploaded(data) {
+  if (data.multi) {
+    showError('upload-error', 'This file contains multiple controllers. Use the Database Decoupler tool to split it first.');
+    return;
+  }
+  state.sessionId = data.session_id;
+  const container = document.getElementById('blocks-container');
+  container.innerHTML = '';
+
+  data.blocks.forEach((block, idx) => {
+    const div = document.createElement('div');
+    div.className = 'block-section';
+    div.innerHTML = `
+      <div class="block-header">
+        <strong>${escHtml(block.name)}</strong>
+        <span class="badge">${escHtml(block.controller_type)}</span>
+        <span class="muted-text">${block.groups.length} groups</span>
+        <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>
+      </div>
+      ${renderWarnings(block.warnings)}
+      <div class="group-list sortable-list" id="group-list-${idx}" data-block="${idx}">
+        ${block.groups.map(g => renderGroupCard(g)).join('')}
+      </div>`;
+    container.appendChild(div);
+
+    initSortable(`group-list-${idx}`, idx);
+  });
+
+  document.getElementById('results-section').style.display = '';
+}
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  if (!state.sessionId) return;
+  window.location.href = `/api/download/rearrange/${state.sessionId}`;
+});
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

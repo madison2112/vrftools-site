@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}DSBX to DAT{% endblock %}
+{% block breadcrumb %} / <span>DSBX to DAT</span>{% endblock %}
+
+{% block content %}
+<h1 class="page-title">DSBX to DAT</h1>
+<p class="page-subtitle">Upload a Design Build project file and download the ready-to-load controller configuration.</p>
+
+<div class="card" id="upload-card">
+  <div class="card-title">1. Upload Design Build File</div>
+  <div class="drop-zone" id="drop-zone" data-accept=".dsbx">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop your <strong>.dsbx</strong> file here, or <label for="file-input" class="link-btn">browse</label></p>
+    <small>Maximum 5 MB</small>
+    <input type="file" id="file-input" accept=".dsbx" style="display:none">
+  </div>
+  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+</div>
+
+<div id="results-section" style="display:none">
+
+  <div class="card">
+    <div class="card-title">2. Review &amp; Optionally Rearrange Groups</div>
+    <div id="blocks-container"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">3. Download</div>
+    <p class="muted-text" style="margin-bottom:16px">Choose the target tool version. If your project has multiple controller blocks, a ZIP file will be returned.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-download-c400">Download for AE-C400 Tool</button>
+      <button class="btn btn-outline" id="btn-download-ae200">Download for AE-200 Tool</button>
+    </div>
+    <div id="download-error" class="alert alert-error" style="display:none"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const state = { sessionId: null };
+
+setupDropZone('drop-zone', 'file-input', '/api/upload/dsbx', onUploaded);
+
+function onUploaded(data) {
+  state.sessionId = data.session_id;
+  const container = document.getElementById('blocks-container');
+  container.innerHTML = '';
+
+  data.blocks.forEach((block, idx) => {
+    const div = document.createElement('div');
+    div.className = 'block-section';
+    div.innerHTML = `
+      <div class="block-header">
+        <strong>${escHtml(block.name)}</strong>
+        <span class="muted-text">${block.groups.length} groups</span>
+        <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>
+      </div>
+      ${renderWarnings(block.warnings)}
+      <div class="group-list sortable-list" id="group-list-${idx}" data-block="${idx}">
+        ${block.groups.map(g => renderGroupCard(g)).join('')}
+      </div>`;
+    container.appendChild(div);
+
+    initSortable(`group-list-${idx}`, idx);
+  });
+
+  document.getElementById('results-section').style.display = '';
+}
+
+document.getElementById('btn-download-c400').addEventListener('click', () => downloadDat('AE-C400A'));
+document.getElementById('btn-download-ae200').addEventListener('click', () => downloadDat('AE-200'));
+
+function downloadDat(version) {
+  if (!state.sessionId) return;
+  window.location.href = `/api/download/dsbx-to-dat/${state.sessionId}?version=${version}`;
+}
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

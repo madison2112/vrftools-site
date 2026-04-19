@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Generation Change{% endblock %}
+{% block breadcrumb %} / <span>Generation Change</span>{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Generation Change</h1>
+<p class="page-subtitle">Automatically convert a .dat file between AE-200 and AE-C400A tool versions.</p>
+
+<div class="card">
+  <div class="card-title">Upload Configuration File</div>
+  <div class="drop-zone" id="drop-zone" data-accept=".dat">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop your <strong>.dat</strong> file here, or <label for="file-input" class="link-btn">browse</label></p>
+    <small>AE-200, EW-50, AE-C400A, or EW-C50 &mdash; maximum 5 MB</small>
+    <input type="file" id="file-input" accept=".dat" style="display:none">
+  </div>
+  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+</div>
+
+<div id="results-section" style="display:none">
+  <div class="card">
+    <div class="card-title">Detected Configuration</div>
+    <div id="controller-info"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Download Converted DAT</div>
+    <p class="muted-text" style="margin-bottom:16px">The source family will be detected automatically and converted to its opposite type (AE-200 &#8644; AE-C400A, EW-50 &#8644; EW-C50).</p>
+    <button class="btn btn-primary" id="btn-download">Download Converted DAT</button>
+    <div id="download-error" class="alert alert-error" style="display:none"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const state = { sessionId: null };
+
+setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
+
+const OPPOSITE = {
+  'AE-200': 'AE-C400A', 'AE-C400A': 'AE-200',
+  'EW-50': 'EW-C50', 'EW-C50': 'EW-50',
+};
+
+function onUploaded(data) {
+  state.sessionId = data.session_id;
+
+  const info = document.getElementById('controller-info');
+  const rows = data.blocks.map(b => {
+    const arrow = OPPOSITE[b.controller_type] || '?';
+    return `<tr>
+      <td>${escHtml(b.name)}</td>
+      <td><span class="badge">${escHtml(b.controller_type)}</span></td>
+      <td>&rarr;</td>
+      <td><span class="badge badge-green">${escHtml(arrow)}</span></td>
+    </tr>`;
+  }).join('');
+  info.innerHTML = `<table class="info-table"><thead><tr>
+    <th>Controller</th><th>Source</th><th></th><th>Target</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+
+  document.getElementById('results-section').style.display = '';
+}
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  if (!state.sessionId) return;
+  window.location.href = `/api/download/convert/${state.sessionId}`;
+});
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

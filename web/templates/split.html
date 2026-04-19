@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Database Decoupler{% endblock %}
+{% block breadcrumb %} / <span>Database Decoupler</span>{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Database Decoupler</h1>
+<p class="page-subtitle">Split a multi-controller .dat database file into individual files, one per controller.</p>
+
+<div class="card">
+  <div class="card-title">Upload Configuration File</div>
+  <div class="drop-zone" id="drop-zone" data-accept=".dat">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop your <strong>.dat</strong> file here, or <label for="file-input" class="link-btn">browse</label></p>
+    <small>Multi-controller database &mdash; maximum 5 MB</small>
+    <input type="file" id="file-input" accept=".dat" style="display:none">
+  </div>
+  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+</div>
+
+<div id="results-section" style="display:none">
+  <div class="card">
+    <div class="card-title">Detected Controllers</div>
+    <div id="controller-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Download Individual DATs</div>
+    <p class="muted-text" style="margin-bottom:16px">All controllers will be packaged in a single ZIP archive.</p>
+    <button class="btn btn-primary" id="btn-download">Download ZIP</button>
+    <div id="download-error" class="alert alert-error" style="display:none"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const state = { sessionId: null };
+
+setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
+
+function onUploaded(data) {
+  if (!data.multi) {
+    showError('upload-error', 'This file contains only one controller — nothing to split. Use the Group Rearranger if you want to reorder groups.');
+    return;
+  }
+  state.sessionId = data.session_id;
+
+  const list = document.getElementById('controller-list');
+  const rows = data.blocks.map(b =>
+    `<tr>
+      <td>${escHtml(b.name)}</td>
+      <td><span class="badge">${escHtml(b.controller_type)}</span></td>
+      <td>${b.groups.length} groups</td>
+    </tr>`
+  ).join('');
+  list.innerHTML = `<table class="info-table"><thead><tr>
+    <th>Controller Name</th><th>Type</th><th>Groups</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+
+  document.getElementById('results-section').style.display = '';
+}
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  if (!state.sessionId) return;
+  window.location.href = `/api/download/split/${state.sessionId}`;
+});
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

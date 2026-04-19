@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Central Controller Config Tools{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Central Controller Config Tools</h1>
+<p class="page-subtitle">Web-based utilities for Mitsubishi Electric AE-200 and AE-C400A controller configuration files.</p>
+
+<div class="tool-grid">
+
+  <a class="tool-card" href="{{ url_for('page_dsbx_to_dat') }}">
+    <div class="tool-icon">&#8594;</div>
+    <div class="tool-body">
+      <div class="tool-name">DSBX to DAT</div>
+      <div class="tool-desc">Convert a Design Build project file (.dsbx) to a controller configuration file (.dat) ready to load into ISToolAEC or ISToolAE.</div>
+      <div class="tool-formats"><span class="badge">.dsbx</span> &rarr; <span class="badge">.dat</span></div>
+    </div>
+  </a>
+
+  <a class="tool-card" href="{{ url_for('page_rearranger') }}">
+    <div class="tool-icon">&#8645;</div>
+    <div class="tool-body">
+      <div class="tool-name">Group Rearranger</div>
+      <div class="tool-desc">Upload an existing .dat file and drag-and-drop groups into a new order before downloading the modified file.</div>
+      <div class="tool-formats"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
+    </div>
+  </a>
+
+  <a class="tool-card" href="{{ url_for('page_convert') }}">
+    <div class="tool-icon">&#8646;</div>
+    <div class="tool-body">
+      <div class="tool-name">Generation Change</div>
+      <div class="tool-desc">Convert a configuration file between AE-200 and AE-C400A tool versions (and their paired EW controller types) automatically.</div>
+      <div class="tool-formats"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
+    </div>
+  </a>
+
+  <a class="tool-card" href="{{ url_for('page_split') }}">
+    <div class="tool-icon">&#9003;</div>
+    <div class="tool-body">
+      <div class="tool-name">Database Decoupler</div>
+      <div class="tool-desc">Split a multi-controller .dat database into individual files — one per controller — packaged as a ZIP download.</div>
+      <div class="tool-formats"><span class="badge">multi .dat</span> &rarr; <span class="badge">.zip</span></div>
+    </div>
+  </a>
+
+</div>
+
+<div class="card" style="margin-top: 32px;">
+  <div class="card-title">About These Tools</div>
+  <p>All processing happens on the server. Uploaded files are automatically deleted after one hour. Maximum file size: 5 MB.</p>
+  <p style="margin-top: 12px;">For detailed usage instructions and file format documentation, see the <a href="{{ url_for('page_docs') }}">How to Use</a> guide.</p>
+</div>
+{% endblock %}

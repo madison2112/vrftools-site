@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Central Controller Config Tools{% endblock %} — VRFTools</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<header>
+  <a class="logo" href="https://vrftools.com">VRF<span>Tools</span></a>
+  <nav>
+    <a href="{{ url_for('index') }}">Config Tools</a>
+    <a href="{{ url_for('page_docs') }}">How to Use</a>
+    <a href="https://vrftools.com">Main Site</a>
+  </nav>
+</header>
+
+<div class="breadcrumb">
+  <a href="https://vrftools.com">vrftools.com</a> /
+  <a href="{{ url_for('index') }}">Config Tools</a>
+  {% block breadcrumb %}{% endblock %}
+</div>
+
+<main class="page">
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div>Central Controller Config Tools &mdash; <a href="https://vrftools.com">vrftools.com</a></div>
+  <div>Free utilities for Mitsubishi Electric HVAC installers</div>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
