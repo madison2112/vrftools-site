@@ -1,0 +1,61 @@
+{% extends "site_base.html" %}
+{% block title %}Log Data — MTDZ Viewer{% endblock %}
+
+{% block head %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+{% endblock %}
+
+{% block nav %}
+<nav>
+  <a href="/mtdz/report" id="link-report" style="display:none">Generate Report</a>
+  <a href="/mtdz/sysinfo" id="link-sysconfig" style="display:none">System Config</a>
+  <a href="/docs">How to Use</a>
+  <a href="/mtdz/">Home</a>
+</nav>
+{% endblock %}
+
+{% block breadcrumb_section %}
+<div class="breadcrumb">
+  <a href="/">Home</a> &rsaquo; <a href="/mtdz/">MTDZ Viewer</a> &rsaquo; <span id="topbar-subtitle">Loading…</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="day-tabs-row" style="display:none">
+  <div class="card-title" style="font-size:0.85rem;margin-bottom:8px;">Select Day</div>
+  <div class="day-tabs" id="day-tabs"></div>
+</div>
+
+<div id="system-selector-row" class="system-select" style="display:none">
+  <label for="system-select">System</label>
+  <select id="system-select"></select>
+</div>
+
+<div id="error-msg" class="error-msg"></div>
+
+<div class="card" id="odu-section">
+  <div class="card-title">Outdoor Unit (ODU)</div>
+  <div id="odu-graphs"></div>
+  <div class="skeleton" id="odu-skeleton" style="height:280px;"></div>
+</div>
+
+<div id="idu-section">
+  <div class="card">
+    <div class="card-title">Indoor Units (IDU)</div>
+    <div id="idu-graphs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px;"></div>
+    <div class="skeleton" id="idu-skeleton" style="height:200px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.MTDZ_PAGES = {
+    index:     '/mtdz/',
+    viewer:    '/mtdz/viewer',
+    report:    '/mtdz/report',
+    sysconfig: '/mtdz/sysinfo',
+  };
+</script>
+<script src="{{ url_for('static', filename='js/mtdz/viewer.js') }}"></script>
+{% endblock %}

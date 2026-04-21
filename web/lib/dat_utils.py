@@ -68,7 +68,7 @@ def parse_dat_controllers(dat_bytes: bytes) -> list:
         names = z.namelist()
         has_network = "NetworkSetting.xml" in names
         has_img     = any(n.endswith("/") for n in names)
-        xml_entries = [e for e in names if "/" not in e]
+        xml_entries = [e for e in names if e.isdigit()]
 
         controllers = []
         for entry in xml_entries:
@@ -277,6 +277,101 @@ def rearrange_dat_bytes(dat_bytes: bytes, new_order: list) -> bytes:
     ctrl    = controllers[0]
     new_xml = apply_rearrangement(ctrl["xml_bytes"], new_order)
     return generate_dat_bytes(new_xml, ctrl["controller_type"])
+
+
+def rearrange_and_repackage_dat_bytes(dat_bytes: bytes, orders: dict) -> bytes:
+    """
+    Apply per-controller rearrangements and repackage as a single .dat
+    (multi-controller format preserved; single-controller returns standard .dat).
+    orders: {block_idx: [old_slot, ...]}
+    """
+    controllers = parse_dat_controllers(dat_bytes)
+    entries = []
+    for i, ctrl in enumerate(controllers):
+        order = orders.get(i)
+        xml = apply_rearrangement(ctrl["xml_bytes"], order) if order else ctrl["xml_bytes"]
+        entries.append((ctrl["entry"], xml, True))
+
+    with _open_dat(dat_bytes) as z:
+        ctrl_entry_names = {c["entry"] for c in controllers}
+        for name in z.namelist():
+            if name in ctrl_entry_names:
+                continue
+            if name.endswith("/"):
+                entries.append((name, None, False))
+            else:
+                try:
+                    data = z.read(name, pwd=PASSWORD)
+                except Exception:
+                    data = z.read(name)
+                entries.append((name, data, True))
+
+    return build_dat_bytes(entries)
+
+
+def rearrange_and_split_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
+    """
+    Apply per-controller rearrangements and split into individual per-controller .dat files.
+    Returns list of {"name": str, "controller": str, "data": bytes}.
+    """
+    controllers = parse_dat_controllers(dat_bytes)
+    results = []
+    for i, ctrl in enumerate(controllers):
+        order = orders.get(i)
+        xml = apply_rearrangement(ctrl["xml_bytes"], order) if order else ctrl["xml_bytes"]
+        results.append({
+            "name":       _safe_filename(ctrl["name"]),
+            "controller": ctrl["controller_type"],
+            "data":       generate_dat_bytes(xml, ctrl["controller_type"]),
+        })
+    return results
+
+
+def rearrange_and_convert_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
+    """
+    Apply per-controller rearrangements, split, and convert each to its opposite generation.
+    Returns list of {"name": str, "controller": str, "data": bytes}.
+    """
+    controllers = parse_dat_controllers(dat_bytes)
+    results = []
+    for i, ctrl in enumerate(controllers):
+        order = orders.get(i)
+        xml = apply_rearrangement(ctrl["xml_bytes"], order) if order else ctrl["xml_bytes"]
+
+        src_type = ctrl["controller_type"]
+        tgt_type = OPPOSITE.get(src_type, src_type)
+        template_path = os.path.join(TEMPLATES_DIR, f"{tgt_type}.xml")
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(f"Template not found: {template_path}")
+
+        src_root = ET.fromstring(xml)
+        src_sd   = src_root.find(".//SystemData")
+        src_cg   = src_root.find(".//ControlGroup")
+        sys_name = src_sd.get("Name", "") if src_sd is not None else ""
+
+        tmpl_tree = ET.parse(template_path)
+        tmpl_root = tmpl_tree.getroot()
+        tmpl_sd   = tmpl_root.find(".//SystemData")
+        tmpl_cg   = tmpl_root.find(".//ControlGroup")
+
+        if tmpl_sd is not None:
+            tmpl_sd.set("Name", sys_name)
+        if src_cg is not None and tmpl_cg is not None:
+            src_data = {child.tag: child for child in src_cg if child.tag in DATA_LISTS}
+            for child in list(tmpl_cg):
+                if child.tag in DATA_LISTS and child.tag in src_data:
+                    idx = list(tmpl_cg).index(child)
+                    tmpl_cg.remove(child)
+                    tmpl_cg.insert(idx, src_data[child.tag])
+
+        out_buf = io.BytesIO()
+        tmpl_tree.write(out_buf, encoding="utf-8", xml_declaration=True)
+        results.append({
+            "name":       f"{_safe_filename(sys_name)} {tgt_type}",
+            "controller": tgt_type,
+            "data":       generate_dat_bytes(out_buf.getvalue(), tgt_type),
+        })
+    return results
 
 
 def sort_groups_by_tag(cards: list) -> list:

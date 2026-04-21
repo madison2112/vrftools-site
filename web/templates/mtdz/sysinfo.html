@@ -1,0 +1,74 @@
+{% extends "site_base.html" %}
+{% block title %}System Config — MTDZ Viewer{% endblock %}
+
+{% block head %}
+<style>
+  .info-banner {
+    background: #fff3f3;
+    border: 1px solid #ffb3b3;
+    border-left: 4px solid var(--red);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    color: var(--dark);
+    font-size: 0.9rem;
+  }
+  .info-banner strong { display: block; margin-bottom: 2px; }
+  .topo-scroll { overflow-x: auto; padding-bottom: 8px; }
+  .oc-box  { fill: #1a1a1a; }
+  .os-box  { fill: #2d2d2d; stroke: #888; stroke-width: 1; stroke-dasharray: 3 2; }
+  .bc-box  { fill: #555; }
+  .ic-box  { fill: #2a7a52; }
+  .unit-label-single {
+    font-size: 12px; font-weight: 600; fill: #fff;
+    dominant-baseline: middle; text-anchor: middle;
+  }
+  .connect-line { stroke: #999; stroke-width: 1.5; fill: none; }
+  .port-cap-line { stroke: #555; stroke-width: 1.5; }
+  .port-cap-sq { fill: none; stroke: #555; stroke-width: 1.5; }
+  .sys-divider { stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 4; }
+  .no-systems { color: var(--muted); font-style: italic; padding: 16px 0; }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav>
+  <a href="/mtdz/report" id="link-report" style="display:none">Generate Report</a>
+  <a href="/mtdz/viewer" id="link-viewer" style="display:none">View Log Data</a>
+  <a href="/docs">How to Use</a>
+  <a href="/mtdz/">Home</a>
+</nav>
+{% endblock %}
+
+{% block breadcrumb_section %}
+<div class="breadcrumb">
+  <a href="/">Home</a> &rsaquo; <a href="/mtdz/">MTDZ Viewer</a> &rsaquo; System Config
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="info-banner" id="sysinfo-banner" style="display:none">
+  <strong>System Information file</strong>
+  This file contains system configuration data only — no trend or monitoring data is included.
+</div>
+
+<div class="card">
+  <div class="card-title" id="map-title">System Configuration Map</div>
+  <div class="topo-scroll">
+    <svg id="topo-svg" style="display:block;"></svg>
+  </div>
+  <p class="no-systems" id="no-systems-msg" style="display:none">No system topology data found in this file.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.MTDZ_PAGES = {
+    index:     '/mtdz/',
+    viewer:    '/mtdz/viewer',
+    report:    '/mtdz/report',
+    sysconfig: '/mtdz/sysinfo',
+  };
+</script>
+<script src="{{ url_for('static', filename='js/mtdz/sysinfo.js') }}"></script>
+{% endblock %}

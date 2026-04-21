@@ -10,11 +10,15 @@
   <div class="card-title">Upload Configuration File</div>
   <div class="drop-zone" id="drop-zone" data-accept=".dat">
     <div class="icon">&#128196;</div>
-    <p>Drag &amp; drop your <strong>.dat</strong> file here, or <label for="file-input" class="link-btn">browse</label></p>
+    <p>Drag &amp; drop your <strong>.dat</strong> file here, or click to browse</p>
     <small>AE-200, EW-50, AE-C400A, or EW-C50 &mdash; maximum 5 MB</small>
     <input type="file" id="file-input" accept=".dat" style="display:none">
   </div>
   <div id="upload-error" class="alert alert-error" style="display:none"></div>
+</div>
+
+<div id="bug-btn-pre" class="bug-link-wrap">
+  <a href="/contact?type=issue&tool=generation-change" class="bug-link">🐜 Report a Bug</a>
 </div>
 
 <div id="results-section" style="display:none">
@@ -26,7 +30,10 @@
   <div class="card">
     <div class="card-title">Download Converted DAT</div>
     <p class="muted-text" style="margin-bottom:16px">The source family will be detected automatically and converted to its opposite type (AE-200 &#8644; AE-C400A, EW-50 &#8644; EW-C50).</p>
-    <button class="btn btn-primary" id="btn-download">Download Converted DAT</button>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-download">Download Converted DAT</button>
+      <a href="/contact?type=issue&tool=generation-change" class="bug-link bug-link--inline">🐜 Report a Bug</a>
+    </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
   </div>
 </div>
@@ -61,6 +68,7 @@ function onUploaded(data) {
     <th>Controller</th><th>Source</th><th></th><th>Target</th>
   </tr></thead><tbody>${rows}</tbody></table>`;
 
+  document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
 }
 

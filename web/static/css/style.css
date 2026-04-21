@@ -246,37 +246,54 @@ footer a:hover { text-decoration: underline; }
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
+.rearrange-header { margin-bottom: 20px; }
+.rearrange-title  { font-size: 1.25rem; font-weight: 700; margin-bottom: 6px; }
+.rearrange-hint   { font-size: 0.875rem; color: var(--muted); line-height: 1.5; }
 
 .slots-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 24px;
 }
-.slots-col {
+.slots-half {
+  display: flex;
+  gap: 4px;
+}
+.slot-label-col {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex-shrink: 0;
 }
-.slot-item {
+.slot-label {
+  width: 22px;
+  height: 32px;
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-.slot-num {
-  width: 22px;
-  text-align: right;
+  justify-content: flex-end;
   font-size: 0.72rem;
   color: var(--muted);
-  flex-shrink: 0;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+}
+.slots-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.slot-item {
+  height: 32px;
+  display: flex;
+  align-items: center;
 }
 .group-card {
   flex: 1;
+  height: 30px;
   background: var(--light-gray);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 5px 9px;
+  padding: 0 9px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -285,9 +302,9 @@ footer a:hover { text-decoration: underline; }
   min-width: 0;
   transition: background 0.1s, border-color 0.1s;
 }
-.group-card:hover       { background: #e8e8e8; border-color: #bbb; }
-.group-card.sortable-chosen { background: #fff3f3; border-color: var(--red); }
-.group-card.sortable-ghost  { opacity: 0.35; }
+.group-card:hover { background: #e8e8e8; border-color: #bbb; }
+.slot-item.sortable-chosen .group-card { background: #fff3f3; border-color: var(--red); cursor: grabbing; }
+.slot-item.sortable-ghost .group-card  { opacity: 0.35; }
 .slot-empty-card {
   flex: 1;
   height: 30px;
@@ -297,6 +314,54 @@ footer a:hover { text-decoration: underline; }
 .group-tag   { font-weight: 600; font-size: 0.82rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-mnets { font-size: 0.74rem; color: var(--muted); font-family: monospace; white-space: nowrap; flex-shrink: 0; }
 .group-types { font-size: 0.70rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+
+/* ── Tool list (single-column with problem/solution) ── */
+.tool-list { display: flex; flex-direction: column; gap: 16px; }
+.tool-list-item {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  align-items: start;
+  text-decoration: none;
+  color: var(--dark);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tool-list-item:hover {
+  border-color: var(--red);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.tool-list-item:hover .tool-name { color: var(--red); }
+.tool-list-left { display: flex; }
+.tool-card-inner {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.tool-list-right { font-size: 0.875rem; line-height: 1.6; }
+.tool-list-right p + p { margin-top: 8px; }
+.tool-list-right .problem-label { font-weight: 600; color: var(--dark); }
+.tool-list-right .solution-label { font-weight: 600; color: var(--red); }
+.suite-overview {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--red);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--dark);
+}
+.suite-overview h2 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+@media (max-width: 680px) {
+  .tool-list-item { grid-template-columns: 1fr; gap: 12px; }
+  .slots-grid { grid-template-columns: 1fr; }
+  .slots-half:last-child { margin-top: 8px; }
+}
 
 /* ── Info table ── */
 .info-table {
@@ -326,6 +391,23 @@ footer a:hover { text-decoration: underline; }
 }
 .doc-list li { margin-bottom: 4px; }
 .muted-text { color: var(--muted); font-size: 0.88rem; }
+
+/* ── Bug report link ── */
+.bug-link-wrap { text-align: right; margin: 6px 0 -4px; }
+.bug-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.bug-link:hover { color: var(--danger); border-color: #e88; }
+.bug-link--inline { margin-left: auto; }
 
 /* ── Spinner ── */
 .spinner {

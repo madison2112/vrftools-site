@@ -1,0 +1,82 @@
+{% extends "site_base.html" %}
+{% block title %}MTDZ Viewer{% endblock %}
+
+{% block nav %}
+<nav>
+  <a href="/docs">How to Use</a>
+  <a href="/">Home</a>
+</nav>
+{% endblock %}
+
+{% block breadcrumb_section %}
+<div class="breadcrumb">
+  <a href="/">Home</a> &rsaquo; MTDZ Viewer
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card" id="upload-card">
+  <div class="card-title">Upload Monitoring File</div>
+  <div class="info-banner privacy-notice">
+    Your uploaded file is automatically deleted after 1 hour of inactivity and is never stored permanently on this server.
+  </div>
+  <div class="drop-zone" id="drop-zone">
+    <div class="icon">📂</div>
+    <p>Drag &amp; drop your file here, or click to browse</p>
+    <small>Accepted formats: .MTDZ (single day) &nbsp;·&nbsp; .MTLZ or .MTPZ (multi-day)</small>
+  </div>
+  <input type="file" id="file-input" accept=".mtdz,.MTDZ,.mtlz,.MTLZ,.mtpz,.MTPZ" style="display:none">
+  <div class="progress-bar" id="progress-bar"><div class="progress-fill"></div></div>
+  <div class="error-msg" id="error-msg"></div>
+</div>
+
+<div class="card" id="mode-card" style="display:none">
+  <div class="card-title" id="file-title">File loaded</div>
+  <div id="day-info" style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;"></div>
+  <div class="mode-cards">
+    <div class="mode-card" id="btn-viewer" style="order:1">
+      <div class="icon">📈</div>
+      <h3>View Log Data</h3>
+      <p>Interactive graphs for ODUs and IDUs</p>
+      <p class="mobile-note">Not available on mobile — please use a desktop browser</p>
+    </div>
+    <div class="mode-card" id="btn-report" style="order:2">
+      <div class="icon">📄</div>
+      <h3>Generate Report</h3>
+      <p>Creates a Word document with graphed data</p>
+    </div>
+    <div class="mode-card" id="btn-sysconfig" style="order:3">
+      <div class="icon">🗺️</div>
+      <h3>System Config</h3>
+      <p>Shows system layout and port connections on BC</p>
+      <p class="mobile-note">Not available on mobile — please use a desktop browser</p>
+    </div>
+    <div class="mode-card" id="btn-rawdata" style="order:4">
+      <div class="icon">📦</div>
+      <h3>Download Raw Data</h3>
+      <p>For advanced users only. CSV file with all data extracted from the MTDZ file</p>
+    </div>
+  </div>
+  <div class="info-banner privacy-notice" style="margin-top:16px;">
+    Your file will be automatically deleted after 1 hour of inactivity.
+  </div>
+  <div class="mode-card-actions">
+    <a href="#" id="btn-different-file" class="back-link" style="display:none">↩ Upload a different file</a>
+    <a href="#" id="btn-delete-file" class="delete-link" style="display:none">🗑 Delete file from server</a>
+    <a href="/contact?type=issue&tool=mtdz" id="btn-report-issue" class="back-link" style="display:none">⚑ Report an issue</a>
+  </div>
+  <div class="error-msg" id="delete-error"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.MTDZ_PAGES = {
+    index:     '/mtdz/',
+    viewer:    '/mtdz/viewer',
+    report:    '/mtdz/report',
+    sysconfig: '/mtdz/sysinfo',
+  };
+</script>
+<script src="{{ url_for('static', filename='js/mtdz/upload.js') }}"></script>
+{% endblock %}

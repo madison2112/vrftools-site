@@ -1,53 +1,82 @@
 {% extends "base.html" %}
 {% block title %}Central Controller Config Tools{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block content %}
 <h1 class="page-title">Central Controller Config Tools</h1>
 <p class="page-subtitle">Web-based utilities for Mitsubishi Electric AE-200 and AE-C400A controller configuration files.</p>
 
-<div class="tool-grid">
-
-  <a class="tool-card" href="{{ url_for('page_dsbx_to_dat') }}">
-    <div class="tool-icon">&#8594;</div>
-    <div class="tool-body">
-      <div class="tool-name">DSBX to DAT</div>
-      <div class="tool-desc">Convert a Design Build project file (.dsbx) to a controller configuration file (.dat) ready to load into ISToolAEC or ISToolAE.</div>
-      <div class="tool-formats"><span class="badge">.dsbx</span> &rarr; <span class="badge">.dat</span></div>
-    </div>
-  </a>
-
-  <a class="tool-card" href="{{ url_for('page_rearranger') }}">
-    <div class="tool-icon">&#8645;</div>
-    <div class="tool-body">
-      <div class="tool-name">Group Rearranger</div>
-      <div class="tool-desc">Upload an existing .dat file and drag-and-drop groups into a new order before downloading the modified file.</div>
-      <div class="tool-formats"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
-    </div>
-  </a>
-
-  <a class="tool-card" href="{{ url_for('page_convert') }}">
-    <div class="tool-icon">&#8646;</div>
-    <div class="tool-body">
-      <div class="tool-name">Generation Change</div>
-      <div class="tool-desc">Convert a configuration file between AE-200 and AE-C400A tool versions (and their paired EW controller types) automatically.</div>
-      <div class="tool-formats"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
-    </div>
-  </a>
-
-  <a class="tool-card" href="{{ url_for('page_split') }}">
-    <div class="tool-icon">&#9003;</div>
-    <div class="tool-body">
-      <div class="tool-name">Database Decoupler</div>
-      <div class="tool-desc">Split a multi-controller .dat database into individual files — one per controller — packaged as a ZIP download.</div>
-      <div class="tool-formats"><span class="badge">multi .dat</span> &rarr; <span class="badge">.zip</span></div>
-    </div>
-  </a>
-
+<div class="suite-overview">
+  <h2>About These Tools</h2>
+  <p>The central controller config file required to load group and address data into an AE-200 or AE-C400A already exists in your DSB file — it just isn't in the right format. The DSBX to DAT converter closes that gap, turning a .dsbx file into one loading-ready config file per centralized system with no manual data entry. The remaining tools handle the next most common pain points: reordering groups after the fact, converting between controller generations, and splitting a site database into individual controller files that can actually be loaded when the IT backbone isn't complete yet.</p>
+  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are automatically deleted after one hour. Maximum file size: 5 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
 </div>
 
-<div class="card" style="margin-top: 32px;">
-  <div class="card-title">About These Tools</div>
-  <p>All processing happens on the server. Uploaded files are automatically deleted after one hour. Maximum file size: 5 MB.</p>
-  <p style="margin-top: 12px;">For detailed usage instructions and file format documentation, see the <a href="{{ url_for('page_docs') }}">How to Use</a> guide.</p>
+<div class="tool-list">
+
+  <a class="tool-list-item" href="{{ url_for('page_dsbx_to_dat') }}">
+    <div class="tool-list-left">
+      <div class="tool-card-inner">
+        <div class="tool-icon">&#8594;</div>
+        <div class="tool-body">
+          <div class="tool-name">DSBX to DAT</div>
+          <div class="tool-formats"><span class="badge">.dsbx</span> &rarr; <span class="badge">one or more .dat</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-list-right">
+      <p><span class="problem-label">The problem:</span> Building a central controller config file requires manually entering the name and M-Net address(es) for every group. This takes a significant amount of time and is a source of frustration — the data already exists in the DSB file.</p>
+      <p><span class="solution-label">The solution:</span> Upload your .dsbx file and download fully built config file(s) ready to be opened with the Initial Settings Tool. Groups are auto-populated from the DSB data, and you can optionally reorder them before downloading. Generates one config file per centralized system.</p>
+    </div>
+  </a>
+
+  <a class="tool-list-item" href="{{ url_for('page_rearranger') }}">
+    <div class="tool-list-left">
+      <div class="tool-card-inner">
+        <div class="tool-icon">&#8645;</div>
+        <div class="tool-body">
+          <div class="tool-name">Group Rearranger</div>
+          <div class="tool-formats"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-list-right">
+      <p><span class="problem-label">The problem:</span> Units display on the controller touchscreen in group order. When groups don't match the preferred display order — as is often the case when there are multiple systems on one floor — fixing the group ordering requires significant editing to the config file or rebuilding the database entirely.</p>
+      <p><span class="solution-label">The solution:</span> Upload your config file and drag groups into the order you want. Download a modified config file ready to be loaded to the controller.</p>
+    </div>
+  </a>
+
+  <a class="tool-list-item" href="{{ url_for('page_convert') }}">
+    <div class="tool-list-left">
+      <div class="tool-card-inner">
+        <div class="tool-icon">&#8646;</div>
+        <div class="tool-body">
+          <div class="tool-name">Generation Change</div>
+          <div class="tool-formats"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-list-right">
+      <p><span class="problem-label">The problem:</span> The AE-200 and AE-C400A (and their EW counterparts) use different .dat formats that aren't cross-compatible. If a database was built for the wrong controller generation, or a central controller is being upgraded or replaced, the only option is to rebuild the entire database.</p>
+      <p><span class="solution-label">The solution:</span> Upload a config file and download it converted to the opposite generation. Group data, names, and M-Net assignments are preserved automatically.</p>
+    </div>
+  </a>
+
+  <a class="tool-list-item" href="{{ url_for('page_split') }}">
+    <div class="tool-list-left">
+      <div class="tool-card-inner">
+        <div class="tool-icon">&#9003;</div>
+        <div class="tool-body">
+          <div class="tool-name">Database Decoupler</div>
+          <div class="tool-formats"><span class="badge">multi .dat</span> &rarr; <span class="badge">multiple .dat</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-list-right">
+      <p><span class="problem-label">The problem:</span> A multi-controller config file can only be loaded when all controllers in the database are already communicating with each other. On sites where the IT backbone isn't yet complete, individual controllers can't have their databases loaded without separate config files for each controller.</p>
+      <p><span class="solution-label">The solution:</span> Upload a config file with multiple central controllers and download a ZIP of individual per-controller files, each ready to load independently.</p>
+    </div>
+  </a>
+
 </div>
 {% endblock %}

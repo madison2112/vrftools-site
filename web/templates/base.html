@@ -11,17 +11,17 @@
 <body>
 
 <header>
-  <a class="logo" href="https://vrftools.com">VRF<span>Tools</span></a>
+  <a class="logo" href="/">VRF<span>Tools</span></a>
   <nav>
-    <a href="{{ url_for('index') }}">Config Tools</a>
+    <a href="{{ url_for('page_config_tools') }}">Config Tools</a>
     <a href="{{ url_for('page_docs') }}">How to Use</a>
-    <a href="https://vrftools.com">Main Site</a>
+    <a href="/">Home</a>
   </nav>
 </header>
 
 <div class="breadcrumb">
-  <a href="https://vrftools.com">vrftools.com</a> /
-  <a href="{{ url_for('index') }}">Config Tools</a>
+  <a href="/">vrftools.com</a> /
+  <a href="{{ url_for('page_config_tools') }}">Config Tools</a>
   {% block breadcrumb %}{% endblock %}
 </div>
 

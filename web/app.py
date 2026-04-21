@@ -5,14 +5,16 @@ import io
 import os
 import zipfile
 
-from flask import (Flask, jsonify, render_template, request,
+import requests as req_lib
+from flask import (Flask, Response, jsonify, render_template, request,
                    send_file, abort)
 
 from lib import sessions
 from lib.dat_utils import (
     convert_dat_bytes, detect_controller_type, extract_groups_from_xml,
-    parse_dat_controllers, rearrange_dat_bytes, sort_groups_by_tag,
-    split_dat_bytes, _check_warnings,
+    parse_dat_controllers, rearrange_and_repackage_dat_bytes,
+    rearrange_and_split_dat_bytes, rearrange_and_convert_dat_bytes,
+    sort_groups_by_tag, split_dat_bytes, _check_warnings, _safe_filename,
 )
 from lib.dsbx_utils import (
     dsbx_to_dat_bytes, extract_group_cards, get_groupof50_list,
@@ -23,6 +25,7 @@ app = Flask(__name__)
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXT = {".dsbx", ".dat"}
+MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +78,42 @@ def _send_zip(data: bytes, filename: str):
 
 @app.route("/")
 def index():
+    return render_template("site_index.html")
+
+
+@app.route("/config-tools")
+def page_config_tools():
     return render_template("index.html")
+
+
+@app.route("/contact")
+def page_contact():
+    return render_template("site_contact.html")
+
+
+@app.route("/lev-kit-configurator")
+def page_lev_kit():
+    return render_template("site_lev_kit.html")
+
+
+@app.route("/mtdz/")
+def page_mtdz_index():
+    return render_template("mtdz/index.html")
+
+
+@app.route("/mtdz/viewer")
+def page_mtdz_viewer():
+    return render_template("mtdz/viewer.html")
+
+
+@app.route("/mtdz/report")
+def page_mtdz_report():
+    return render_template("mtdz/report.html")
+
+
+@app.route("/mtdz/sysinfo")
+def page_mtdz_sysinfo():
+    return render_template("mtdz/sysinfo.html")
 
 
 @app.route("/dsbx-to-dat")
@@ -262,20 +300,31 @@ def api_download_rearrange(sid):
     if not s or s.get("type") != "dat":
         abort(404, "Session not found or expired.")
 
-    if s.get("multi"):
-        abort(400, "Rearrangement is only available for single-controller DAT files.")
-
-    order = s.get("order_0")
-    if not order:
-        abort(400, "No rearrangement has been applied to this session.")
+    export = request.args.get("export", "packaged")
+    blocks = s.get("blocks", [])
+    orders = {i: s.get(f"order_{i}") for i in range(len(blocks)) if s.get(f"order_{i}")}
 
     try:
-        result = rearrange_dat_bytes(s["dat_data"], order)
-    except Exception as e:
-        abort(500, f"Rearrangement failed: {e}")
+        if export == "individual":
+            results = rearrange_and_split_dat_bytes(s["dat_data"], orders)
+            if len(results) == 1:
+                return _send_dat(results[0]["data"], f"{results[0]['name']}_rearranged.dat")
+            return _send_zip(_zip_results(results), "rearranged_controllers.zip")
 
-    name = s["blocks"][0]["name"] if s.get("blocks") else "rearranged"
-    return _send_dat(result, f"{name}_rearranged.dat")
+        elif export == "converted":
+            results = rearrange_and_convert_dat_bytes(s["dat_data"], orders)
+            if len(results) == 1:
+                return _send_dat(results[0]["data"], f"{results[0]['name']}.dat")
+            return _send_zip(_zip_results(results), "converted_controllers.zip")
+
+        else:  # packaged (default)
+            result = rearrange_and_repackage_dat_bytes(s["dat_data"], orders)
+            base = _safe_filename(blocks[0]["name"]) if blocks else "rearranged"
+            fname = f"{base}_rearranged.dat" if len(blocks) == 1 else "rearranged.dat"
+            return _send_dat(result, fname)
+
+    except Exception as e:
+        abort(500, f"Export failed: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -342,6 +391,48 @@ def api_sort_groups(sid):
     sessions.update(sid, {f"order_{block_idx}": new_order})
 
     return jsonify({"ok": True, "new_order": new_order})
+
+
+# ---------------------------------------------------------------------------
+# MTDZ backend proxy — catch-all for any /api/ paths not handled above
+# ---------------------------------------------------------------------------
+
+@app.route("/api/<path:path>", methods=["GET", "POST", "DELETE", "PUT", "PATCH"])
+def proxy_mtdz(path):
+    url = f"{MTDZ_BACKEND}/api/{path}"
+    try:
+        if request.files:
+            files = {k: (v.filename, v.stream, v.content_type)
+                     for k, v in request.files.items()}
+            form = {k: v for k, v in request.form.items()}
+            resp = req_lib.request(
+                method=request.method,
+                url=url,
+                files=files,
+                data=form,
+                params=request.args,
+                allow_redirects=False,
+                timeout=120,
+            )
+        else:
+            ct = request.content_type or ""
+            resp = req_lib.request(
+                method=request.method,
+                url=url,
+                data=request.get_data(),
+                headers={"Content-Type": ct} if ct else {},
+                params=request.args,
+                allow_redirects=False,
+                timeout=120,
+            )
+    except req_lib.exceptions.ConnectionError:
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "MTDZ backend unavailable."}), 502
+        abort(502)
+
+    exclude = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+    headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in exclude]
+    return Response(resp.content, resp.status_code, headers)
 
 
 # ---------------------------------------------------------------------------

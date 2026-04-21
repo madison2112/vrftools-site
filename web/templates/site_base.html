@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}VRFTools{% endblock %} — VRFTools</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  {% block head %}{% endblock %}
+  <script defer src="https://analytics.vrftools.com/script.js" data-website-id="4d51be17-83ba-484d-a104-1af90571f078"></script>
+</head>
+<body{% block body_class %}{% endblock %}>
+
+<header>
+  <a href="/" class="logo">VRF<span>Tools</span></a>
+  {% block nav %}
+  <nav>
+    <a href="/docs">How to Use</a>
+    <a href="/contact">Contact</a>
+  </nav>
+  {% endblock %}
+</header>
+
+{% block breadcrumb_section %}{% endblock %}
+
+{% block main %}
+<div class="page{% block page_class %}{% endblock %}">
+  {% block content %}{% endblock %}
+</div>
+{% endblock %}
+
+<footer>
+  <span>&copy; 2026 <a href="https://madisoninnovations.com" target="_blank" rel="noopener">Madison Innovations</a> &mdash; VRF Utility Tools</span>
+  <span>Questions, ideas, or running into an issue? <a href="/contact">Get in touch</a></span>
+  <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'I2I21XMJAG');kofiwidget2.draw();</script>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

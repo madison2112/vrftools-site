@@ -70,11 +70,11 @@ function resetZone(zone, filename, success = false) {
     zone.innerHTML = `
       <div class="icon" style="color:var(--green)">&#10003;</div>
       <p><strong>${escHtml(filename)}</strong> uploaded</p>
-      <small>Drag &amp; drop or click to upload a different file</small>`;
+      <small>Click or drag &amp; drop to upload a different file</small>`;
   } else {
     zone.innerHTML = `
       <div class="icon">&#128196;</div>
-      <p>Drag &amp; drop your <strong>${accept}</strong> file here, or <label for="${zone.closest('.card')?.querySelector('input[type=file]')?.id}" class="link-btn">browse</label></p>
+      <p>Drag &amp; drop your <strong>${accept}</strong> file here, or click to browse</p>
       <small>Maximum 5 MB</small>`;
   }
 }
@@ -86,6 +86,7 @@ function resetZone(zone, filename, success = false) {
 
 /**
  * Render the two-column slot grid and return HTML string.
+ * Slot numbers are static labels in a separate column; only the cards are sortable.
  * groups: [{slot, tag, mnet_addresses, unit_types, icon}, ...]
  * listIdPrefix: used to generate column element IDs
  * blockIdx: which Groupof50 block this belongs to
@@ -97,15 +98,11 @@ function renderGroupGrid(groups, listIdPrefix, blockIdx) {
   const makeItem = (slotNum) => {
     const g = bySlot[slotNum];
     if (!g) {
-      return `<div class="slot-item" data-original-slot="">
-        <span class="slot-num">${slotNum}</span>
-        <div class="slot-empty-card"></div>
-      </div>`;
+      return `<div class="slot-item" data-original-slot=""><div class="slot-empty-card"></div></div>`;
     }
     const mnets = (g.mnet_addresses || []).join(', ');
     const types = (g.unit_types || []).join(', ');
     return `<div class="slot-item" data-original-slot="${g.slot}">
-      <span class="slot-num">${slotNum}</span>
       <div class="group-card">
         <span class="group-tag">${escHtml(g.tag || '(unnamed)')}</span>
         <span class="group-mnets">${escHtml(mnets)}</span>
@@ -114,13 +111,25 @@ function renderGroupGrid(groups, listIdPrefix, blockIdx) {
     </div>`;
   };
 
+  const makeLabels = (start, end) => {
+    let html = '';
+    for (let i = start; i <= end; i++) html += `<div class="slot-label">${i}</div>`;
+    return `<div class="slot-label-col" aria-hidden="true">${html}</div>`;
+  };
+
   let col1 = '', col2 = '';
   for (let i = 1;  i <= 25; i++) col1 += makeItem(i);
   for (let i = 26; i <= 50; i++) col2 += makeItem(i);
 
   return `<div class="slots-grid">
-    <div class="slots-col" id="${listIdPrefix}-col1" data-block="${blockIdx}">${col1}</div>
-    <div class="slots-col" id="${listIdPrefix}-col2" data-block="${blockIdx}">${col2}</div>
+    <div class="slots-half">
+      ${makeLabels(1, 25)}
+      <div class="slots-col" id="${listIdPrefix}-col1" data-block="${blockIdx}">${col1}</div>
+    </div>
+    <div class="slots-half">
+      ${makeLabels(26, 50)}
+      <div class="slots-col" id="${listIdPrefix}-col2" data-block="${blockIdx}">${col2}</div>
+    </div>
   </div>`;
 }
 
@@ -140,8 +149,6 @@ function initSlotGrid(listIdPrefix, blockIdx) {
     draggable:   '.slot-item',
     onEnd() {
       rebalanceColumns(col1, col2);
-      _updateSlotNums(col1, 1);
-      _updateSlotNums(col2, 26);
       _persistSlotOrder(blockIdx, col1, col2);
     },
   };
@@ -157,23 +164,12 @@ function initSlotGrid(listIdPrefix, blockIdx) {
 
 /** Keep each column at exactly 25 items by moving overflow to the other column. */
 function rebalanceColumns(col1, col2) {
-  // If col1 has more than 25, move excess to top of col2
   while (col1.children.length > 25) {
     col2.insertBefore(col1.lastElementChild, col2.firstElementChild);
   }
-  // If col2 has more than 25, move excess to bottom of col1
   while (col2.children.length > 25) {
     col1.appendChild(col2.firstElementChild);
   }
-  _updateSlotNums(col1, 1);
-  _updateSlotNums(col2, 26);
-}
-
-function _updateSlotNums(colEl, startNum) {
-  [...colEl.children].forEach((item, i) => {
-    const numEl = item.querySelector('.slot-num');
-    if (numEl) numEl.textContent = startNum + i;
-  });
 }
 
 function _persistSlotOrder(blockIdx, col1, col2) {
@@ -225,8 +221,6 @@ function _sortByTag(blockIdx, listIdPrefix, col1, col2) {
     all50.slice(0,  25).forEach(el => col1.appendChild(el));
     all50.slice(25, 50).forEach(el => col2.appendChild(el));
 
-    _updateSlotNums(col1, 1);
-    _updateSlotNums(col2, 26);
     _persistSlotOrder(blockIdx, col1, col2);
   })
   .catch(() => {});
