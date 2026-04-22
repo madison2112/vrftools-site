@@ -32,6 +32,7 @@
     <p class="muted-text" style="margin-bottom:16px">All controllers will be packaged in a single ZIP archive.</p>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-download">Download ZIP</button>
+      {% if codetest %}<button class="btn btn-outline" id="btn-export-json">Export as JSON to Share</button>{% endif %}
       <a href="/contact?type=issue&tool=database-decoupler" class="bug-link bug-link--inline">🐜 Report a Bug</a>
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
@@ -43,6 +44,7 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 const state = { sessionId: null };
+const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
 setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
 
@@ -73,5 +75,13 @@ document.getElementById('btn-download').addEventListener('click', () => {
   if (!state.sessionId) return;
   window.location.href = `/api/download/split/${state.sessionId}`;
 });
+{% if codetest %}
+document.getElementById('btn-export-json').addEventListener('click', () => {
+  if (!state.sessionId) return;
+  exportJson(state.sessionId, 'split');
+});
+{% endif %}
+
+if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);
 </script>
 {% endblock %}

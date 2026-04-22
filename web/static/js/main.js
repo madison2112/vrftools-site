@@ -261,3 +261,42 @@ function hideError(id) {
   const el = document.getElementById(id);
   if (el) el.style.display = 'none';
 }
+
+
+// ---------------------------------------------------------------------------
+// JSON export / session preload (codetest feature)
+// ---------------------------------------------------------------------------
+
+function exportJson(sessionId, tool) {
+  fetch('/api/export-json', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ session_id: sessionId, tool }),
+  })
+  .then(r => {
+    if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Export failed.'); });
+    return r.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = 'config_export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  })
+  .catch(err => alert(err.message || 'Export failed.'));
+}
+
+function preloadSession(sid, onSuccess) {
+  fetch(`/api/session/${sid}/groups`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.blocks) {
+        onSuccess({ session_id: sid, blocks: data.blocks, multi: data.blocks.length > 1 });
+      }
+    })
+    .catch(() => {});
+}

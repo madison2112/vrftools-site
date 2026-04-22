@@ -20,6 +20,7 @@ docker run -d \
   --network vrftools-net \
   --restart unless-stopped \
   -e PYTHONUNBUFFERED=1 \
+  -e SECRET_KEY="${SECRET_KEY:-codetest-hmac-key-change-before-prod}" \
   "$IMAGE" \
   gunicorn --bind 0.0.0.0:5050 --workers 2 --timeout 60 app:app
 

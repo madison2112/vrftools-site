@@ -38,6 +38,7 @@
       <button class="btn btn-primary"  id="btn-dl-packaged">Download Packaged .dat</button>
       <button class="btn btn-outline"  id="btn-dl-individual">Download Individual .dat Files</button>
       <button class="btn btn-outline"  id="btn-dl-converted">Download Converted .dat Files</button>
+      {% if codetest %}<button class="btn btn-outline" id="btn-export-json">Export as JSON to Share</button>{% endif %}
       <a href="/contact?type=issue&tool=rearranger" class="bug-link bug-link--inline">🐜 Report a Bug</a>
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
@@ -50,6 +51,7 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 window.state = { sessionId: null };
+const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
 setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
 
@@ -86,5 +88,13 @@ function doDownload(exportType) {
 document.getElementById('btn-dl-packaged').addEventListener('click', () => doDownload('packaged'));
 document.getElementById('btn-dl-individual').addEventListener('click', () => doDownload('individual'));
 document.getElementById('btn-dl-converted').addEventListener('click', () => doDownload('converted'));
+{% if codetest %}
+document.getElementById('btn-export-json').addEventListener('click', () => {
+  if (!state.sessionId) return;
+  exportJson(state.sessionId, 'rearranger');
+});
+{% endif %}
+
+if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);
 </script>
 {% endblock %}

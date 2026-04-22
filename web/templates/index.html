@@ -78,5 +78,23 @@
     </div>
   </a>
 
+  {% if codetest %}
+  <a class="tool-list-item" href="{{ url_for('page_dat_json') }}">
+    <div class="tool-list-left">
+      <div class="tool-card-inner">
+        <div class="tool-icon">&#123;&#125;</div>
+        <div class="tool-body">
+          <div class="tool-name">DAT ↔ JSON</div>
+          <div class="tool-formats"><span class="badge">.dat</span> &#8644; <span class="badge">.json</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-list-right">
+      <p><span class="problem-label">The problem:</span> Many email servers block .dat file attachments from being sent or received, making it impossible to share controller configurations with contractors or clients by email.</p>
+      <p><span class="solution-label">The solution:</span> Export any configuration as a shareable .json file that passes through email filters. Import a .json to restore the full session — including group layout and any rearrangements — exactly as it was when exported. Also useful for saving progress on large sites before the session expires.</p>
+    </div>
+  </a>
+  {% endif %}
+
 </div>
 {% endblock %}

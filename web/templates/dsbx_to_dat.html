@@ -34,6 +34,7 @@
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-download-c400">Download for AE-C400 Tool</button>
       <button class="btn btn-outline" id="btn-download-ae200">Download for AE-200 Tool</button>
+      {% if codetest %}<button class="btn btn-outline" id="btn-export-json">Export as JSON to Share</button>{% endif %}
       <a href="/contact?type=issue&tool=dsbx-to-dat" class="bug-link bug-link--inline">🐜 Report a Bug</a>
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
@@ -46,6 +47,7 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 window.state = { sessionId: null };
+const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
 setupDropZone('drop-zone', 'file-input', '/api/upload/dsbx', onUploaded);
 
@@ -80,5 +82,13 @@ function downloadDat(version) {
   if (!state.sessionId) return;
   window.location.href = `/api/download/dsbx-to-dat/${state.sessionId}?version=${version}`;
 }
+{% if codetest %}
+document.getElementById('btn-export-json').addEventListener('click', () => {
+  if (!state.sessionId) return;
+  exportJson(state.sessionId, 'dsbx-to-dat');
+});
+{% endif %}
+
+if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);
 </script>
 {% endblock %}
