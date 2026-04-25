@@ -58,8 +58,7 @@ def _build_indices(groupof50):
         if not _valid_mnet(odu_mnet):
             continue
 
-        bc   = ou.find("BCController")
-        idus = bc.findall("IndoorUnit") if bc is not None else ou.findall("IndoorUnit")
+        idus = ou.findall(".//IndoorUnit")
 
         for idu in idus:
             mnet = _text(idu, "MNetAddress")

@@ -1,6 +1,5 @@
 /**
  * Shared JS for Central Controller Config Tools.
- * Depends on SortableJS (loaded from CDN in base.html).
  */
 
 // ---------------------------------------------------------------------------
@@ -103,7 +102,7 @@ function renderGroupGrid(groups, listIdPrefix, blockIdx) {
     const mnets = (g.mnet_addresses || []).join(', ');
     const types = (g.unit_types || []).join(', ');
     return `<div class="slot-item" data-original-slot="${g.slot}">
-      <div class="group-card">
+      <div class="group-card" draggable="true">
         <span class="group-tag">${escHtml(g.tag || '(unnamed)')}</span>
         <span class="group-mnets">${escHtml(mnets)}</span>
         <span class="group-types">${escHtml(types)}</span>
@@ -134,27 +133,76 @@ function renderGroupGrid(groups, listIdPrefix, blockIdx) {
 }
 
 /**
- * Initialise SortableJS on both columns with cross-column drag enabled.
+ * Wire up native HTML5 drag-and-drop on the fixed slot grid.
+ * Slots are fixed containers; only card content swaps on drop.
+ * Empty slots accept drops but cannot be dragged.
  */
 function initSlotGrid(listIdPrefix, blockIdx) {
   const col1 = document.getElementById(`${listIdPrefix}-col1`);
   const col2 = document.getElementById(`${listIdPrefix}-col2`);
-  if (!col1 || !col2 || typeof Sortable === 'undefined') return;
+  if (!col1 || !col2) return;
 
-  const opts = {
-    group:       `slots-block-${blockIdx}`,
-    animation:   120,
-    ghostClass:  'sortable-ghost',
-    chosenClass: 'sortable-chosen',
-    draggable:   '.slot-item',
-    onEnd() {
-      rebalanceColumns(col1, col2);
+  if (!window.state.gridCols) window.state.gridCols = {};
+  window.state.gridCols[blockIdx] = { col1, col2 };
+
+  let dragSrc = null;
+
+  function allSlots() {
+    return [...col1.children, ...col2.children];
+  }
+
+  function bindSlot(slotEl) {
+    slotEl.addEventListener('dragstart', e => {
+      dragSrc = slotEl;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', ''); // required by Firefox
+    });
+
+    slotEl.addEventListener('dragend', () => {
+      allSlots().forEach(s => s.classList.remove('drag-over'));
+      dragSrc = null;
+    });
+
+    slotEl.addEventListener('dragover', e => {
+      if (dragSrc && dragSrc !== slotEl) e.preventDefault();
+    });
+
+    slotEl.addEventListener('dragenter', e => {
+      if (!dragSrc || dragSrc === slotEl) return;
+      e.preventDefault();
+      allSlots().forEach(s => s.classList.remove('drag-over'));
+      slotEl.classList.add('drag-over');
+    });
+
+    slotEl.addEventListener('dragleave', e => {
+      if (!slotEl.contains(e.relatedTarget)) slotEl.classList.remove('drag-over');
+    });
+
+    slotEl.addEventListener('drop', e => {
+      e.preventDefault();
+      slotEl.classList.remove('drag-over');
+      if (!dragSrc || dragSrc === slotEl) return;
+
+      const tmpOrig        = dragSrc.dataset.originalSlot;
+      dragSrc.dataset.originalSlot = slotEl.dataset.originalSlot;
+      slotEl.dataset.originalSlot  = tmpOrig;
+
+      const tmpHtml  = dragSrc.innerHTML;
+      dragSrc.innerHTML = slotEl.innerHTML;
+      slotEl.innerHTML  = tmpHtml;
+
+      // Re-attach draggable after innerHTML swap (event listeners don't survive)
+      [dragSrc, slotEl].forEach(s => {
+        const card = s.querySelector('.group-card');
+        if (card) card.setAttribute('draggable', 'true');
+      });
+
+      dragSrc = null;
       _persistSlotOrder(blockIdx, col1, col2);
-    },
-  };
+    });
+  }
 
-  Sortable.create(col1, opts);
-  Sortable.create(col2, opts);
+  allSlots().forEach(bindSlot);
 
   // Sort button
   document.querySelectorAll(`.sort-btn[data-idx="${blockIdx}"]`).forEach(btn => {
@@ -174,13 +222,12 @@ function rebalanceColumns(col1, col2) {
 
 function _persistSlotOrder(blockIdx, col1, col2) {
   const sid = window.state?.sessionId;
-  if (!sid) return;
+  if (!sid) return Promise.resolve();
 
   const newOrder = [...col1.children, ...col2.children]
-    .map(item => parseInt(item.dataset.originalSlot) || 0)
-    .filter(s => s > 0);
+    .map(item => parseInt(item.dataset.originalSlot) || 0);
 
-  fetch(`/api/session/${sid}/groups`, {
+  return fetch(`/api/session/${sid}/groups`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ block_index: blockIdx, new_order: newOrder }),

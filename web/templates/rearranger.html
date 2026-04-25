@@ -80,8 +80,14 @@ function onUploaded(data) {
   document.getElementById('results-section').style.display = '';
 }
 
-function doDownload(exportType) {
+async function doDownload(exportType) {
   if (!state.sessionId) return;
+  // Flush pending order saves before download to avoid a race condition where
+  // the GET arrives at the server before the most-recent POST has persisted.
+  const saves = Object.entries(state.gridCols || {}).map(([idx, { col1, col2 }]) =>
+    _persistSlotOrder(parseInt(idx), col1, col2)
+  );
+  await Promise.all(saves);
   window.location.href = `/api/download/rearrange/${state.sessionId}?export=${exportType}`;
 }
 

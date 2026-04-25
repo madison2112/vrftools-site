@@ -244,19 +244,32 @@ def apply_rearrangement(xml_bytes: bytes, new_order: list) -> bytes:
     if cg is None:
         return xml_bytes
 
-    # Build slot→index mapping: new_order[i] is the old slot that becomes slot (i+1)
-    old_to_new = {old: new + 1 for new, old in enumerate(new_order)}
+    # Build slot→index mapping: position in new_order (1-indexed) becomes the new
+    # Group number for that old slot.  Zeros represent empty positions and are skipped
+    # so gaps are preserved (e.g. groups at old slots 1-10 and 19 keep the gap).
+    old_to_new = {
+        old_slot: pos + 1
+        for pos, old_slot in enumerate(new_order)
+        if old_slot > 0
+    }
 
     for elem in cg.iter():
-        for attr in ("Group",):
-            val = elem.get(attr)
-            if val is not None:
-                try:
-                    old_slot = int(val)
-                    if old_slot in old_to_new:
-                        elem.set(attr, str(old_to_new[old_slot]))
-                except ValueError:
-                    pass
+        val = elem.get("Group")
+        if val is not None:
+            try:
+                old_slot = int(val)
+                if old_slot in old_to_new:
+                    elem.set("Group", str(old_to_new[old_slot]))
+            except ValueError:
+                pass
+
+    # ISToolAEC writes (and expects) records in ascending Group-number order within
+    # each list.  After remapping attributes the physical order is wrong — sort each
+    # list that uses Group as its primary key so the file stays compatible.
+    _GROUP_LISTS = {"MnetGroupList", "ViewInfoList", "MnetList"}
+    for child in cg:
+        if child.tag in _GROUP_LISTS:
+            child[:] = sorted(child, key=lambda e: int(e.get("Group", 0)))
 
     out = io.BytesIO()
     ET.ElementTree(root).write(out, encoding="utf-8", xml_declaration=True)
