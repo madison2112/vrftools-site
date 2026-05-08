@@ -22,13 +22,20 @@ from lib.dsbx_utils import (
     load_mapping, parse_dsbx_bytes,
 )
 from lib.json_utils import export_session_json, import_session_json
+from lib.agent_routes import agent_bp
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-fallback-key-change-in-prod")
+app.register_blueprint(agent_bp)
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXT = {".dsbx", ".dat"}
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
+
+# Deployment environment label — "prod" or "test". Read by /status and exposed
+# to templates so the frontend banner script knows which container it's in.
+APP_ENV = os.environ.get("APP_ENV", "test")
+SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
 
 # Feature flag — new DAT↔JSON tool is only active on the codetest subdomain.
 # Hostname check is the primary gate (both domains hit the same container).
@@ -43,7 +50,19 @@ def _is_codetest() -> bool:
 
 @app.context_processor
 def inject_globals():
-    return {"codetest": _is_codetest()}
+    return {"codetest": _is_codetest(), "app_env": APP_ENV}
+
+
+def _read_restart_signal() -> str | None:
+    """Return ISO timestamp of an upcoming restart, or None if none scheduled."""
+    try:
+        with open(SIGNAL_FILE, "r") as f:
+            import json as _json
+            data = _json.load(f)
+        ts = data.get("restart_at")
+        return ts if isinstance(ts, str) and ts else None
+    except (FileNotFoundError, ValueError, OSError):
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +125,17 @@ def _send_zip(data: bytes, filename: str):
 # ---------------------------------------------------------------------------
 # Page routes
 # ---------------------------------------------------------------------------
+
+@app.route("/status")
+def status():
+    """Liveness + restart-window probe. Read by Docker healthcheck and the
+    frontend banner poller. Cheap by design: no DB, no template render."""
+    return jsonify({
+        "ok": True,
+        "env": APP_ENV,
+        "restart_at": _read_restart_signal(),
+    })
+
 
 @app.route("/")
 def index():
