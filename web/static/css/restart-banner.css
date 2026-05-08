@@ -1,0 +1,33 @@
+/* Sticky top banner shown when /status reports an upcoming restart.
+   Severity tiers ramp from notice (calm yellow) to critical (urgent red). */
+.restart-banner {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.restart-banner-notice {
+  background: #fff8c5;
+  color: #58450a;
+  border-bottom-color: #d4b21c;
+}
+.restart-banner-warning {
+  background: #ffd6a5;
+  color: #6b3500;
+  border-bottom-color: #c97a14;
+}
+.restart-banner-critical {
+  background: #c0392b;
+  color: #fff;
+  border-bottom-color: #7f1d1d;
+  animation: restart-banner-pulse 1.6s ease-in-out infinite;
+}
+@keyframes restart-banner-pulse {
+  0%, 100% { background: #c0392b; }
+  50%      { background: #e74c3c; }
+}

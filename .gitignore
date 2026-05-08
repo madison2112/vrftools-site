@@ -8,4 +8,9 @@ venv/
 # Claude Code
 .claude/
 
+# Local agent notes and scratch docs
+AGENT_CONTEXT.md
+CLAUDE.local.md
+**/CLAUDE.local.md
+
 # Plans
