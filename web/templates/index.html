@@ -23,7 +23,7 @@
   <div id="upload-error" class="alert alert-error" style="display:none"></div>
 </div>
 
-<div id="resume-card" class="resume-card" data-href="" style="display:none">
+<div id="resume-card" class="resume-card" data-href="">
   <div class="resume-icon">&#128190;</div>
   <div class="resume-body">
     <div class="resume-title">Resume Session</div>
@@ -114,11 +114,17 @@ function onHubUploaded(data) {
       c.classList.remove('highlighted');
     });
 
-    // Show and highlight the resume card
+    // Highlight the resume card
     var resume = document.getElementById('resume-card');
-    resume.style.display = '';
     resume.dataset.href = data.redirect;
     resume.classList.add('highlighted');
+
+    // Persist in sessionStorage so navigating back remembers the session
+    try {
+      sessionStorage.setItem('hub_session_id', data.session_id);
+      sessionStorage.setItem('hub_json_redirect', data.redirect);
+      sessionStorage.setItem('hub_applicable_tools', JSON.stringify([]));
+    } catch(e) {}
     return;
   }
 
@@ -126,9 +132,8 @@ function onHubUploaded(data) {
   state.applicableTools = data.applicable_tools || [];
   state.jsonRedirect = null;
 
-  // Hide resume card if it was showing
+  // Unhighlight resume card
   var resume = document.getElementById('resume-card');
-  resume.style.display = 'none';
   resume.classList.remove('highlighted');
 
   // Clear all highlights
@@ -141,6 +146,13 @@ function onHubUploaded(data) {
     var card = document.querySelector('.tool-card-square[data-tool="' + tool + '"]');
     if (card) card.classList.add('highlighted');
   });
+
+  // Persist in sessionStorage
+  try {
+    sessionStorage.setItem('hub_session_id', data.session_id);
+    sessionStorage.setItem('hub_applicable_tools', JSON.stringify(data.applicable_tools || []));
+    sessionStorage.removeItem('hub_json_redirect');
+  } catch(e) {}
 }
 
 // Resume Session card click
@@ -163,10 +175,11 @@ document.querySelectorAll('.info-btn').forEach(function(btn) {
 function showInfoPopup(info) {
   var overlay = document.createElement('div');
   overlay.className = 'info-popup-overlay';
+  var problemHtml = info.problemHtml || ('<p><span class="problem-label">The problem:</span> ' + escHtml(info.problem) + '</p>');
   overlay.innerHTML =
     '<div class="info-popup">' +
       '<h3>' + escHtml(info.title) + '</h3>' +
-      '<p><span class="problem-label">The problem:</span> ' + escHtml(info.problem) + '</p>' +
+      problemHtml +
       '<p><span class="solution-label">The solution:</span> ' + escHtml(info.solution) + '</p>' +
       '<button class="close-popup">Close</button>' +
     '</div>';
@@ -206,13 +219,60 @@ function flashCardWarning(card, message) {
   card.classList.add('warning-flash');
   showInfoPopup({
     title: 'Upload Required',
-    problem: message,
+    problemHtml: '<p><span class="problem-label">The problem:</span> ' + message + '</p>',
     solution: 'Upload the required file type in the upload box above, then click the highlighted card.'
   });
 
   setTimeout(function() {
     card.classList.remove('warning-flash');
   }, 2500);
+}
+
+// Restore session highlights from sessionStorage on page load.
+// When the user navigates back from a tool page, this re-highlights
+// the applicable cards so they don't have to re-upload.
+(function restoreSession() {
+  try {
+    var storedId = sessionStorage.getItem('hub_session_id');
+    if (!storedId) return;
+
+    // Check if the session is still valid on the server
+    fetch('/api/session/' + storedId + '/groups')
+      .then(function(r) {
+        if (!r.ok) { clearStoredSession(); return; }
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data || !data.blocks) { clearStoredSession(); return; }
+
+        state.sessionId = storedId;
+
+        var jsonRedirect = sessionStorage.getItem('hub_json_redirect');
+        if (jsonRedirect) {
+          state.jsonRedirect = jsonRedirect;
+          state.applicableTools = [];
+          var resume = document.getElementById('resume-card');
+          resume.dataset.href = jsonRedirect;
+          resume.classList.add('highlighted');
+        } else {
+          var tools = JSON.parse(sessionStorage.getItem('hub_applicable_tools') || '[]');
+          state.applicableTools = tools;
+          tools.forEach(function(tool) {
+            var card = document.querySelector('.tool-card-square[data-tool="' + tool + '"]');
+            if (card) card.classList.add('highlighted');
+          });
+        }
+      })
+      .catch(function() { clearStoredSession(); });
+  } catch(e) {}
+})();
+
+function clearStoredSession() {
+  try {
+    sessionStorage.removeItem('hub_session_id');
+    sessionStorage.removeItem('hub_applicable_tools');
+    sessionStorage.removeItem('hub_json_redirect');
+  } catch(e) {}
 }
 </script>
 {% endblock %}

@@ -315,22 +315,26 @@ function hideError(id) {
 // ---------------------------------------------------------------------------
 
 async function exportJson(sessionId, tool) {
-  // Flush any pending slot-order saves before exporting so the JSON captures
-  // the latest card arrangement.  Without this the server still sees the
-  // pre-drag order when it builds the export payload.
+  // Gather the current grid orders so they can be sent atomically
+  // with the export request — eliminates the race between the flush
+  // POST and the export fetch.
+  var orders = {};
   if (window.state && window.state.gridCols) {
-    var saves = Object.entries(window.state.gridCols).map(function(entry) {
-      var idx  = parseInt(entry[0]);
+    Object.entries(window.state.gridCols).forEach(function(entry) {
+      var idx = entry[0];
       var cols = entry[1];
-      return _persistSlotOrder(idx, cols.col1, cols.col2);
+      var newOrder = cols.col1.children.length
+        ? [].slice.call(cols.col1.children).concat([].slice.call(cols.col2.children))
+            .map(function(item) { return parseInt(item.dataset.originalSlot) || 0; })
+        : [];
+      if (newOrder.length) orders[idx] = newOrder;
     });
-    await Promise.all(saves);
   }
 
   fetch('/api/export-json', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ session_id: sessionId, tool }),
+    body:    JSON.stringify({ session_id: sessionId, tool: tool, orders: orders }),
   })
   .then(r => {
     if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Export failed.'); });

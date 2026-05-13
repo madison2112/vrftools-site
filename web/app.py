@@ -128,31 +128,29 @@ def _rebuild_dat_with_names(dat_data: bytes, blocks: list, group_names_by_block:
     """
     Rebuild a .dat file with updated controller names (from blocks)
     and group tag names (from group_names_by_block).
-    Returns new .dat bytes, or the original if nothing changed.
+    Always returns rebuilt bytes — the caller always gets the current state.
     """
     from lib.dat_utils import generate_dat_bytes, apply_group_names
     from lib.zipcrypto import build_dat_bytes, PASSWORD
 
     controllers = parse_dat_controllers(dat_data)
-    changed = False
 
     for i, ctrl in enumerate(controllers):
         xml = ctrl["xml_bytes"]
 
-        # Apply controller name
+        # Apply controller name — always, even if it looks unchanged.
+        # The session blocks are the source of truth.
         if i < len(blocks):
             new_name = blocks[i].get("name", "")
-            if new_name and new_name != ctrl.get("name", ""):
+            if new_name:
                 try:
                     root = ET.fromstring(xml)
                     sd = root.find(".//SystemData")
-                    if sd is not None:
+                    if sd is not None and sd.get("Name", "") != new_name:
                         sd.set("Name", new_name)
-                    buf = io.BytesIO()
-                    ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
-                    xml = buf.getvalue()
-                    ctrl["name"] = new_name
-                    changed = True
+                        buf = io.BytesIO()
+                        ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
+                        xml = buf.getvalue()
                 except ET.ParseError:
                     pass
 
@@ -161,12 +159,8 @@ def _rebuild_dat_with_names(dat_data: bytes, blocks: list, group_names_by_block:
         int_map = {int(k): v for k, v in tag_map.items()}
         if int_map:
             xml = apply_group_names(xml, int_map)
-            changed = True
 
         ctrl["xml_bytes"] = xml
-
-    if not changed:
-        return dat_data
 
     entries = []
     for ctrl in controllers:
@@ -1167,6 +1161,18 @@ def api_export_json():
     s = sessions.get(sid)
     if not s:
         abort(404, "Session not found or expired.")
+
+    # Apply any orders the frontend sent in the request body.
+    # This eliminates the race between the flush POST and the export GET —
+    # the orders arrive in the same HTTP request as the export.
+    orders_payload = body.get("orders")
+    if isinstance(orders_payload, dict):
+        for idx_str, order in orders_payload.items():
+            if isinstance(order, list):
+                sessions.update(sid, {f"order_{idx_str}": order})
+
+    # Re-read session to pick up the just-applied orders
+    s = sessions.get(sid)
 
     secret = app.secret_key if isinstance(app.secret_key, bytes) else app.secret_key.encode()
     try:
