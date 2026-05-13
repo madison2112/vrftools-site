@@ -12,72 +12,166 @@
   <p style="margin-top:8px;">All processing happens on the server. Uploaded files are automatically deleted after one hour. Maximum file size: 5 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
 </div>
 
-<div class="tool-list">
+<div class="card" id="upload-card">
+  <div class="card-title">Upload a File to Get Started</div>
+  <div class="drop-zone" id="drop-zone" data-accept=".dsbx, .dat, or .json">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop a <strong>.dsbx</strong>, <strong>.dat</strong>, or <strong>.json</strong> file here, or click to browse</p>
+    <small>Upload a file to see which tools are applicable. Maximum 5 MB.</small>
+    <input type="file" id="file-input" accept=".dsbx,.dat,.json" style="display:none">
+  </div>
+  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+</div>
 
-  <a class="tool-list-item" href="{{ url_for('page_dsbx_to_dat') }}">
-    <div class="tool-list-left">
-      <div class="tool-card-inner">
-        <div class="tool-icon">&#8594;</div>
-        <div class="tool-body">
-          <div class="tool-name">DSBX to DAT</div>
-          <div class="tool-formats"><span class="badge">.dsbx</span> &rarr; <span class="badge">one or more .dat</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="tool-list-right">
-      <p><span class="problem-label">The problem:</span> Building a central controller config file requires manually entering the name and M-Net address(es) for every group. This takes a significant amount of time and is a source of frustration — the data already exists in the DSB file.</p>
-      <p><span class="solution-label">The solution:</span> Upload your .dsbx file and download fully built config file(s) ready to be opened with the Initial Settings Tool. Groups are auto-populated from the DSB data, and you can optionally reorder them before downloading. Generates one config file per centralized system.</p>
-    </div>
-  </a>
+<div class="tool-grid-square">
 
-  <a class="tool-list-item" href="{{ url_for('page_rearranger') }}">
-    <div class="tool-list-left">
-      <div class="tool-card-inner">
-        <div class="tool-icon">&#8645;</div>
-        <div class="tool-body">
-          <div class="tool-name">Group Rearranger</div>
-          <div class="tool-formats"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="tool-list-right">
-      <p><span class="problem-label">The problem:</span> Units display on the controller touchscreen in group order. When groups don't match the preferred display order — as is often the case when there are multiple systems on one floor — fixing the group ordering requires significant editing to the config file or rebuilding the database entirely.</p>
-      <p><span class="solution-label">The solution:</span> Upload your config file and drag groups into the order you want. Download a modified config file ready to be loaded to the controller.</p>
-    </div>
-  </a>
+  <div class="tool-card-square" data-tool="dsbx-to-dat" data-href="{{ url_for('page_dsbx_to_dat') }}">
+    <div class="tool-icon-sq">&#8594;</div>
+    <div class="tool-name-sq">DSBX to DAT</div>
+    <div class="tool-formats-sq"><span class="badge">.dsbx</span> &rarr; <span class="badge">.dat</span></div>
+    <button class="info-btn" data-popup="dsbx-to-dat">i</button>
+  </div>
 
-  <a class="tool-list-item" href="{{ url_for('page_convert') }}">
-    <div class="tool-list-left">
-      <div class="tool-card-inner">
-        <div class="tool-icon">&#8646;</div>
-        <div class="tool-body">
-          <div class="tool-name">Generation Change</div>
-          <div class="tool-formats"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="tool-list-right">
-      <p><span class="problem-label">The problem:</span> The AE-200 and AE-C400A (and their EW counterparts) use different .dat formats that aren't cross-compatible. If a database was built for the wrong controller generation, or a central controller is being upgraded or replaced, the only option is to rebuild the entire database.</p>
-      <p><span class="solution-label">The solution:</span> Upload a config file and download it converted to the opposite generation. Group data, names, and M-Net assignments are preserved automatically.</p>
-    </div>
-  </a>
+  <div class="tool-card-square" data-tool="rearranger" data-href="{{ url_for('page_rearranger') }}">
+    <div class="tool-icon-sq">&#8645;</div>
+    <div class="tool-name-sq">Group Rearranger</div>
+    <div class="tool-formats-sq"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
+    <button class="info-btn" data-popup="rearranger">i</button>
+  </div>
 
-  <a class="tool-list-item" href="{{ url_for('page_split') }}">
-    <div class="tool-list-left">
-      <div class="tool-card-inner">
-        <div class="tool-icon">&#9003;</div>
-        <div class="tool-body">
-          <div class="tool-name">Database Decoupler</div>
-          <div class="tool-formats"><span class="badge">multi .dat</span> &rarr; <span class="badge">multiple .dat</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="tool-list-right">
-      <p><span class="problem-label">The problem:</span> A multi-controller config file can only be loaded when all controllers in the database are already communicating with each other. On sites where the IT backbone isn't yet complete, individual controllers can't have their databases loaded without separate config files for each controller.</p>
-      <p><span class="solution-label">The solution:</span> Upload a config file with multiple central controllers and download a ZIP of individual per-controller files, each ready to load independently.</p>
-    </div>
-  </a>
+  <div class="tool-card-square" data-tool="convert" data-href="{{ url_for('page_convert') }}">
+    <div class="tool-icon-sq">&#8646;</div>
+    <div class="tool-name-sq">Generation Change</div>
+    <div class="tool-formats-sq"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
+    <button class="info-btn" data-popup="convert">i</button>
+  </div>
 
+  <div class="tool-card-square" data-tool="split" data-href="{{ url_for('page_split') }}">
+    <div class="tool-icon-sq">&#9003;</div>
+    <div class="tool-name-sq">Database Decoupler</div>
+    <div class="tool-formats-sq"><span class="badge">multi .dat</span> &rarr; <span class="badge">.dat</span></div>
+    <button class="info-btn" data-popup="split">i</button>
+  </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+window.state = { sessionId: null, applicableTools: [] };
+
+const TOOL_INFO = {
+  'dsbx-to-dat': {
+    title: 'DSBX to DAT',
+    problem: 'Building a central controller config file requires manually entering the name and M-Net address(es) for every group. This takes significant time — the data already exists in the DSB file.',
+    solution: 'Upload your .dsbx file and download fully built config file(s) ready to be opened with the Initial Settings Tool. Groups are auto-populated and you can reorder them before downloading.'
+  },
+  'rearranger': {
+    title: 'Group Rearranger',
+    problem: 'Units display on the controller touchscreen in group order. When groups don\u2019t match the preferred display order, fixing it requires significant editing or rebuilding the database.',
+    solution: 'Upload your config file and drag groups into the order you want. Download a modified config file ready to be loaded to the controller.'
+  },
+  'convert': {
+    title: 'Generation Change',
+    problem: 'The AE-200 and AE-C400A use different .dat formats that aren\u2019t cross-compatible. If a database was built for the wrong controller, the only option is to rebuild.',
+    solution: 'Upload a config file and download it converted to the opposite generation. Group data, names, and M-Net assignments are preserved.'
+  },
+  'split': {
+    title: 'Database Decoupler',
+    problem: 'A multi-controller config file can only be loaded when all controllers are communicating. On incomplete sites, individual controllers can\u2019t have their databases loaded.',
+    solution: 'Upload a multi-controller config file and download a ZIP of individual per-controller files, each ready to load independently.'
+  }
+};
+
+setupDropZone('drop-zone', 'file-input', '/api/upload/config-hub', onHubUploaded);
+
+function onHubUploaded(data) {
+  // .json: auto-redirect to the originating tool page
+  if (data.redirect) {
+    window.location.href = data.redirect;
+    return;
+  }
+
+  state.sessionId = data.session_id;
+  state.applicableTools = data.applicable_tools || [];
+
+  // Clear all highlights
+  document.querySelectorAll('.tool-card-square').forEach(function(c) {
+    c.classList.remove('highlighted');
+  });
+
+  // Add green highlight to applicable cards
+  state.applicableTools.forEach(function(tool) {
+    var card = document.querySelector('.tool-card-square[data-tool="' + tool + '"]');
+    if (card) card.classList.add('highlighted');
+  });
+}
+
+// Info popup buttons
+document.querySelectorAll('.info-btn').forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    var toolId = btn.dataset.popup;
+    var info = TOOL_INFO[toolId];
+    if (!info) return;
+    showInfoPopup(info);
+  });
+});
+
+function showInfoPopup(info) {
+  var overlay = document.createElement('div');
+  overlay.className = 'info-popup-overlay';
+  overlay.innerHTML =
+    '<div class="info-popup">' +
+      '<h3>' + escHtml(info.title) + '</h3>' +
+      '<p><span class="problem-label">The problem:</span> ' + escHtml(info.problem) + '</p>' +
+      '<p><span class="solution-label">The solution:</span> ' + escHtml(info.solution) + '</p>' +
+      '<button class="close-popup">Close</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('.close-popup').addEventListener('click', function() { overlay.remove(); });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+// Card click navigation with session pass-through and red flash on mismatches
+document.querySelectorAll('.tool-card-square').forEach(function(card) {
+  card.addEventListener('click', function(e) {
+    if (e.target.closest('.info-btn')) return;
+
+    var tool = card.dataset.tool;
+    var href = card.dataset.href;
+
+    // Applicable: pass session ID
+    if (state.sessionId && state.applicableTools.indexOf(tool) !== -1) {
+      window.location.href = href + '?session=' + state.sessionId;
+      return;
+    }
+
+    // Session exists but tool isn't applicable — flash red on THIS card
+    if (state.sessionId && state.applicableTools.indexOf(tool) === -1) {
+      flashCardWarning(card, 'This file type cannot be used with this tool.');
+      return;
+    }
+
+    // No session — flash red with upload prompt
+    flashCardWarning(card, 'Upload a file before selecting tools.');
+  });
+});
+
+function flashCardWarning(card, message) {
+  card.classList.add('warning-flash');
+  showInfoPopup({
+    title: 'Upload Required',
+    problem: message,
+    solution: 'Upload a .dsbx, .dat, or .json file in the upload box above, then click the highlighted cards.'
+  });
+
+  setTimeout(function() {
+    card.classList.remove('warning-flash');
+  }, 2500);
+}
+</script>
 {% endblock %}
