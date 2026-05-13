@@ -553,14 +553,6 @@ def page_split():
     return render_template("split.html", preloaded_session=preloaded)
 
 
-@app.route("/dat-json")
-def page_dat_json():
-    if not _is_codetest():
-        abort(404)
-    preloaded = _preloaded_session("dat-json")
-    return render_template("dat_json.html", preloaded_session=preloaded)
-
-
 @app.route("/docs")
 def page_docs():
     return render_template("docs.html")
@@ -981,7 +973,6 @@ _TOOL_ROUTES = {
     "rearranger":   "/rearranger",
     "convert":      "/convert",
     "split":        "/split",
-    "dat-json":     "/dat-json",
 }
 
 _VALID_TOOLS = set(_TOOL_ROUTES.keys())
@@ -1015,134 +1006,6 @@ def api_export_json():
         as_attachment=True,
         download_name="config_export.json",
     )
-
-
-@app.route("/api/upload/dat-json", methods=["POST"])
-def api_upload_dat_json():
-    if not _is_codetest():
-        abort(404)
-
-    data, ext = _validate_upload(request.files.get("file"), {".dat", ".json"})
-
-    if ext == ".json":
-        secret = app.secret_key if isinstance(app.secret_key, bytes) else app.secret_key.encode()
-        try:
-            payload = import_session_json(data, secret)
-        except ValueError as e:
-            abort(400, str(e))
-
-        tool         = payload.get("tool", "dat-json")
-        source_bytes = base64.b64decode(payload.get("source_b64", ""))
-        orders       = payload.get("orders", {})
-
-        if tool == "dsbx-to-dat":
-            if not source_bytes[:4] == b"PK\x03\x04":
-                abort(400, "Stored source data does not appear to be a valid .dsbx archive.")
-            try:
-                mapping  = load_mapping()
-                dsb_root = parse_dsbx_bytes(source_bytes)
-                g50_list = get_groupof50_list(dsb_root)
-            except Exception as e:
-                abort(400, f"Could not restore session: {e}")
-
-            blocks = []
-            for g50 in g50_list:
-                cards = extract_group_cards(g50, mapping)
-                blocks.append({
-                    "name":     g50.findtext("Name") or "",
-                    "groups":   cards,
-                    "warnings": _check_warnings(cards),
-                })
-
-            session_data = {"type": "dsbx", "dsbx_data": source_bytes, "blocks": blocks}
-        else:
-            if not source_bytes[:4] == b"PK\x03\x04":
-                abort(400, "Stored source data does not appear to be a valid .dat archive.")
-            try:
-                controllers = parse_dat_controllers(source_bytes)
-            except Exception as e:
-                abort(400, f"Could not restore session: {e}")
-
-            if not controllers:
-                abort(400, "No controller data found in stored source.")
-
-            blocks = []
-            for ctrl in controllers:
-                cards = extract_groups_from_xml(ctrl["xml_bytes"])
-                blocks.append({
-                    "name":            ctrl["name"],
-                    "controller_type": ctrl["controller_type"],
-                    "groups":          cards,
-                    "warnings":        _check_warnings(cards),
-                })
-
-            session_type = "dat-json" if tool == "dat-json" else "dat"
-            session_data = {
-                "type":     session_type,
-                "dat_data": source_bytes,
-                "blocks":   blocks,
-                "multi":    len(controllers) > 1,
-            }
-
-        for idx_str, order in orders.items():
-            session_data[f"order_{idx_str}"] = order
-
-        sid          = sessions.create(session_data)
-        redirect_url = _TOOL_ROUTES.get(tool, "/dat-json") + f"?session={sid}"
-        return jsonify({"redirect": redirect_url})
-
-    # .dat file — parse and create a dat-json session (same as api_upload_dat)
-    if not data[:4] == b"PK\x03\x04":
-        abort(400, "File does not appear to be a valid .dat archive.")
-
-    try:
-        controllers = parse_dat_controllers(data)
-    except Exception as e:
-        abort(400, f"Could not parse .dat file: {e}")
-
-    if not controllers:
-        abort(400, "No controller data found in this .dat file.")
-
-    blocks = []
-    for ctrl in controllers:
-        cards = extract_groups_from_xml(ctrl["xml_bytes"])
-        blocks.append({
-            "name":            ctrl["name"],
-            "controller_type": ctrl["controller_type"],
-            "groups":          cards,
-            "warnings":        _check_warnings(cards),
-        })
-
-    sid = sessions.create({
-        "type":     "dat-json",
-        "dat_data": data,
-        "blocks":   blocks,
-        "multi":    len(controllers) > 1,
-    })
-
-    return jsonify({"session_id": sid, "blocks": blocks, "multi": len(controllers) > 1})
-
-
-@app.route("/api/download/dat-json/<sid>")
-def api_download_dat_json(sid):
-    if not _is_codetest():
-        abort(404)
-
-    s = sessions.get(sid)
-    if not s or s.get("type") != "dat-json":
-        abort(404, "Session not found or expired.")
-
-    blocks = s.get("blocks", [])
-    orders = {i: s.get(f"order_{i}") for i in range(len(blocks)) if s.get(f"order_{i}")}
-
-    try:
-        result = rearrange_and_repackage_dat_bytes(s["dat_data"], orders)
-    except Exception as e:
-        abort(500, f"Export failed: {e}")
-
-    base  = _safe_filename(blocks[0]["name"]) if blocks else "config"
-    fname = f"{base}.dat" if len(blocks) == 1 else "config.dat"
-    return _send_dat(result, fname)
 
 
 # ---------------------------------------------------------------------------

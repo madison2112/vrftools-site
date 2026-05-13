@@ -15,16 +15,20 @@
 <header>
   <a class="logo" href="/">VRF<span>Tools</span></a>
   <nav>
+    {% block nav_links %}
     <a href="{{ url_for('page_config_tools') }}">Config Tools</a>
     <a href="{{ url_for('page_docs') }}">How to Use</a>
     <a href="/">Home</a>
+    {% endblock %}
   </nav>
 </header>
 
 <div class="breadcrumb">
+  {% block breadcrumb_path %}
   <a href="/">vrftools.com</a> /
   <a href="{{ url_for('page_config_tools') }}">Config Tools</a>
   {% block breadcrumb %}{% endblock %}
+  {% endblock %}
 </div>
 
 <main class="page">
@@ -33,7 +37,8 @@
 
 <footer>
   <div>Central Controller Config Tools &mdash; <a href="https://vrftools.com">vrftools.com</a></div>
-  <div>Free utilities for Mitsubishi Electric HVAC installers</div>
+  <div>Unofficial Mitsubishi HVAC utilities.</div>
+  <div><a href="/disclaimer">Disclaimer &amp; Terms of Use</a></div>
 </footer>
 
 {% block scripts %}{% endblock %}

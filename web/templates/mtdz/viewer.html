@@ -1,23 +1,22 @@
-{% extends "site_base.html" %}
+{% extends "base.html" %}
 {% block title %}Log Data — MTDZ Viewer{% endblock %}
 
+{% block nav_links %}
+<a href="/mtdz/report" id="link-report" style="display:none">Generate Report</a>
+<a href="/mtdz/sysinfo" id="link-sysconfig" style="display:none">System Config</a>
+<a href="{{ url_for('page_docs') }}">How to Use</a>
+<a href="/mtdz/">Home</a>
+{% endblock %}
+
+{% block breadcrumb_path %}
+<a href="/">vrftools.com</a> /
+<a href="/mtdz/">MTDZ Viewer</a> /
+<span id="topbar-subtitle">Loading…</span>
+{% endblock %}
+
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mtdz.css') }}">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-{% endblock %}
-
-{% block nav %}
-<nav>
-  <a href="/mtdz/report" id="link-report" style="display:none">Generate Report</a>
-  <a href="/mtdz/sysinfo" id="link-sysconfig" style="display:none">System Config</a>
-  <a href="/docs">How to Use</a>
-  <a href="/mtdz/">Home</a>
-</nav>
-{% endblock %}
-
-{% block breadcrumb_section %}
-<div class="breadcrumb">
-  <a href="/">Home</a> &rsaquo; <a href="/mtdz/">MTDZ Viewer</a> &rsaquo; <span id="topbar-subtitle">Loading…</span>
-</div>
 {% endblock %}
 
 {% block content %}

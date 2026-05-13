@@ -54,8 +54,10 @@ def _build_indices(groupof50):
         ou = system.find("OutdoorUnit")
         if ou is None:
             continue
+        system_type = _text(system, "SystemType")
         odu_mnet = _text(ou, "MNetAddress")
-        if not _valid_mnet(odu_mnet):
+        # MandS units have no outdoor M-Net address; skip the validity gate for them.
+        if system_type != "MandS" and not _valid_mnet(odu_mnet):
             continue
 
         idus = ou.findall(".//IndoorUnit")
@@ -68,11 +70,12 @@ def _build_indices(groupof50):
             if not assoc:
                 continue
             assoc_to_idus.setdefault(assoc, []).append({
-                "mnet":     mnet,
-                "model":    _text(idu, "ModelNumber"),
-                "ref_tag":  _text(idu, "ReferenceTag"),
-                "odu_mnet": odu_mnet,
-                "system":   system,
+                "mnet":        mnet,
+                "model":       _text(idu, "ModelNumber"),
+                "ref_tag":     _text(idu, "ReferenceTag"),
+                "odu_mnet":    odu_mnet,
+                "system_type": system_type,
+                "system":      system,
             })
             group_to_system[assoc] = system
 
@@ -132,7 +135,8 @@ def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
     groups.sort(key=lambda x: x[0])
 
     valid_systems = [s for s in groupof50.findall("System")
-                     if _valid_mnet(_text(s.find("OutdoorUnit"), "MNetAddress"))]
+                     if _text(s, "SystemType") == "MandS"
+                     or _valid_mnet(_text(s.find("OutdoorUnit"), "MNetAddress"))]
     system_area = {id(s): i for i, s in enumerate(valid_systems, start=1)}
 
     group_area = {}
@@ -152,7 +156,7 @@ def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
         gstr = str(gnum)
         if gtype == "IU":
             for rec in assoc_to_idus.get(tid, []):
-                model = "AIC" if rec["mnet"] == rec["odu_mnet"] else "IC"
+                model = "AIC" if (rec["mnet"] == rec["odu_mnet"] or rec["system_type"] == "MandS") else "IC"
                 ET.SubElement(mgl, "MnetGroupRecord",
                     Group=gstr, Address=rec["mnet"], Model=model, SubModel="")
             rc = iug.find("LocalRemoteController")
@@ -229,7 +233,7 @@ def extract_group_cards(groupof50: ET.Element, mapping: dict) -> list:
             if not idus:
                 continue
             mnets      = [r["mnet"] for r in idus]
-            unit_types = ["AIC" if r["mnet"] == r["odu_mnet"] else "IC" for r in idus]
+            unit_types = ["AIC" if (r["mnet"] == r["odu_mnet"] or r["system_type"] == "MandS") else "IC" for r in idus]
             tag        = idus[0]["ref_tag"]
             icon       = lookup_icon(idus[0]["model"], icon_rules, default_icon)
             rc = iug.find("LocalRemoteController")

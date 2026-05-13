@@ -1,26 +1,511 @@
-{% extends "site_base.html" %}
-{% block title %}LEV Kit Configurator{% endblock %}
+{% extends "base.html" %}
+{% block title %}LEV Kit Batch Configurator{% endblock %}
 
-{% block nav %}
-<nav>
-  <a href="/docs">How to Use</a>
-  <a href="/">Home</a>
-</nav>
+{% block nav_links %}
+<a href="{{ url_for('page_lev_kit_single') }}">Single Unit</a>
+<a href="{{ url_for('page_docs') }}">How to Use</a>
+<a href="/">Home</a>
 {% endblock %}
 
-{% block breadcrumb_section %}
-<div class="breadcrumb">
-  <a href="/">Home</a> &rsaquo; LEV Kit Configurator
-</div>
+{% block breadcrumb_path %}
+<a href="/">vrftools.com</a> /
+<a href="{{ url_for('page_lev_kit') }}">LEV Kit Configurator</a> /
+<span>Batch</span>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lev_kit.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="coming-soon-box">
-    <div class="icon">⚙️</div>
-    <h1>LEV Kit Configurator</h1>
-    <p>Configure Linear Expansion Valve kits for Mitsubishi VRF installations.</p>
-    <p style="margin-top:16px;font-size:0.85rem;">This tool is currently under development. Check back soon.</p>
+<h1 class="page-title">LEV Kit Batch Configurator</h1>
+<p class="page-subtitle">Configure DIP switch settings for PAC-AH002 (R-32) and PAC-AH001 (R-410A) LEV Kit units.</p>
+
+<!-- Step 1: Upload (visible immediately on the batch page) -->
+<div class="card" id="lk-step-upload">
+  <div class="card-title">1. Upload DSB Project File</div>
+  <div class="drop-zone" id="lk-drop-zone" data-accept=".dsbx">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop your <strong>.dsbx</strong> file here, or click to browse</p>
+    <small>DSB project export &mdash; maximum 5 MB</small>
+    <input type="file" id="lk-file-input" accept=".dsbx" style="display:none">
+  </div>
+  <div id="lk-upload-error" class="alert alert-error" style="display:none"></div>
+  <div class="lk-manual-entry">
+    <span class="lk-manual-entry-or">or</span>
+    <button type="button" class="btn btn-outline" id="lk-manual-entry">
+      Add LEV Kits manually
+    </button>
   </div>
 </div>
+
+<!-- Step 2: Editor (hidden until upload/manual entry succeeds) -->
+<div id="lk-step-editor" style="display:none">
+
+  <div class="card">
+    <div class="lk-editor-header">
+      <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">2. LEV Kit Editor</div>
+      <button type="button" class="link-btn" id="lk-reset">New project</button>
+    </div>
+
+    <!-- Parser warnings (e.g. unrecognized capacity sizes) -->
+    <div class="alert alert-warn lk-warnings" id="lk-warnings" role="status" style="display:none">
+      <div class="lk-warnings-block" id="lk-parser-warnings-block" style="display:none">
+        <strong>Warnings:</strong>
+        <ul id="lk-parser-warnings-list"></ul>
+      </div>
+    </div>
+
+    <!-- Project-level controls -->
+    <fieldset class="lk-project-options">
+      <legend>Project Options</legend>
+      <label class="lk-option">
+        <span class="lk-option-label">Project Name</span>
+        <input type="text" id="lk-project-name" maxlength="120"
+               autocomplete="off" placeholder="Enter project name">
+      </label>
+      <fieldset class="lk-option lk-refrigerant-fieldset" id="lk-refrigerant-fieldset">
+        <legend class="lk-option-label">Refrigerant Type</legend>
+        <label class="lk-radio-label">
+          <input type="radio" name="lk-refrigerant" value="ah002" checked>
+          <span>PAC-AH002 (R-32)</span>
+        </label>
+        <label class="lk-radio-label">
+          <input type="radio" name="lk-refrigerant" value="ah001">
+          <span>PAC-AH001 (R-410A)</span>
+        </label>
+        <label class="lk-radio-label">
+          <input type="radio" name="lk-refrigerant" value="both">
+          <span>Both</span>
+        </label>
+      </fieldset>
+      <label class="lk-option">
+        <span class="lk-option-label">Voltage</span>
+        <select id="lk-voltage">
+          <option value="208" selected>208V (Default)</option>
+          <option value="230">230V / 240V</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <!-- Two parallel section groups: AH002 (R-32) and AH001 (R-410A). Each
+         contains three stacked tables (Basic / DAT / RAT). Visibility is
+         controlled by the Refrigerant Type radio above. -->
+    <div class="lk-batch-tables" aria-live="polite">
+
+      <!-- =========== PAC-AH002 (R-32) sections =========== -->
+      <div class="lk-controller-group" id="lk-sections-ah002">
+        <h2 class="lk-controller-group-heading">PAC-AH002 (R-32) Controllers</h2>
+        <section class="lk-mode-section" id="lk-basic-section-ah002">
+          <h3 class="lk-table-heading">Basic Info</h3>
+          <table class="lk-batch-table" id="lk-basic-table-ah002">
+            <thead>
+              <tr>
+                <th>Unit Tag</th>
+                <th>LEV Kit Size</th>
+                <th>Control Mode</th>
+                <th class="lk-th-op">Operation</th>
+              </tr>
+            </thead>
+            <tbody id="lk-basic-tbody-ah002"></tbody>
+          </table>
+          <div class="lk-basic-actions">
+            <button type="button" class="btn btn-outline btn-sm"
+                    id="lk-basic-add-new-ah002" data-controller="PAC-AH002">
+              + Add New
+            </button>
+          </div>
+        </section>
+
+        <section class="lk-mode-section" id="lk-dat-section-ah002">
+          <h3 class="lk-table-heading">DAT Options</h3>
+          <table class="lk-batch-table" id="lk-dat-table-ah002">
+            <thead>
+              <tr>
+                <th>Unit Tag</th>
+                <th>Enable Method</th>
+                <th>Setpoint Method</th>
+                <th>Thermo OFF Temperature</th>
+                <th>Heating Setpoint Upper Limit</th>
+              </tr>
+            </thead>
+            <tbody id="lk-dat-tbody-ah002"></tbody>
+          </table>
+        </section>
+
+        <section class="lk-mode-section" id="lk-rat-section-ah002">
+          <h3 class="lk-table-heading">RAT Options</h3>
+          <table class="lk-batch-table" id="lk-rat-table-ah002">
+            <thead>
+              <tr>
+                <th>Unit Tag</th>
+                <th>Controlling Sensor</th>
+                <th>Enable Method</th>
+                <th>Stratification Adjustment</th>
+              </tr>
+            </thead>
+            <tbody id="lk-rat-tbody-ah002"></tbody>
+          </table>
+        </section>
+      </div>
+
+      <!-- =========== PAC-AH001 (R-410A) sections =========== -->
+      <div class="lk-controller-group" id="lk-sections-ah001" style="display:none">
+        <h2 class="lk-controller-group-heading">PAC-AH001 (R-410A) Controllers</h2>
+        <section class="lk-mode-section" id="lk-basic-section-ah001">
+          <h3 class="lk-table-heading">Basic Info</h3>
+          <div class="lk-table-scroll">
+            <table class="lk-batch-table lk-batch-table-wide" id="lk-basic-table-ah001">
+              <colgroup>
+                <col style="width:110px">
+                <col style="width:110px">
+                <col style="width:220px">
+                <col style="width:130px">
+                <col style="width:110px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Unit Tag</th>
+                  <th>LEV Kit Size</th>
+                  <th>Control Mode</th>
+                  <th class="lk-th-op">Operation</th>
+                  <th>Fan Controlled By</th>
+                </tr>
+              </thead>
+              <tbody id="lk-basic-tbody-ah001"></tbody>
+            </table>
+          </div>
+          <div class="lk-basic-actions">
+            <button type="button" class="btn btn-outline btn-sm"
+                    id="lk-basic-add-new-ah001" data-controller="PAC-AH001">
+              + Add New
+            </button>
+          </div>
+        </section>
+
+        <section class="lk-mode-section" id="lk-dat-section-ah001">
+          <h3 class="lk-table-heading">DAT Options</h3>
+          <div class="lk-table-scroll">
+            <table class="lk-batch-table lk-batch-table-wide" id="lk-dat-table-ah001">
+              <colgroup>
+                <col style="width:90px">
+                <col style="width:180px">
+                <col style="width:180px">
+                <col style="width:150px">
+                <col style="width:200px">
+                <col style="width:130px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Unit Tag</th>
+                  <th>Enable Method</th>
+                  <th>Setpoint Method</th>
+                  <th>Thermo OFF Temperature</th>
+                  <th>DAT Setpoint Range</th>
+                  <th>Run Fan During Defrost</th>
+                </tr>
+              </thead>
+              <tbody id="lk-dat-tbody-ah001"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="lk-mode-section" id="lk-rat-section-ah001">
+          <h3 class="lk-table-heading">RAT Options</h3>
+          <div class="lk-table-scroll">
+            <table class="lk-batch-table lk-batch-table-wide" id="lk-rat-table-ah001">
+              <colgroup>
+                <col style="width:90px">
+                <col style="width:220px">
+                <col style="width:180px">
+                <col style="width:200px">
+                <col style="width:110px">
+                <col style="width:130px">
+                <col style="width:130px">
+                <col style="width:140px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Unit Tag</th>
+                  <th>Controlling Sensor</th>
+                  <th>Enable Method</th>
+                  <th>Stratification Adjustment</th>
+                  <th>Electric Heat</th>
+                  <th>Use During Defrost / Error</th>
+                  <th>Humidifier Installed</th>
+                  <th>Run Humidifier in Thermo OFF</th>
+                </tr>
+              </thead>
+              <tbody id="lk-rat-tbody-ah001"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">3. Generate Submittal PDF</div>
+    <p class="muted-text" style="margin-bottom:16px">Choose a layout for the submittal.</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="lk-generate-horizontal">
+        Horizontal &mdash; units in rows
+      </button>
+      <button type="button" class="btn btn-outline" id="lk-generate-vertical">
+        Vertical &mdash; units in columns
+      </button>
+      <a href="/contact?type=issue&tool=lev-kit" class="bug-link bug-link--inline">🐜 Report a Bug</a>
+    </div>
+    <div id="lk-generate-error" class="alert alert-error" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- Per-unit row templates — one row per table per unit. -->
+<!-- ============ PAC-AH002 (R-32) row templates ============ -->
+<template id="lk-basic-row-template-ah002">
+  <tr data-mode="discharge" data-controller="PAC-AH002">
+    <td class="lk-cell-tag">
+      <input type="text" data-field="tag" maxlength="40"
+             autocomplete="off" placeholder="Unit Tag">
+    </td>
+    <td class="lk-cell-kit">
+      <select data-field="capacity">
+        <option value="0" selected>--- LEV Kit Size ---</option>
+        <option value="1">6 MBH</option>
+        <option value="2">8 MBH</option>
+        <option value="3">12 MBH</option>
+        <option value="4">15 MBH</option>
+        <option value="5">18 MBH</option>
+        <option value="6">24 MBH</option>
+        <option value="7">27 MBH</option>
+        <option value="8">30 MBH</option>
+        <option value="9">36 MBH</option>
+        <option value="10">48 MBH</option>
+        <option value="11">54 MBH</option>
+        <option value="12">60 MBH</option>
+        <option value="13">72 MBH</option>
+        <option value="14">96 MBH</option>
+        <option value="15">120 MBH</option>
+        <option value="16">144 MBH</option>
+        <option value="17">168 MBH</option>
+        <option value="18">192 MBH</option>
+        <option value="19">216 MBH</option>
+        <option value="20">240 MBH</option>
+      </select>
+    </td>
+    <td class="lk-cell-mode">
+      <select data-field="control_mode">
+        <option value="discharge">Discharge Air Temp (DAT)</option>
+        <option value="return">Return/Room Air Temp (RAT)</option>
+      </select>
+    </td>
+    <td class="lk-cell-op">
+      <select data-field="heat_pump">
+        <option value="true" selected>Heat Pump</option>
+        <option value="false">Cool Only</option>
+      </select>
+    </td>
+  </tr>
+</template>
+
+<template id="lk-dat-row-template-ah002">
+  <tr data-mode="discharge" data-controller="PAC-AH002">
+    <td class="lk-tag" data-display="tag"></td>
+    <td>
+      <select data-field="discharge_enable">
+        <option value="central" selected>Central Controller</option>
+        <option value="bas">BAS (Dry Contact)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="discharge_setpoint">
+        <option value="central" selected>Central Controller</option>
+        <option value="bas">BAS (0-10V Signal)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="thermo_temp">
+        <option value="2" selected>82&deg;F (Default)</option>
+        <option value="3">70&deg;F</option>
+        <option value="4">59&deg;F</option>
+        <option value="1">50&deg;F</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="dat_setpoint">
+        <option value="2" selected>95&deg;F (Default)</option>
+        <option value="1">82&deg;F</option>
+      </select>
+    </td>
+  </tr>
+</template>
+
+<template id="lk-rat-row-template-ah002">
+  <tr data-mode="return" data-controller="PAC-AH002">
+    <td class="lk-tag" data-display="tag"></td>
+    <td>
+      <select data-field="return_control">
+        <option value="room">Room Temp Sensor</option>
+        <option value="rat" selected>Return Air Sensor (TH24)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="return_enable">
+        <option value="central" selected>Central Controller</option>
+        <option value="bas">BAS (Dry Contact)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="temp_adjustment">
+        <option value="false" selected>No</option>
+        <option value="true">Yes (-7&deg;F offset)</option>
+      </select>
+    </td>
+  </tr>
+</template>
+
+<!-- ============ PAC-AH001 (R-410A) row templates ============ -->
+<template id="lk-basic-row-template-ah001">
+  <tr data-mode="discharge" data-controller="PAC-AH001">
+    <td class="lk-cell-tag">
+      <input type="text" data-field="tag" maxlength="40"
+             autocomplete="off" placeholder="Unit Tag">
+    </td>
+    <td class="lk-cell-kit">
+      <select data-field="capacity">
+        <option value="0" selected>--- LEV Kit Size ---</option>
+        <option value="1">6 MBH</option>
+        <option value="2">8 MBH</option>
+        <option value="3">12 MBH</option>
+        <option value="4">15 MBH</option>
+        <option value="5">18 MBH</option>
+        <option value="6">24 MBH</option>
+        <option value="7">27 MBH</option>
+        <option value="8">30 MBH</option>
+        <option value="9">36 MBH</option>
+        <option value="10">48 MBH</option>
+        <option value="11">54 MBH</option>
+        <option value="12">60 MBH</option>
+        <option value="13">72 MBH</option>
+        <option value="14">96 MBH</option>
+        <option value="15">120 MBH</option>
+        <option value="16">144 MBH</option>
+        <option value="17">168 MBH</option>
+        <option value="18">192 MBH</option>
+        <option value="19">216 MBH</option>
+        <option value="20">240 MBH</option>
+      </select>
+    </td>
+    <td class="lk-cell-mode">
+      <select data-field="control_mode">
+        <option value="discharge">Discharge Air Temp (DAT)</option>
+        <option value="return">Return/Room Air Temp (RAT)</option>
+      </select>
+    </td>
+    <td class="lk-cell-op">
+      <select data-field="heat_pump">
+        <option value="true" selected>Heat Pump</option>
+        <option value="false">Cool Only</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="fan_controlled_by">
+        <option value="lev">LEV Kit</option>
+        <option value="bas" selected>BAS</option>
+      </select>
+    </td>
+  </tr>
+</template>
+
+<template id="lk-dat-row-template-ah001">
+  <tr data-mode="discharge" data-controller="PAC-AH001">
+    <td class="lk-tag" data-display="tag"></td>
+    <td>
+      <select data-field="discharge_enable">
+        <option value="central" selected>Central Controller</option>
+        <option value="bas">BAS (Dry Contact)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="discharge_setpoint">
+        <option value="central" selected>Central Controller</option>
+        <option value="bas">BAS (0-10V Signal)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="thermo_temp">
+        <option value="4" selected>59&deg;F (Default)</option>
+        <option value="3">70&deg;F</option>
+        <option value="1">50&deg;F</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="dat_setpoint">
+        <option value="1" selected>46-82&deg;F (Default)</option>
+        <option value="2">46-95&deg;F</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="run_fan_defrost">
+        <option value="false" selected>No</option>
+        <option value="true">Yes</option>
+      </select>
+    </td>
+  </tr>
+</template>
+
+<template id="lk-rat-row-template-ah001">
+  <tr data-mode="return" data-controller="PAC-AH001">
+    <td class="lk-tag" data-display="tag"></td>
+    <td>
+      <select data-field="return_control">
+        <option value="room">Room Temp Sensor</option>
+        <option value="rat" selected>Return Air Sensor (TH24)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="return_enable">
+        <option value="central" selected>Central Controller</option>
+        <option value="bas">BAS (Dry Contact)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="temp_adjustment">
+        <option value="false" selected>No</option>
+        <option value="true">Yes (-7&deg;F offset)</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="electric_heat">
+        <option value="false" selected>No</option>
+        <option value="true">Yes</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="use_defrost_error" disabled>
+        <option value="false" selected>No</option>
+        <option value="true">Yes</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="humidifier_installed">
+        <option value="false" selected>No</option>
+        <option value="true">Yes</option>
+      </select>
+    </td>
+    <td>
+      <select data-field="run_humidifier" disabled>
+        <option value="false" selected>No</option>
+        <option value="true">Yes</option>
+      </select>
+    </td>
+  </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lev_kit.js') }}"></script>
 {% endblock %}

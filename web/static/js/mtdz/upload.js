@@ -1,21 +1,20 @@
 const API = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
 
-const dropZone      = document.getElementById('drop-zone');
-const fileInput     = document.getElementById('file-input');
-const progressBar   = document.getElementById('progress-bar');
-const errorMsg      = document.getElementById('error-msg');
-const deleteError   = document.getElementById('delete-error');
-const modeCard      = document.getElementById('mode-card');
-const uploadCard    = document.getElementById('upload-card');
-const fileTitle     = document.getElementById('file-title');
-const dayInfo       = document.getElementById('day-info');
-const btnReport     = document.getElementById('btn-report');
-const btnRawdata    = document.getElementById('btn-rawdata');
-const btnSysconfig  = document.getElementById('btn-sysconfig');
-const btnViewer     = document.getElementById('btn-viewer');
-const btnDiffFile   = document.getElementById('btn-different-file');
-const btnDeleteFile = document.getElementById('btn-delete-file');
-const btnReportIssue = document.getElementById('btn-report-issue');
+const dropZone        = document.getElementById('drop-zone');
+const fileInput       = document.getElementById('file-input');
+const progressBar     = document.getElementById('progress-bar');
+const errorMsg        = document.getElementById('error-msg');
+const deleteError     = document.getElementById('delete-error');
+const uploadCard      = document.getElementById('upload-card');
+const fileStatusCard  = document.getElementById('file-status-card');
+const fileTitle       = document.getElementById('file-title');
+const dayInfo         = document.getElementById('day-info');
+const btnReport       = document.getElementById('btn-report');
+const btnRawdata      = document.getElementById('btn-rawdata');
+const btnSysconfig    = document.getElementById('btn-sysconfig');
+const btnViewer       = document.getElementById('btn-viewer');
+const btnDiffFile     = document.getElementById('btn-different-file');
+const btnDeleteFile   = document.getElementById('btn-delete-file');
 
 const isMobile = () => window.innerWidth < 768;
 
@@ -42,7 +41,7 @@ function clearSession() {
     .forEach(k => localStorage.removeItem(k));
 }
 
-function showModeCard(filename, days) {
+function showFileStatus(filename, days) {
   fileTitle.textContent = `File: ${filename}`;
   if (days.length > 1) {
     dayInfo.textContent = `${days.length} days: ${days.join(', ')}`;
@@ -52,10 +51,13 @@ function showModeCard(filename, days) {
     dayInfo.textContent = '';
   }
   uploadCard.style.display = 'none';
-  modeCard.style.display = '';
-  btnDiffFile.style.display = '';
-  btnDeleteFile.style.display = '';
-  btnReportIssue.style.display = '';
+  fileStatusCard.style.display = '';
+}
+
+function showUploadStep() {
+  fileStatusCard.style.display = 'none';
+  uploadCard.style.display = '';
+  deleteError.classList.remove('visible');
 }
 
 // ── Resume previous session on page load ──────────────────────────────────────
@@ -71,16 +73,37 @@ const storedFilename = localStorage.getItem('filename');
 const storedDays     = JSON.parse(localStorage.getItem('days') || '[]');
 
 if (storedId && storedFilename) {
-  showModeCard(storedFilename, storedDays);
+  showFileStatus(storedFilename, storedDays);
+}
+
+// ── Tool catalog: require a session before navigating ─────────────────────────
+
+function requireSession(action) {
+  return (e) => {
+    if (!localStorage.getItem('session_id')) {
+      if (e && e.preventDefault) e.preventDefault();
+      promptUploadFirst();
+      return;
+    }
+    action(e);
+  };
+}
+
+function promptUploadFirst() {
+  deleteError.textContent = 'Upload an .MTDZ, .MTLZ, or .MTPZ file first to use this tool.';
+  deleteError.classList.add('visible');
+  uploadCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ── Mode card navigation ───────────────────────────────────────────────────────
 
-btnReport.addEventListener('click', () => { window.location.href = PAGE_REPORT; });
+btnReport.addEventListener('click', requireSession(() => {
+  deleteError.classList.remove('visible');
+  window.location.href = PAGE_REPORT;
+}));
 
-btnRawdata.addEventListener('click', async () => {
+btnRawdata.addEventListener('click', requireSession(async () => {
   const sid = localStorage.getItem('session_id');
-  if (!sid) return;
   try {
     const resp = await fetch(`${API}/api/rawdata/${sid}`);
     if (resp.status === 404) { handleExpired(); return; }
@@ -97,41 +120,42 @@ btnRawdata.addEventListener('click', async () => {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    deleteError.classList.remove('visible');
   } catch (e) {
     deleteError.textContent = `Download failed: ${e.message}`;
     deleteError.classList.add('visible');
   }
-});
+}));
 
-btnSysconfig.addEventListener('click', () => {
+btnSysconfig.addEventListener('click', requireSession(() => {
   if (isMobile()) {
     showMobileBlock('System configuration map is not available on mobile — please use a desktop browser.');
     return;
   }
+  deleteError.classList.remove('visible');
   window.location.href = PAGE_SYSINFO;
-});
+}));
 
-btnViewer.addEventListener('click', () => {
+btnViewer.addEventListener('click', requireSession(() => {
   if (isMobile()) {
     showMobileBlock('Log data graphs are not available on mobile — please use a desktop browser.');
     return;
   }
+  deleteError.classList.remove('visible');
   window.location.href = PAGE_VIEWER;
-});
+}));
 
 function showMobileBlock(msg) {
   deleteError.textContent = msg;
   deleteError.classList.add('visible');
 }
 
-// ── Utility links ──────────────────────────────────────────────────────────────
+// ── Utility links (only visible inside file-status-card) ──────────────────────
 
 btnDiffFile.addEventListener('click', e => {
   e.preventDefault();
   clearSession();
-  modeCard.style.display = 'none';
-  uploadCard.style.display = '';
-  deleteError.classList.remove('visible');
+  showUploadStep();
 });
 
 btnDeleteFile.addEventListener('click', async e => {
@@ -142,9 +166,7 @@ btnDeleteFile.addEventListener('click', async e => {
     await fetch(`${API}/api/session/${sid}`, { method: 'DELETE' });
   } catch (_) { /* ignore network errors — session may already be gone */ }
   clearSession();
-  modeCard.style.display = 'none';
-  uploadCard.style.display = '';
-  deleteError.classList.remove('visible');
+  showUploadStep();
 });
 
 // ── Upload zone ────────────────────────────────────────────────────────────────
@@ -175,6 +197,7 @@ async function handleFile(file) {
     return;
   }
   errorMsg.classList.remove('visible');
+  deleteError.classList.remove('visible');
   progressBar.classList.add('visible');
 
   const form = new FormData();
@@ -206,7 +229,7 @@ async function handleFile(file) {
     return;
   }
 
-  showModeCard(file.name, data.days);
+  showFileStatus(file.name, data.days);
 }
 
 function handleExpired() {

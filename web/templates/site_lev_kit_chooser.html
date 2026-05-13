@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}LEV Kit Configurator{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('page_docs') }}">How to Use</a>
+<a href="/">Home</a>
+{% endblock %}
+
+{% block breadcrumb_path %}
+<a href="/">vrftools.com</a> / <span>LEV Kit Configurator</span>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lev_kit.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">LEV Kit Configurator</h1>
+<p class="page-subtitle">Configure DIP switch settings for PAC-AH002 (R-32) and PAC-AH001 (R-410A) LEV Kit units.</p>
+
+<div class="card" id="lk-mode-chooser">
+  <div class="card-title">Choose Workflow</div>
+  <div class="lk-mode-cards">
+    <a href="{{ url_for('page_lev_kit_batch') }}" class="lk-mode-card">
+      <div class="lk-mode-card-title">Batch &mdash; Multiple Units</div>
+      <div class="lk-mode-card-desc">Upload a DSB project file or enter units manually. Generates a submittal PDF with all units and DIP switch settings.</div>
+    </a>
+    <a href="{{ url_for('page_lev_kit_single') }}" class="lk-mode-card">
+      <div class="lk-mode-card-title">Single Unit</div>
+      <div class="lk-mode-card-desc">Step-by-step wizard for one unit. Generates a DIP switch image sized for phones and quick reference.</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

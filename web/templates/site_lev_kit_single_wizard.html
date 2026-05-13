@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}LEV Kit &mdash; Single Unit &mdash; {{ self.controller_name() }}{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('page_lev_kit_batch') }}">Batch Configurator</a>
+<a href="{{ url_for('page_lev_kit_single') }}">Single Unit</a>
+<a href="/">Home</a>
+{% endblock %}
+
+{% block breadcrumb_path %}
+<a href="/">vrftools.com</a> /
+<a href="/lev-kit-configurator">LEV Kit Configurator</a> /
+<a href="/lev-kit-single">Single Unit</a> /
+<span>{% block controller_name %}{% endblock %}</span>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lev_kit_single.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">LEV Kit &mdash; Single Unit &mdash; {{ self.controller_name() }}</h1>
+<p class="page-subtitle">Step-by-step DIP switch wizard. Configure one unit at a time.</p>
+
+<!-- Step 1: Capacity & Voltage -->
+<section class="card lks-step lks-hidden" id="lks-step-1" aria-label="Step 1 of 4">
+  <div class="card-title">Step 1 of 4 &mdash; Capacity &amp; Voltage</div>
+  <div class="lks-field">
+    <label for="lks-capacity" class="lks-label">LEV Kit Size</label>
+    <select id="lks-capacity" class="lks-select"></select>
+  </div>
+  <fieldset class="lks-fieldset" id="lks-voltage-fieldset">
+    <legend>Input Voltage</legend>
+    <label class="lks-radio-label">
+      <input type="radio" name="lks-voltage" value="208" checked> 208V (Default)
+    </label>
+    <label class="lks-radio-label">
+      <input type="radio" name="lks-voltage" value="230"> <span id="lks-voltage-230-label">230V</span>
+    </label>
+  </fieldset>
+  <div class="lks-nav">
+    <button id="lks-back-1" class="btn btn-outline">Back</button>
+    <button id="lks-next-1" class="btn btn-primary" disabled>Next</button>
+  </div>
+</section>
+
+<!-- Step 2: System Type & Control Mode (+ Fan Controlled By for AH001) -->
+<section class="card lks-step lks-hidden" id="lks-step-2" aria-label="Step 2 of 4">
+  <div class="card-title">Step 2 of 4 &mdash; System Type &amp; Control Mode</div>
+  <p class="lks-group-label">System Type</p>
+  <div class="lks-btn-group" id="lks-heat-pump-group">
+    <button type="button" class="lks-choice lks-active" data-field="heatPump" data-value="true">Heat Pump</button>
+    <button type="button" class="lks-choice" data-field="heatPump" data-value="false">Cooling Only</button>
+  </div>
+  <p class="lks-group-label">Control Mode</p>
+  <div class="lks-btn-group" id="lks-mode-group">
+    <button type="button" class="lks-choice lks-active" data-field="controlMode" data-value="discharge">Discharge Air Temperature (DAT)</button>
+    <button type="button" class="lks-choice" data-field="controlMode" data-value="return">Return Air Temperature (RAT)</button>
+  </div>
+  <!-- AH001-only: Fan Controlled By gates the AH001 extras in later steps -->
+  <div class="lks-ah001-only lks-hidden" data-controller-only="PAC-AH001">
+    <p class="lks-group-label">AHU/FCU Fan Controlled By</p>
+    <div class="lks-btn-group" id="lks-fan-group">
+      <button type="button" class="lks-choice" data-field="fanControlledBy" data-value="lev">LEV Kit</button>
+      <button type="button" class="lks-choice lks-active" data-field="fanControlledBy" data-value="bas">BAS</button>
+    </div>
+  </div>
+  <div class="lks-nav">
+    <button id="lks-back-2" class="btn btn-outline">Back</button>
+    <button id="lks-next-2" class="btn btn-primary">Next</button>
+  </div>
+</section>
+
+<!-- Step 3A: DAT Settings -->
+<section class="card lks-step lks-hidden" id="lks-step-3-dat" aria-label="Step 3 of 4 - DAT">
+  <div class="card-title">Step 3 of 4 &mdash; DAT Settings</div>
+  <p class="lks-group-label">Enable Method</p>
+  <div class="lks-btn-group" id="lks-discharge-enable-group">
+    <button type="button" class="lks-choice lks-active" data-field="dischargeEnableType" data-value="bas">BAS (Dry Contact)</button>
+    <button type="button" class="lks-choice" data-field="dischargeEnableType" data-value="central">Mitsubishi Controls</button>
+  </div>
+  <p class="lks-group-label">Setpoint Source</p>
+  <div class="lks-btn-group" id="lks-discharge-setpoint-group">
+    <button type="button" class="lks-choice lks-active" data-field="dischargeSetpointType" data-value="bas">BAS (0-10V Signal)</button>
+    <button type="button" class="lks-choice" data-field="dischargeSetpointType" data-value="central">Mitsubishi Controls</button>
+  </div>
+  <div class="alert alert-warn lks-lock-note lks-hidden" id="lks-setpoint-lock-note">
+    0-10V setpoint not available with Mitsubishi Controls enable.
+  </div>
+  <!-- AH001-only: Run Fan During Defrost (only meaningful when fan is LEV-controlled) -->
+  <div class="lks-ah001-only lks-hidden" data-controller-only="PAC-AH001" data-fan-gated="true">
+    <p class="lks-group-label">Run Fan During Defrost</p>
+    <div class="lks-btn-group" id="lks-run-fan-defrost-group">
+      <button type="button" class="lks-choice lks-active" data-field="runFanDefrost" data-value="false">No</button>
+      <button type="button" class="lks-choice" data-field="runFanDefrost" data-value="true">Yes</button>
+    </div>
+  </div>
+  <div class="lks-nav">
+    <button id="lks-back-3dat" class="btn btn-outline">Back</button>
+    <button id="lks-next-3dat" class="btn btn-primary">Next</button>
+  </div>
+</section>
+
+<!-- Step 3B: RAT Settings -->
+<section class="card lks-step lks-hidden" id="lks-step-3-rat" aria-label="Step 3 of 4 - RAT">
+  <div class="card-title">Step 3 of 4 &mdash; RAT Settings</div>
+  <p class="lks-group-label">Temperature Sensor</p>
+  <div class="lks-btn-group" id="lks-return-control-group">
+    <button type="button" class="lks-choice lks-active" data-field="returnControl" data-value="rat">Return Air Sensor</button>
+    <button type="button" class="lks-choice" data-field="returnControl" data-value="room">Room Temp Sensor</button>
+  </div>
+  <p class="lks-group-label">Enable Method</p>
+  <div class="lks-btn-group" id="lks-return-enable-group">
+    <button type="button" class="lks-choice lks-active" data-field="returnEnableMethod" data-value="central">Mitsubishi Controls</button>
+    <button type="button" class="lks-choice" data-field="returnEnableMethod" data-value="bas">BAS (Dry Contact)</button>
+  </div>
+  <!-- AH001-only RAT extras (gated by fan=LEV) -->
+  <div class="lks-ah001-only lks-hidden" data-controller-only="PAC-AH001" data-fan-gated="true">
+    <p class="lks-group-label">Electric Heat Installed</p>
+    <div class="lks-btn-group" id="lks-electric-heat-group">
+      <button type="button" class="lks-choice lks-active" data-field="electricHeat" data-value="false">No</button>
+      <button type="button" class="lks-choice" data-field="electricHeat" data-value="true">Yes</button>
+    </div>
+    <div class="lks-ah001-subgroup lks-hidden" id="lks-use-defrost-error-wrap">
+      <p class="lks-group-label">Use During Defrost &amp; Error</p>
+      <div class="lks-btn-group" id="lks-use-defrost-error-group">
+        <button type="button" class="lks-choice lks-active" data-field="useDefrostError" data-value="false">No</button>
+        <button type="button" class="lks-choice" data-field="useDefrostError" data-value="true">Yes</button>
+      </div>
+    </div>
+    <p class="lks-group-label">Humidifier Installed</p>
+    <div class="lks-btn-group" id="lks-humidifier-installed-group">
+      <button type="button" class="lks-choice lks-active" data-field="humidifierInstalled" data-value="false">No</button>
+      <button type="button" class="lks-choice" data-field="humidifierInstalled" data-value="true">Yes</button>
+    </div>
+    <div class="lks-ah001-subgroup lks-hidden" id="lks-run-humidifier-wrap">
+      <p class="lks-group-label">Run Humidifier in Heating Thermo-OFF</p>
+      <div class="lks-btn-group" id="lks-run-humidifier-group">
+        <button type="button" class="lks-choice lks-active" data-field="runHumidifier" data-value="false">No</button>
+        <button type="button" class="lks-choice" data-field="runHumidifier" data-value="true">Yes</button>
+      </div>
+    </div>
+  </div>
+  <div class="lks-nav">
+    <button id="lks-back-3rat" class="btn btn-outline">Back</button>
+    <button id="lks-next-3rat" class="btn btn-primary">Next</button>
+  </div>
+</section>
+
+<!-- Step 4A: DAT Heating Options -->
+<section class="card lks-step lks-hidden" id="lks-step-4-dat" aria-label="Step 4 of 4 - DAT">
+  <div class="card-title">Step 4 of 4 &mdash; DAT Heating Options</div>
+  <p class="lks-group-label">Thermo-Off Temperature</p>
+  <div class="lks-btn-group lks-btn-group-col" id="lks-thermo-group"></div>
+  <p class="lks-group-label">Heating Setpoint Upper Limit</p>
+  <div class="lks-btn-group lks-btn-group-col" id="lks-setpoint-group"></div>
+  <div class="lks-nav">
+    <button id="lks-back-4dat" class="btn btn-outline">Back</button>
+    <button id="lks-next-4dat" class="btn btn-primary">Generate</button>
+  </div>
+</section>
+
+<!-- Step 4B: RAT Stratification -->
+<section class="card lks-step lks-hidden" id="lks-step-4-rat" aria-label="Step 4 of 4 - RAT">
+  <div class="card-title">Step 4 of 4 &mdash; RAT Stratification</div>
+  <p class="lks-group-label">Temperature Stratification Offset</p>
+  <div class="lks-btn-group" id="lks-temp-adjust-group">
+    <button type="button" class="lks-choice lks-active" data-field="tempAdjustment" data-value="false">No offset</button>
+    <button type="button" class="lks-choice" data-field="tempAdjustment" data-value="true">Yes &mdash; 7&deg;F below return</button>
+  </div>
+  <div class="lks-nav">
+    <button id="lks-back-4rat" class="btn btn-outline">Back</button>
+    <button id="lks-next-4rat" class="btn btn-primary">Generate</button>
+  </div>
+</section>
+
+<!-- Results -->
+<section class="card lks-hidden" id="lks-results" aria-label="Results">
+  <div class="card-title">Switch Positions</div>
+  <div id="lks-summary-display" class="lks-summary-wrap"></div>
+  <div id="lks-banks-container"></div>
+  <p id="lks-cnrm-text" class="lks-cnrm"></p>
+  <div class="lks-actions btn-row" style="margin-top:20px">
+    <button id="lks-back-results" class="btn btn-outline">Back</button>
+    <button id="lks-download" class="btn btn-primary">Download PNG</button>
+    <button id="lks-copy" class="btn btn-outline lks-hidden">Copy to Clipboard</button>
+  </div>
+</section>
+
+<!-- Off-screen capture target for html2canvas -->
+<div id="lks-capture-target">
+  <div id="lks-capture-summary"></div>
+  <div id="lks-capture-banks"></div>
+  <p id="lks-capture-cnrm"></p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.LKS_CONTROLLER = '{% block controller_const %}{% endblock %}';</script>
+<script src="{{ url_for('static', filename='js/vendor/html2canvas.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lev_kit_single.js') }}"></script>
+{% endblock %}

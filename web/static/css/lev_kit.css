@@ -1,0 +1,348 @@
+/* ============================================================================
+ * LEV Kit Configurator — Batch
+ *
+ * Shared scaffolding (.card, .btn, .drop-zone, .alert) lives in style.css.
+ * This file only carries tool-unique classes: the mode chooser, the three
+ * batch tables, project-options fieldset, warning sub-blocks, and the
+ * editor header. Colors map to style.css's CSS variables for consistency.
+ * ============================================================================ */
+
+/* ----- Mode chooser ----------------------------------------------------- */
+
+.lk-mode-cards {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lk-mode-card {
+  flex: 1;
+  min-width: 240px;
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  font: inherit;
+  display: block;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.lk-mode-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.lk-mode-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+
+.lk-mode-card-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ----- Manual-entry affordance under the drop zone --------------------- */
+
+.lk-manual-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.lk-manual-entry-or {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ----- Editor header (title + "New project" link) ---------------------- */
+
+.lk-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* ----- Warning sub-blocks inside .alert.alert-warn --------------------- */
+
+.lk-warnings-block + .lk-warnings-block {
+  margin-top: 8px;
+}
+
+.lk-warnings ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.lk-warnings-note {
+  margin: 6px 0 4px;
+  font-size: 0.85rem;
+}
+
+/* ----- Project options fieldset ---------------------------------------- */
+
+.lk-project-options {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px 16px;
+  margin: 0 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.lk-project-options legend {
+  padding: 0 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--gray);
+}
+
+.lk-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.lk-option-label {
+  font-weight: 500;
+  color: var(--gray);
+}
+
+#lk-project-name {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Refrigerant Type radio fieldset — visually nested inside .lk-project-options
+   while staying a real <fieldset> for accessibility. The outer grid treats it
+   as one column. */
+.lk-refrigerant-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px 8px;
+  margin: 0;
+}
+
+.lk-refrigerant-fieldset legend {
+  padding: 0 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray);
+}
+
+.lk-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.lk-radio-label input[type="radio"] {
+  margin: 0;
+}
+
+/* Controller-group heading — only shown when "Both" is selected and the two
+   groups need clear visual separation. */
+.lk-controller-group-heading {
+  margin: 0 0 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--dark);
+  display: none;          /* shown only in 'both' mode (toggled by JS via .lk-show-headings) */
+}
+
+.lk-show-headings .lk-controller-group-heading {
+  display: block;
+}
+
+.lk-controller-group + .lk-controller-group {
+  margin-top: 28px;       /* extra breathing room when both groups stack */
+}
+
+/* AH001 wide tables: wrap each <table> in a `.lk-table-scroll` div that
+   takes care of horizontal overflow. The table itself stays a normal
+   `display: table`, so thead and tbody share one table-layout context and
+   the <colgroup> column widths apply uniformly to header and body rows.
+   This is the canonical fix for the "header doesn't line up with body"
+   problem — previously the table was `display: block` which forced
+   thead/tbody into independent display:table contexts with independent
+   column widths. */
+.lk-table-scroll {
+  overflow-x: auto;
+  /* Slight vertical padding so the scrollbar doesn't crowd the table content
+     on browsers that show always-on scrollbars. */
+  padding-bottom: 2px;
+}
+
+.lk-batch-table-wide {
+  table-layout: fixed;
+  width: max-content;       /* size table to sum of <colgroup> widths */
+  min-width: 100%;          /* but fill the wrapper when columns sum < width */
+  border-collapse: collapse;
+}
+
+/* Allow th text to wrap to two lines on wide AH001 tables — the long
+   header strings (DAT Setpoint Range, Run Fan During Defrost, etc.) don't
+   fit on one line at typical widths. Td cells stay single-line so the
+   dropdowns don't squeeze vertically. */
+.lk-batch-table-wide th {
+  white-space: normal;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+.lk-batch-table-wide td {
+  white-space: nowrap;
+}
+
+/* Uniform Unit Tag column width across ALL batch tables (AH002 and AH001).
+   Matches the look of the AH002 RAT Unit Tag column — narrow, fits typical
+   tags like "DOAS-1A" with comfortable padding. */
+.lk-batch-table .lk-cell-tag,
+.lk-batch-table td.lk-tag,
+.lk-batch-table th:first-child {
+  width: 90px;
+  min-width: 90px;
+}
+
+/* Basic Info Unit Tag column is wider than DAT/RAT — sized to match the
+   natural width of an "Enable Method" dropdown on the AH002 DAT table, so
+   manually-entered unit tags have room to breathe without crowding the
+   capacity dropdown next to them. Applies to both controllers. */
+#lk-basic-table-ah002 .lk-cell-tag,
+#lk-basic-table-ah002 th:first-child {
+  width: 150px;
+  min-width: 150px;
+}
+
+/* AH001 column widths are defined via <colgroup> in the HTML — see
+   site_lev_kit.html. Colgroup widths apply uniformly to header and body
+   rows since the table uses standard table-layout: fixed (no display: block
+   workaround). */
+
+/* ----- Editor form controls -------------------------------------------- */
+
+#lk-step-editor select,
+#lk-step-editor input[type="text"] {
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--white);
+}
+
+#lk-step-editor select:disabled,
+#lk-step-editor input[type="text"]:disabled {
+  background: #f1f3f5;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* ----- Batch input tables ---------------------------------------------- */
+
+.lk-batch-tables {
+  margin: 0 0 20px;
+}
+
+.lk-mode-section {
+  margin: 0 0 24px;
+}
+
+.lk-table-heading {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.lk-batch-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  background: var(--white);
+}
+
+.lk-batch-table th,
+.lk-batch-table td {
+  border: 1px solid var(--dark);
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.lk-batch-table thead th {
+  background: #e0e0e0;
+  font-weight: bold;
+}
+
+.lk-batch-table td.lk-tag {
+  font-weight: 600;
+}
+
+.lk-batch-table .lk-cell-kit {
+  font-weight: 500;
+}
+
+.lk-batch-table select,
+.lk-batch-table input[type="text"] {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font: inherit;
+  background: var(--white);
+  box-sizing: border-box;
+}
+
+.lk-batch-table select:disabled,
+.lk-batch-table input[type="text"]:disabled {
+  background: #e9ecef;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* Compress the Operation column — fixed width keeps it from eating space
+   the wider columns need. */
+.lk-batch-table .lk-th-op,
+.lk-batch-table .lk-cell-op {
+  width: 130px;
+}
+
+.lk-basic-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0 0;
+}
+
+/* Each unit has one row in each table; CSS hides the row in the
+   mode-specific table whose mode does not match. */
+/* Rows tagged with the "wrong" control mode for their table are hidden. The
+   batch UI keeps three rows per unit (basic/DAT/RAT) and toggles visibility
+   when the user flips control_mode; same rule applies to both controllers. */
+#lk-dat-table-ah002 tr[data-mode="return"],
+#lk-dat-table-ah001 tr[data-mode="return"]    { display: none; }
+#lk-rat-table-ah002 tr[data-mode="discharge"],
+#lk-rat-table-ah001 tr[data-mode="discharge"] { display: none; }

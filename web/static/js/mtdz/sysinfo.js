@@ -45,6 +45,8 @@ function renderTopology(systems) {
   const PORT_H  = 30;   // height per port row
   const BC_BOT  = 6;    // bottom padding inside BC box
   const IC_W    = 90,  IC_H  = 22;
+  const IC_GAP  = 6;    // vertical gap between stacked ICs sharing a BC port
+  const IC_PAD  = 4;    // top/bottom padding inside a multi-IC port slot
   const CONN_W  = 44;   // horizontal gap: BC right edge → IC left edge
   const CAP_LEN = 28,  CAP_SQ = 7;   // empty-port cap: line length + square side
   const PAD_X   = 24,  PAD_TOP = 20;
@@ -96,6 +98,127 @@ function renderTopology(systems) {
     return Math.max(m, 1);
   }
 
+  // Vertical pixels for one port row given its IC count.
+  // Returns PORT_H for 0 or 1 ICs (visually identical to pre-stack behavior);
+  // grows linearly when multiple ICs share a port.
+  function slotHeight(nIc) {
+    if (nIc <= 1) return PORT_H;
+    return nIc * IC_H + (nIc - 1) * IC_GAP + IC_PAD * 2;
+  }
+
+  // Layout per BC/BS port: bucket ICs by primary port, resolve twin markers,
+  // compute per-slot heights and cumulative offsets. Slots are 0-indexed
+  // (slots[0] is port 1). Real ICs always win over a twin marker on the same row.
+  function buildPortLayout(ics, nPorts) {
+    const bucket = {};
+    const twinSet = new Set();
+    for (const ic of (ics || [])) {
+      if (ic.port != null) (bucket[ic.port] ||= []).push(ic);
+      if (ic.twin_port != null) twinSet.add(ic.twin_port);
+    }
+    const slots = new Array(nPorts);
+    let totalH = 0;
+    for (let p = 1; p <= nPorts; p++) {
+      const portIcs = (bucket[p] || []).slice().sort((a, b) => a.address - b.address);
+      const height = slotHeight(portIcs.length);
+      slots[p - 1] = {
+        ics: portIcs,
+        twin: twinSet.has(p) && portIcs.length === 0,
+        height,
+        topRel: totalH,
+      };
+      totalH += height;
+    }
+    return { totalH, slots };
+  }
+
+  // Append one IC box (rect + label + tooltip) at (icLeftX, icCy).
+  function appendIcBox(svgRoot, ic, icLeftX, icCy) {
+    const icG = document.createElementNS(NS, 'g');
+    addTitle(icG, [ic.model, ic.tag, ic.capacity ? `${ic.capacity} MBH` : '']);
+    icG.appendChild(el('rect', {
+      x: icLeftX, y: icCy - IC_H / 2, width: IC_W, height: IC_H,
+      class: 'unit-box ic-box',
+    }));
+    icG.appendChild(el('text', {
+      x: icLeftX + IC_W / 2, y: icCy, class: 'unit-label-single',
+    }, `IC ${ic.address.toString().padStart(2, '0')}`));
+    svgRoot.appendChild(icG);
+  }
+
+  // Draw all port rows (label, pipes, ICs, caps) for a BC or BS.
+  // Centralized so main BC and Sub-BCs share identical geometry rules.
+  // For N >= 2 ICs sharing a port, draws a manifold: trunk → vertical riser → per-IC stub.
+  function renderPortRows({ svgRoot, layout, hostX, hostY, lineX0 }) {
+    for (let p = 1; p <= layout.slots.length; p++) {
+      const slot = layout.slots[p - 1];
+      const slotCenterY = hostY + BC_HDR + slot.topRel + slot.height / 2;
+
+      // Port number label, right-aligned inside BC/BS, centered on slot.
+      svgRoot.appendChild(el('text', {
+        x: hostX + BC_W - 6, y: slotCenterY,
+        'text-anchor': 'end', 'dominant-baseline': 'middle',
+        'font-size': '10', fill: 'rgba(255,255,255,0.45)',
+      }, String(p)));
+
+      const n = slot.ics.length;
+
+      if (n === 0 && slot.twin) {
+        svgRoot.appendChild(el('line', {
+          x1: lineX0, y1: slotCenterY,
+          x2: lineX0 + CONN_W * 0.55, y2: slotCenterY,
+          stroke: 'rgba(42,122,82,0.45)', 'stroke-width': '1',
+          'stroke-dasharray': '3,3',
+        }));
+        svgRoot.appendChild(el('text', {
+          x: lineX0 + CONN_W * 0.55 + 4, y: slotCenterY,
+          'dominant-baseline': 'middle', 'font-size': '9',
+          fill: 'rgba(255,255,255,0.25)',
+        }, 'twin'));
+
+      } else if (n === 0) {
+        svgRoot.appendChild(el('line', {
+          x1: lineX0, y1: slotCenterY,
+          x2: lineX0 + CAP_LEN, y2: slotCenterY, class: 'port-cap-line',
+        }));
+        svgRoot.appendChild(el('rect', {
+          x: lineX0 + CAP_LEN, y: slotCenterY - CAP_SQ / 2,
+          width: CAP_SQ, height: CAP_SQ, class: 'port-cap-sq',
+        }));
+
+      } else if (n === 1) {
+        const ic = slot.ics[0];
+        svgRoot.appendChild(el('line', {
+          x1: lineX0, y1: slotCenterY,
+          x2: lineX0 + CONN_W, y2: slotCenterY, class: 'connect-line',
+        }));
+        appendIcBox(svgRoot, ic, lineX0 + CONN_W, slotCenterY);
+
+      } else {
+        const firstIcCy = hostY + BC_HDR + slot.topRel + IC_PAD + IC_H / 2;
+        const lastIcCy  = firstIcCy + (n - 1) * (IC_H + IC_GAP);
+        const riserX    = lineX0 + CONN_W / 2;
+
+        svgRoot.appendChild(el('line', {
+          x1: lineX0, y1: slotCenterY,
+          x2: riserX, y2: slotCenterY, class: 'connect-line',
+        }));
+        svgRoot.appendChild(el('line', {
+          x1: riserX, y1: firstIcCy,
+          x2: riserX, y2: lastIcCy, class: 'connect-line',
+        }));
+        for (let i = 0; i < n; i++) {
+          const icCy = firstIcCy + i * (IC_H + IC_GAP);
+          svgRoot.appendChild(el('line', {
+            x1: riserX, y1: icCy,
+            x2: lineX0 + CONN_W, y2: icCy, class: 'connect-line',
+          }));
+          appendIcBox(svgRoot, slot.ics[i], lineX0 + CONN_W, icCy);
+        }
+      }
+    }
+  }
+
   // System width — BC+connection+IC for systems with a BC; OC/IC width otherwise
   function sysW(sys) {
     return sys.bc ? BC_W + CONN_W + IC_W : Math.max(OC_W, IC_W);
@@ -104,9 +227,11 @@ function renderTopology(systems) {
   // System content height (excluding outer PAD_TOP)
   function sysH(sys) {
     if (sys.bc) {
-      let h = OC_H + OC_BC_V + BC_HDR + bcPortCount(sys) * PORT_H + BC_BOT;
+      let h = OC_H + OC_BC_V + BC_HDR
+            + buildPortLayout(sys.ics, bcPortCount(sys)).totalH + BC_BOT;
       for (const bs of (sys.bss || [])) {
-        h += BS_GAP + BC_HDR + bsPortCount(bs) * PORT_H + BC_BOT;
+        h += BS_GAP + BC_HDR
+           + buildPortLayout(bs.ics || [], bsPortCount(bs)).totalH + BC_BOT;
       }
       return h;
     }
@@ -133,14 +258,8 @@ function renderTopology(systems) {
     const ocY    = PAD_TOP;
     const bcY    = PAD_TOP + OC_H + OC_BC_V;
     const nPorts = sys.bc ? bcPortCount(sys) : 0;
-    const bh     = BC_HDR + nPorts * PORT_H + BC_BOT;
-
-    // Port map: port# → IC object | 'twin'
-    const portMap = {};
-    for (const ic of sys.ics) {
-      if (ic.port      != null) portMap[ic.port]      = ic;
-      if (ic.twin_port != null) portMap[ic.twin_port] = 'twin';
-    }
+    const bcLayout = sys.bc ? buildPortLayout(sys.ics, nPorts) : null;
+    const bh     = bcLayout ? BC_HDR + bcLayout.totalH + BC_BOT : 0;
 
     // ── OC box ───────────────────────────────────────────────────────────────
     const ocG = document.createElementNS(NS, 'g');
@@ -195,65 +314,15 @@ function renderTopology(systems) {
 
       // ── Port rows ─────────────────────────────────────────────────────────
       const lineX0 = curX + BC_W;
-
-      for (let p = 1; p <= nPorts; p++) {
-        const pY = bcY + BC_HDR + (p - 0.5) * PORT_H;
-        const ic = portMap[p];
-
-        // Port number label (right-aligned inside BC)
-        svg.appendChild(el('text', {
-          x: curX + BC_W - 6, y: pY,
-          'text-anchor': 'end', 'dominant-baseline': 'middle',
-          'font-size': '10', fill: 'rgba(255,255,255,0.45)',
-        }, String(p)));
-
-        if (ic === 'twin') {
-          // Secondary port of a twin IC — short dashed stub
-          svg.appendChild(el('line', {
-            x1: lineX0, y1: pY, x2: lineX0 + CONN_W * 0.55, y2: pY,
-            stroke: 'rgba(42,122,82,0.45)', 'stroke-width': '1',
-            'stroke-dasharray': '3,3',
-          }));
-          svg.appendChild(el('text', {
-            x: lineX0 + CONN_W * 0.55 + 4, y: pY,
-            'dominant-baseline': 'middle', 'font-size': '9',
-            fill: 'rgba(255,255,255,0.25)',
-          }, 'twin'));
-
-        } else if (ic) {
-          // Active port — solid line + IC box
-          svg.appendChild(el('line', {
-            x1: lineX0, y1: pY, x2: lineX0 + CONN_W, y2: pY, class: 'connect-line',
-          }));
-          const icG = document.createElementNS(NS, 'g');
-          addTitle(icG, [ic.model, ic.tag, ic.capacity ? `${ic.capacity} MBH` : '']);
-          icG.appendChild(el('rect', {
-            x: lineX0 + CONN_W, y: pY - IC_H / 2, width: IC_W, height: IC_H,
-            class: 'unit-box ic-box',
-          }));
-          icG.appendChild(el('text', {
-            x: lineX0 + CONN_W + IC_W / 2, y: pY, class: 'unit-label-single',
-          }, `IC ${ic.address.toString().padStart(2, '0')}`));
-          svg.appendChild(icG);
-
-        } else {
-          // Empty / capped port
-          svg.appendChild(el('line', {
-            x1: lineX0, y1: pY, x2: lineX0 + CAP_LEN, y2: pY, class: 'port-cap-line',
-          }));
-          svg.appendChild(el('rect', {
-            x: lineX0 + CAP_LEN, y: pY - CAP_SQ / 2, width: CAP_SQ, height: CAP_SQ,
-            class: 'port-cap-sq',
-          }));
-        }
-      }
+      renderPortRows({ svgRoot: svg, layout: bcLayout, hostX: curX, hostY: bcY, lineX0 });
 
       // ── Sub BCs (BS) ──────────────────────────────────────────────────────
       let prevBcBottom = bcY + bh;
       for (const bs of (sys.bss || [])) {
         const bsPortN = bsPortCount(bs);
-        const bsh     = BC_HDR + bsPortN * PORT_H + BC_BOT;
-        const bsY     = prevBcBottom + BS_GAP;
+        const bsLayout = buildPortLayout(bs.ics || [], bsPortN);
+        const bsh      = BC_HDR + bsLayout.totalH + BC_BOT;
+        const bsY      = prevBcBottom + BS_GAP;
 
         // Connector from main BC bottom to Sub BC top
         svg.appendChild(el('line', {
@@ -276,53 +345,7 @@ function renderTopology(systems) {
         }));
         svg.appendChild(bsG);
 
-        // BS port rows
-        const bsPortMap = {};
-        for (const ic of bs.ics || []) {
-          if (ic.port      != null) bsPortMap[ic.port]      = ic;
-          if (ic.twin_port != null) bsPortMap[ic.twin_port] = 'twin';
-        }
-
-        for (let p = 1; p <= bsPortN; p++) {
-          const pY = bsY + BC_HDR + (p - 0.5) * PORT_H;
-          const ic = bsPortMap[p];
-
-          svg.appendChild(el('text', {
-            x: curX + BC_W - 6, y: pY,
-            'text-anchor': 'end', 'dominant-baseline': 'middle',
-            'font-size': '10', fill: 'rgba(255,255,255,0.45)',
-          }, String(p)));
-
-          if (ic === 'twin') {
-            svg.appendChild(el('line', {
-              x1: lineX0, y1: pY, x2: lineX0 + CONN_W * 0.55, y2: pY,
-              stroke: 'rgba(42,122,82,0.45)', 'stroke-width': '1',
-              'stroke-dasharray': '3,3',
-            }));
-          } else if (ic) {
-            svg.appendChild(el('line', {
-              x1: lineX0, y1: pY, x2: lineX0 + CONN_W, y2: pY, class: 'connect-line',
-            }));
-            const icG = document.createElementNS(NS, 'g');
-            addTitle(icG, [ic.model, ic.tag, ic.capacity ? `${ic.capacity} MBH` : '']);
-            icG.appendChild(el('rect', {
-              x: lineX0 + CONN_W, y: pY - IC_H / 2, width: IC_W, height: IC_H,
-              class: 'unit-box ic-box',
-            }));
-            icG.appendChild(el('text', {
-              x: lineX0 + CONN_W + IC_W / 2, y: pY, class: 'unit-label-single',
-            }, `IC ${ic.address.toString().padStart(2, '0')}`));
-            svg.appendChild(icG);
-          } else {
-            svg.appendChild(el('line', {
-              x1: lineX0, y1: pY, x2: lineX0 + CAP_LEN, y2: pY, class: 'port-cap-line',
-            }));
-            svg.appendChild(el('rect', {
-              x: lineX0 + CAP_LEN, y: pY - CAP_SQ / 2, width: CAP_SQ, height: CAP_SQ,
-              class: 'port-cap-sq',
-            }));
-          }
-        }
+        renderPortRows({ svgRoot: svg, layout: bsLayout, hostX: curX, hostY: bsY, lineX0 });
 
         prevBcBottom = bsY + bsh;
       }

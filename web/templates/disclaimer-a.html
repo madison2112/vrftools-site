@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Disclaimer — Option A{% endblock %}
+{% block breadcrumb %} / <span>Disclaimer — Option A</span>{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Disclaimer</h1>
+<p class="page-subtitle">Plain-English, broken into topic cards. Easy to scan.</p>
+
+<div class="card">
+  <div class="card-title">No Warranty</div>
+  <p>All tools on this site are provided <strong>"as is"</strong> without warranty of any kind — express, implied, or otherwise. We make no guarantees about accuracy, completeness, or fitness for any particular project.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">No Liability</div>
+  <p>VRFTools shall not be liable for any damages or losses arising from the use of these tools, including but not limited to incorrect configuration files, system misconfigurations, equipment damage, project delays, or labor costs.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">User Responsibility</div>
+  <p>It is the end user's responsibility to <strong>verify all output</strong> before applying it to any controller or project. Always cross-check generated files against your design documents and the manufacturer's official tools before loading them into hardware.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Compatibility Not Guaranteed</div>
+  <p>These tools are community-built utilities and are not affiliated with, endorsed by, or supported by Mitsubishi Electric. No guarantee is made that output will be compatible with every controller firmware version or equipment configuration. The official ISToolAEC application and Mitsubishi documentation remain the authoritative source.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">By Using This Site</div>
+  <p>By using any tool on VRFTools, you acknowledge and accept these terms in full.</p>
+</div>
+{% endblock %}

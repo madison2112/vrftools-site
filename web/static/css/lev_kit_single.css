@@ -1,0 +1,334 @@
+/* ============================================================================
+ * LEV Kit Single-Unit Configurator
+ *
+ * Shared scaffolding (.card, .btn, .alert) lives in style.css. This file
+ * carries only the wizard-specific constructs: step visibility, choice
+ * buttons, fieldset/radio layouts, the DIP-switch visual renderer, and the
+ * off-screen html2canvas capture target.
+ * ============================================================================ */
+
+/* ----- Step visibility -------------------------------------------------- */
+
+.lks-step { display: block; }
+.lks-step.lks-hidden,
+.lks-hidden { display: none !important; }
+
+/* ----- Form controls (Step 1) ------------------------------------------ */
+
+.lks-field { margin-bottom: 20px; }
+
+.lks-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--gray);
+}
+
+.lks-select {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 220px;
+  background: var(--white);
+  cursor: pointer;
+}
+
+.lks-select:focus { outline: 2px solid var(--red); outline-offset: 2px; }
+
+.lks-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 0 0 20px;
+}
+
+.lks-fieldset legend {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0 6px;
+  color: var(--gray);
+}
+
+.lks-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 20px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+/* ----- Group labels (above choice button rows) ------------------------- */
+
+.lks-group-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin: 0 0 6px;
+}
+
+/* ----- Choice buttons --------------------------------------------------- */
+
+.lks-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.lks-btn-group-col {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.lks-choice {
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 9px 16px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--dark);
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+
+.lks-choice:hover:not(:disabled):not(.lks-active) {
+  border-color: var(--red);
+  background: #fff3f3;
+}
+
+.lks-choice.lks-active {
+  background: var(--red);
+  color: var(--white);
+  border-color: var(--red);
+}
+
+.lks-choice:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ----- Wizard nav rows -------------------------------------------------- */
+
+.lks-nav {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* ----- Results ---------------------------------------------------------- */
+
+.lks-cnrm {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 16px 0 0;
+  color: var(--dark);
+}
+
+#lks-banks-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+/* ----- DIP bank visual (hardware-faithful; do not recolor) ------------- */
+
+.lks-bank-wrapper { margin-bottom: 4px; }
+
+.lks-bank-label {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.lks-bank-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.lks-bank-onoff {
+  font-size: 11px;
+  min-width: 25px;
+  margin-top: 6px;
+  margin-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  line-height: 1;
+}
+
+.lks-switch-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lks-switch-frame {
+  background: #fff;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 2px solid #000;
+}
+
+.lks-switch-frame.lks-not-first {
+  border-left: none;
+}
+
+.lks-cell-on,
+.lks-cell-off {
+  width: 12px;
+  height: 20px;
+  border: 1.5px solid #000;
+  box-sizing: border-box;
+}
+
+.lks-cell-on  { background: #000; }
+.lks-cell-off { background: #fff; }
+
+.lks-pos-num {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 5px;
+  width: 18px;
+}
+
+/* ----- AH001 single-row banks (SWA, SW5) ------------------------------- */
+/* SWA renders as a 3-cell horizontal selector with labels 3-2-1 left-to-right
+   (matching the hardware silkscreen). SW5 is the same idiom with 2 cells
+   labeled 230V (left) and 208V (right). Single row, not two — these aren't
+   ON/OFF DIP switches but position selectors. */
+.lks-cell-single {
+  width: 12px;
+  height: 20px;
+  border: 1.5px solid #000;
+  box-sizing: border-box;
+}
+
+.lks-cell-single.lks-cell-on  { background: #000; }
+.lks-cell-single.lks-cell-off { background: #fff; }
+
+.lks-bank-row.lks-bank-single-row .lks-bank-onoff {
+  /* Hide the ON/OFF labels for single-row banks — they don't apply */
+  visibility: hidden;
+  gap: 0;
+}
+
+.lks-pos-label {
+  font-size: 9px;
+  text-align: center;
+  margin-top: 4px;
+  width: 28px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* ----- Selection summary (results + capture target) -------------------- */
+
+.lks-summary-wrap { margin-bottom: 20px; }
+
+.lks-summary-tbl {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.88rem;
+}
+
+.lks-summary-tbl .lks-sumrow-hdr td {
+  background: #222;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 7px 10px;
+  border: 1px solid #222;
+  letter-spacing: 0.02em;
+}
+
+.lks-summary-tbl tr td {
+  padding: 5px 10px;
+  border: 1px solid #d8d8d8;
+  vertical-align: middle;
+}
+
+.lks-summary-tbl tr:nth-child(even) td { background: #f7f7f7; }
+
+.lks-summary-tbl .lks-sum-label {
+  font-weight: 600;
+  color: var(--gray);
+  width: 45%;
+}
+
+.lks-summary-tbl .lks-sum-value { color: var(--dark); }
+
+/* Capture version — inherits above; compact font for vertical PNG layout */
+#lks-capture-summary { margin-bottom: 14px; }
+#lks-capture-summary .lks-summary-tbl { font-size: 12px; }
+#lks-capture-summary .lks-sumrow-hdr td { padding: 6px 10px; font-size: 13px; }
+#lks-capture-summary .lks-sum-label { width: 50%; }
+
+/* ----- Controller chooser cards (Step 0) ------------------------------- */
+
+.lks-controller-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.lks-controller-card {
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s, transform 0.05s;
+}
+
+.lks-controller-card:hover {
+  border-color: var(--red);
+}
+
+.lks-controller-card:active {
+  transform: scale(0.99);
+}
+
+.lks-controller-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 6px;
+}
+
+.lks-controller-card-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.lks-ah001-subgroup {
+  margin-top: 8px;
+}
+
+/* ----- Off-screen capture target for html2canvas ----------------------- */
+
+#lks-capture-target {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #fff;
+  padding: 20px;
+  width: 400px;
+}
+
+#lks-capture-target #lks-capture-banks {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

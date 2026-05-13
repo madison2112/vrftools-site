@@ -1,7 +1,20 @@
-{% extends "site_base.html" %}
+{% extends "base.html" %}
 {% block title %}Generate Report — MTDZ Viewer{% endblock %}
 
+{% block nav_links %}
+<a href="/mtdz/viewer" id="link-viewer">View Graphs</a>
+<a href="{{ url_for('page_docs') }}">How to Use</a>
+<a href="/mtdz/">Home</a>
+{% endblock %}
+
+{% block breadcrumb_path %}
+<a href="/">vrftools.com</a> /
+<a href="/mtdz/">MTDZ Viewer</a> /
+<span>Generate Report</span>
+{% endblock %}
+
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mtdz.css') }}">
 <style>
   .section-divider { border-top: 2px solid var(--border); margin-top: 20px; padding-top: 18px; }
   .section-divider h3 {
@@ -113,20 +126,6 @@
   .known-issue-title { font-size: 0.81rem; font-weight: 600; color: var(--gray); }
   .known-issue-fix   { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
 </style>
-{% endblock %}
-
-{% block nav %}
-<nav>
-  <a href="/mtdz/viewer" id="link-viewer">View Graphs</a>
-  <a href="/docs">How to Use</a>
-  <a href="/mtdz/">Home</a>
-</nav>
-{% endblock %}
-
-{% block breadcrumb_section %}
-<div class="breadcrumb">
-  <a href="/">Home</a> &rsaquo; <a href="/mtdz/">MTDZ Viewer</a> &rsaquo; Generate Report
-</div>
 {% endblock %}
 
 {% block content %}
