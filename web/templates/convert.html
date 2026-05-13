@@ -57,18 +57,22 @@ function onUploaded(data) {
   state.sessionId = data.session_id;
 
   const info = document.getElementById('controller-info');
-  const rows = data.blocks.map(b => {
-    const arrow = OPPOSITE[b.controller_type] || '?';
-    return `<tr>
-      <td>${escHtml(b.name)}</td>
-      <td><span class="badge">${escHtml(b.controller_type)}</span></td>
-      <td>&rarr;</td>
-      <td><span class="badge badge-green">${escHtml(arrow)}</span></td>
-    </tr>`;
-  }).join('');
-  info.innerHTML = `<table class="info-table"><thead><tr>
-    <th>Controller</th><th>Source</th><th></th><th>Target</th>
-  </tr></thead><tbody>${rows}</tbody></table>`;
+  info.innerHTML = '';
+
+  data.blocks.forEach((block, idx) => {
+    const arrow = OPPOSITE[block.controller_type] || '?';
+    const div = document.createElement('div');
+    div.className = 'block-section';
+    div.dataset.blockIdx = idx;
+    div.innerHTML = `
+      <div class="block-header">
+        <input type="text" class="ctrl-name-input" value="${escHtml(block.name)}" data-idx="${idx}" title="Edit controller name — saved to .dat and JSON exports">
+        <span class="badge">${escHtml(block.controller_type)}</span>
+        <span>&rarr;</span>
+        <span class="badge badge-green">${escHtml(arrow)}</span>
+      </div>`;
+    info.appendChild(div);
+  });
 
   document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';

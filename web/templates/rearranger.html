@@ -63,9 +63,10 @@ function onUploaded(data) {
   data.blocks.forEach((block, idx) => {
     const div = document.createElement('div');
     div.className = 'block-section';
+    div.dataset.blockIdx = idx;
     div.innerHTML = `
       <div class="block-header">
-        <strong>${escHtml(block.name)}</strong>
+        <input type="text" class="ctrl-name-input" value="${escHtml(block.name)}" data-idx="${idx}" title="Edit controller name — saved to .dat and JSON exports">
         <span class="badge">${escHtml(block.controller_type)}</span>
         <span class="muted-text">${block.groups.length} groups</span>
         <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>

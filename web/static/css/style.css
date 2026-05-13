@@ -576,3 +576,46 @@ footer a:hover { text-decoration: underline; }
   box-shadow: 0 6px 20px rgba(204,0,0,0.4);
 }
 .float-save-btn .save-icon { font-size: 1rem; }
+
+/* ── Editable controller name ── */
+.ctrl-name-input {
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 350px;
+  min-width: 100px;
+  transition: border-color 0.15s, background 0.15s;
+  color: var(--dark);
+}
+.ctrl-name-input:hover {
+  border-color: var(--border);
+  background: #fafafa;
+}
+.ctrl-name-input:focus {
+  outline: none;
+  border-color: var(--red);
+  background: var(--white);
+}
+
+/* ── Inline group tag editing ── */
+.group-tag {
+  position: relative;
+}
+.group-tag-edit {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border: 2px solid var(--red);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  font-family: inherit;
+  background: var(--white);
+  color: var(--dark);
+  outline: none;
+  min-width: 60px;
+}

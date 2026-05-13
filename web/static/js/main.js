@@ -372,3 +372,89 @@ function showFloatingSaveButton() {
   var btn = document.getElementById('float-save-btn');
   if (btn) btn.classList.add('visible');
 }
+
+// Controller name auto-save on change
+document.addEventListener('change', function(e) {
+  if (!e.target.classList.contains('ctrl-name-input')) return;
+  var idx = parseInt(e.target.dataset.idx);
+  var newName = e.target.value.trim();
+  if (!newName || !(window.state && window.state.sessionId)) return;
+
+  fetch('/api/session/' + window.state.sessionId + '/controller-name', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ block_index: idx, name: newName }),
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(result) {
+    if (result.ok) {
+      e.target.style.borderColor = 'var(--green)';
+      e.target.style.background = '#f1f8f1';
+      setTimeout(function() {
+        e.target.style.borderColor = 'transparent';
+        e.target.style.background = 'transparent';
+      }, 1200);
+    }
+  })
+  .catch(function() {});
+});
+
+// Double-click group tag names to edit inline
+document.addEventListener('dblclick', function(e) {
+  var tagEl = e.target.closest('.group-tag');
+  if (!tagEl || tagEl.querySelector('.group-tag-edit')) return;
+
+  var slotItem = tagEl.closest('.slot-item');
+  if (!slotItem) return;
+  var slot = parseInt(slotItem.dataset.originalSlot);
+  if (!slot) return;
+
+  var blockSection = slotItem.closest('.block-section');
+  var blockIdx = blockSection ? parseInt(blockSection.dataset.blockIdx) : 0;
+
+  var currentText = tagEl.textContent.trim();
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'group-tag-edit';
+  input.value = currentText;
+  input.style.width = Math.max(currentText.length * 10 + 20, 80) + 'px';
+
+  var commit = function() {
+    var newTag = input.value.trim();
+    if (newTag && newTag !== currentText && window.state && window.state.sessionId) {
+      fetch('/api/session/' + window.state.sessionId + '/group-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ block_index: blockIdx, slot: slot, tag: newTag }),
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(result) {
+        if (result.ok) {
+          tagEl.textContent = newTag;
+        }
+      })
+      .catch(function() {});
+    }
+    input.remove();
+  };
+
+  var cancel = function() {
+    input.remove();
+  };
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', function(ke) {
+    if (ke.key === 'Enter') { ke.preventDefault(); commit(); }
+    if (ke.key === 'Escape') { ke.preventDefault(); cancel(); }
+  });
+
+  tagEl.appendChild(input);
+  input.focus();
+  input.select();
+});
+
+// Cancel any active tag edit when a drag starts
+document.addEventListener('dragstart', function() {
+  var active = document.querySelector('.group-tag-edit');
+  if (active) active.remove();
+});

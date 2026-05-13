@@ -56,16 +56,20 @@ function onUploaded(data) {
   state.sessionId = data.session_id;
 
   const list = document.getElementById('controller-list');
-  const rows = data.blocks.map(b =>
-    `<tr>
-      <td>${escHtml(b.name)}</td>
-      <td><span class="badge">${escHtml(b.controller_type)}</span></td>
-      <td>${b.groups.length} groups</td>
-    </tr>`
-  ).join('');
-  list.innerHTML = `<table class="info-table"><thead><tr>
-    <th>Controller Name</th><th>Type</th><th>Groups</th>
-  </tr></thead><tbody>${rows}</tbody></table>`;
+  list.innerHTML = '';
+
+  data.blocks.forEach((block, idx) => {
+    const div = document.createElement('div');
+    div.className = 'block-section';
+    div.dataset.blockIdx = idx;
+    div.innerHTML = `
+      <div class="block-header">
+        <input type="text" class="ctrl-name-input" value="${escHtml(block.name)}" data-idx="${idx}" title="Edit controller name — saved to .dat and JSON exports">
+        <span class="badge">${escHtml(block.controller_type)}</span>
+        <span class="muted-text">${block.groups.length} groups</span>
+      </div>`;
+    list.appendChild(div);
+  });
 
   document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
