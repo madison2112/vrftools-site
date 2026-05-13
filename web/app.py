@@ -4,6 +4,7 @@ Central Controller Config Tools — Flask web application.
 import base64
 import io
 import os
+import xml.etree.ElementTree as ET
 import zipfile
 
 import requests as req_lib
@@ -121,6 +122,71 @@ def _send_zip(data: bytes, filename: str):
         as_attachment=True,
         download_name=filename,
     )
+
+
+def _rebuild_dat_with_names(dat_data: bytes, blocks: list, group_names_by_block: dict) -> bytes:
+    """
+    Rebuild a .dat file with updated controller names (from blocks)
+    and group tag names (from group_names_by_block).
+    Returns new .dat bytes, or the original if nothing changed.
+    """
+    from lib.dat_utils import generate_dat_bytes, apply_group_names
+    from lib.zipcrypto import build_dat_bytes, PASSWORD
+
+    controllers = parse_dat_controllers(dat_data)
+    changed = False
+
+    for i, ctrl in enumerate(controllers):
+        xml = ctrl["xml_bytes"]
+
+        # Apply controller name
+        if i < len(blocks):
+            new_name = blocks[i].get("name", "")
+            if new_name and new_name != ctrl.get("name", ""):
+                try:
+                    root = ET.fromstring(xml)
+                    sd = root.find(".//SystemData")
+                    if sd is not None:
+                        sd.set("Name", new_name)
+                    buf = io.BytesIO()
+                    ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
+                    xml = buf.getvalue()
+                    ctrl["name"] = new_name
+                    changed = True
+                except ET.ParseError:
+                    pass
+
+        # Apply group tag names
+        tag_map = group_names_by_block.get(str(i), {})
+        int_map = {int(k): v for k, v in tag_map.items()}
+        if int_map:
+            xml = apply_group_names(xml, int_map)
+            changed = True
+
+        ctrl["xml_bytes"] = xml
+
+    if not changed:
+        return dat_data
+
+    entries = []
+    for ctrl in controllers:
+        entries.append((ctrl["entry"], ctrl["xml_bytes"], True))
+
+    with pyzipper.AESZipFile(io.BytesIO(dat_data)) as z:
+        ctrl_entry_names = {c["entry"] for c in controllers}
+        for name in z.namelist():
+            if name in ctrl_entry_names:
+                continue
+            if name.endswith("/"):
+                entries.append((name, None, False))
+            else:
+                try:
+                    data = z.read(name, pwd=PASSWORD)
+                except Exception:
+                    data = z.read(name)
+                entries.append((name, data, True))
+
+    return build_dat_bytes(entries)
 
 
 # ---------------------------------------------------------------------------
@@ -660,6 +726,15 @@ def api_download_dsbx_to_dat(sid):
             except Exception:
                 pass  # rearrangement failure is non-fatal
 
+    # Apply user-edited controller names and group tag names
+    blocks = s.get("blocks", [])
+    group_names_by_block = s.get("group_names", {})
+    for i, r in enumerate(results):
+        try:
+            r["data"] = _rebuild_dat_with_names(r["data"], blocks[i:i+1], {str(i): group_names_by_block.get(str(i), {})})
+        except Exception:
+            pass  # name application failure is non-fatal
+
     if len(results) == 1:
         r = results[0]
         return _send_dat(r["data"], r["name"] + ".dat")
@@ -875,21 +950,25 @@ def api_download_rearrange(sid):
     blocks = s.get("blocks", [])
     orders = {i: s.get(f"order_{i}") for i in range(len(blocks)) if s.get(f"order_{i}")}
 
+    # Apply user-edited controller names and group tag names
+    group_names_by_block = s.get("group_names", {})
+    dat_data = _rebuild_dat_with_names(s["dat_data"], blocks, group_names_by_block)
+
     try:
         if export == "individual":
-            results = rearrange_and_split_dat_bytes(s["dat_data"], orders)
+            results = rearrange_and_split_dat_bytes(dat_data, orders)
             if len(results) == 1:
                 return _send_dat(results[0]["data"], f"{results[0]['name']}_rearranged.dat")
             return _send_zip(_zip_results(results), "rearranged_controllers.zip")
 
         elif export == "converted":
-            results = rearrange_and_convert_dat_bytes(s["dat_data"], orders)
+            results = rearrange_and_convert_dat_bytes(dat_data, orders)
             if len(results) == 1:
                 return _send_dat(results[0]["data"], f"{results[0]['name']}.dat")
             return _send_zip(_zip_results(results), "converted_controllers.zip")
 
         else:  # packaged (default)
-            result = rearrange_and_repackage_dat_bytes(s["dat_data"], orders)
+            result = rearrange_and_repackage_dat_bytes(dat_data, orders)
             base = _safe_filename(blocks[0]["name"]) if blocks else "rearranged"
             fname = f"{base}_rearranged.dat" if len(blocks) == 1 else "rearranged.dat"
             return _send_dat(result, fname)
@@ -908,8 +987,12 @@ def api_download_convert(sid):
     if not s or s.get("type") != "dat":
         abort(404, "Session not found or expired.")
 
+    blocks = s.get("blocks", [])
+    group_names_by_block = s.get("group_names", {})
+    dat_data = _rebuild_dat_with_names(s["dat_data"], blocks, group_names_by_block)
+
     try:
-        results = convert_dat_bytes(s["dat_data"])
+        results = convert_dat_bytes(dat_data)
     except Exception as e:
         abort(500, f"Conversion failed: {e}")
 
@@ -930,8 +1013,12 @@ def api_download_split(sid):
     if not s or s.get("type") != "dat":
         abort(404, "Session not found or expired.")
 
+    blocks = s.get("blocks", [])
+    group_names_by_block = s.get("group_names", {})
+    dat_data = _rebuild_dat_with_names(s["dat_data"], blocks, group_names_by_block)
+
     try:
-        results = split_dat_bytes(s["dat_data"])
+        results = split_dat_bytes(dat_data)
     except ValueError as e:
         abort(400, str(e))
     except Exception as e:

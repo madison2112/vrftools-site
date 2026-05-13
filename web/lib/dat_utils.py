@@ -403,3 +403,27 @@ def sort_groups_by_tag(cards: list) -> list:
         (c["tag"] for c in cards if c["slot"] == s), ""))
 
     return ic_sorted + other + lc_slots
+
+
+def apply_group_names(xml_bytes: bytes, tag_map: dict) -> bytes:
+    """
+    Apply edited group tag names to an XML document.
+    tag_map: {old_slot: new_tag_name} where slot is int
+    Returns updated XML bytes, or original if nothing changed.
+    """
+    if not tag_map:
+        return xml_bytes
+
+    root = ET.fromstring(xml_bytes)
+    cg = root.find(".//ControlGroup")
+    if cg is None:
+        return xml_bytes
+
+    for record in cg.findall(".//MnetRecord"):
+        group = record.get("Group")
+        if group and int(group) in tag_map:
+            record.set("GroupNameWeb", tag_map[int(group)])
+
+    out = io.BytesIO()
+    ET.ElementTree(root).write(out, encoding="utf-8", xml_declaration=True)
+    return out.getvalue()
