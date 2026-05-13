@@ -964,6 +964,73 @@ def api_sort_groups(sid):
     return jsonify({"ok": True, "new_order": new_order})
 
 
+@app.route("/api/session/<sid>/controller-name", methods=["POST"])
+def api_update_controller_name(sid):
+    s = sessions.get(sid)
+    if not s:
+        abort(404, "Session not found or expired.")
+
+    body = request.get_json(force=True) or {}
+    block_idx = body.get("block_index", 0)
+    new_name = str(body.get("name", "")).strip()
+
+    if not new_name:
+        abort(400, "Controller name cannot be empty.")
+
+    blocks = s.get("blocks", [])
+    if block_idx >= len(blocks):
+        abort(400, "Invalid block index.")
+
+    blocks[block_idx]["name"] = new_name
+    sessions.update(sid, {"blocks": blocks})
+
+    names = s.get("controller_names", {})
+    names[str(block_idx)] = new_name
+    sessions.update(sid, {"controller_names": names})
+
+    return jsonify({"ok": True, "name": new_name})
+
+
+@app.route("/api/session/<sid>/group-name", methods=["POST"])
+def api_update_group_name(sid):
+    s = sessions.get(sid)
+    if not s:
+        abort(404, "Session not found or expired.")
+
+    body = request.get_json(force=True) or {}
+    block_idx = body.get("block_index", 0)
+    slot = body.get("slot")
+    new_tag = str(body.get("tag", "")).strip()
+
+    if not new_tag:
+        abort(400, "Group tag name cannot be empty.")
+    if not isinstance(slot, int) or slot < 1:
+        abort(400, "Invalid slot number.")
+
+    blocks = s.get("blocks", [])
+    if block_idx >= len(blocks):
+        abort(400, "Invalid block index.")
+
+    groups = blocks[block_idx].get("groups", [])
+    updated = False
+    for g in groups:
+        if g.get("slot") == slot:
+            g["tag"] = new_tag
+            updated = True
+            break
+
+    if not updated:
+        abort(400, f"Slot {slot} not found in block {block_idx}.")
+
+    sessions.update(sid, {"blocks": blocks})
+
+    group_names = s.get("group_names", {})
+    group_names.setdefault(str(block_idx), {})[str(slot)] = new_tag
+    sessions.update(sid, {"group_names": group_names})
+
+    return jsonify({"ok": True, "tag": new_tag})
+
+
 # ---------------------------------------------------------------------------
 # API — DAT↔JSON (codetest only)
 # ---------------------------------------------------------------------------
