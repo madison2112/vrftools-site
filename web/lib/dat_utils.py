@@ -389,9 +389,15 @@ def rearrange_and_convert_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
 
 def sort_groups_by_tag(cards: list) -> list:
     """
-    Return a new_order list that sorts IC/AIC groups by tag name,
-    followed by LC groups, preserving internal order within each category.
+    Return a new_order list that sorts IC/AIC groups by tag name using natural
+    sort (IDU-1, IDU-2, IDU-10, IDU-11 — not IDU-1, IDU-10, IDU-11, IDU-2).
+    LC groups follow, preserving internal order within each category.
     """
+    import re
+
+    def _natural_key(s):
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
+
     ic_slots = [c["slot"] for c in cards
                 if c["unit_types"] and c["unit_types"][0] in ("IC", "AIC")]
     lc_slots = [c["slot"] for c in cards
@@ -399,8 +405,8 @@ def sort_groups_by_tag(cards: list) -> list:
     other    = [c["slot"] for c in cards
                 if c["slot"] not in ic_slots and c["slot"] not in lc_slots]
 
-    ic_sorted = sorted(ic_slots, key=lambda s: next(
-        (c["tag"] for c in cards if c["slot"] == s), ""))
+    ic_sorted = sorted(ic_slots, key=lambda s: _natural_key(
+        next((c["tag"] for c in cards if c["slot"] == s), "")))
 
     return ic_sorted + other + lc_slots
 

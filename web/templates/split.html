@@ -5,20 +5,11 @@
 {% block content %}
 <h1 class="page-title">Database Decoupler</h1>
 <p class="page-subtitle">Split a multi-controller .dat database file into individual files, one per controller.</p>
+<a href="/config-tools" class="back-link">&larr; Back to Tools</a>
 
-<div class="card">
-  <div class="card-title">Upload Configuration File</div>
-  <div class="drop-zone" id="drop-zone" data-accept=".dat">
-    <div class="icon">&#128196;</div>
-    <p>Drag &amp; drop your <strong>.dat</strong> file here, or click to browse</p>
-    <small>Multi-controller database &mdash; maximum 5 MB</small>
-    <input type="file" id="file-input" accept=".dat" style="display:none">
-  </div>
-  <div id="upload-error" class="alert alert-error" style="display:none"></div>
-</div>
-
-<div id="bug-btn-pre" class="bug-link-wrap">
-  <a href="/contact?type=issue&tool=database-decoupler" class="bug-link">🐜 Report a Bug</a>
+<div class="instruct-card">
+  <div class="instruct-title">How to Use</div>
+  <p>Upload a <strong>.dat</strong> file on the <a href="/config-tools">Central Controller Config Tools</a> page, then click <strong>Database Decoupler</strong> to open it here. Each controller will be extracted into its own .dat file and packaged in a ZIP archive. You can edit the controller names before downloading.</p>
 </div>
 
 <div id="results-section" style="display:none">
@@ -42,11 +33,10 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-const state = { sessionId: null };
+window.state = { sessionId: null };
 initFloatingSaveButton('split');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
-setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
 
 function onUploaded(data) {
   if (!data.multi) {
@@ -71,7 +61,6 @@ function onUploaded(data) {
     list.appendChild(div);
   });
 
-  document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
 }

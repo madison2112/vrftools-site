@@ -314,7 +314,19 @@ function hideError(id) {
 // JSON export / session preload (codetest feature)
 // ---------------------------------------------------------------------------
 
-function exportJson(sessionId, tool) {
+async function exportJson(sessionId, tool) {
+  // Flush any pending slot-order saves before exporting so the JSON captures
+  // the latest card arrangement.  Without this the server still sees the
+  // pre-drag order when it builds the export payload.
+  if (window.state && window.state.gridCols) {
+    var saves = Object.entries(window.state.gridCols).map(function(entry) {
+      var idx  = parseInt(entry[0]);
+      var cols = entry[1];
+      return _persistSlotOrder(idx, cols.col1, cols.col2);
+    });
+    await Promise.all(saves);
+  }
+
   fetch('/api/export-json', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -328,7 +340,7 @@ function exportJson(sessionId, tool) {
     const url = URL.createObjectURL(blob);
     const a   = document.createElement('a');
     a.href     = url;
-    a.download = 'config_export.json';
+    a.download = 'vrf-tools_session.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

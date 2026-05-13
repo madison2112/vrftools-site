@@ -4,32 +4,22 @@
 
 {% block content %}
 <h1 class="page-title">DSBX to DAT</h1>
-<p class="page-subtitle">Upload a DSB file and download the ready-to-load controller configuration.</p>
+<p class="page-subtitle">Upload a DSB file and download the ready-to-load controller configuration. <a href="/config-tools" class="back-link">&larr; Back to Tools</a></p>
 
-<div class="card" id="upload-card">
-  <div class="card-title">1. Upload Design Build File</div>
-  <div class="drop-zone" id="drop-zone" data-accept=".dsbx">
-    <div class="icon">&#128196;</div>
-    <p>Drag &amp; drop your <strong>.dsbx</strong> file here, or click to browse</p>
-    <small>Maximum 5 MB</small>
-    <input type="file" id="file-input" accept=".dsbx" style="display:none">
-  </div>
-  <div id="upload-error" class="alert alert-error" style="display:none"></div>
-</div>
-
-<div id="bug-btn-pre" class="bug-link-wrap">
-  <a href="/contact?type=issue&tool=dsbx-to-dat" class="bug-link">🐜 Report a Bug</a>
+<div class="instruct-card">
+  <div class="instruct-title">How to Use</div>
+  <p>Upload a <strong>.dsbx</strong> file on the <a href="/config-tools">Central Controller Config Tools</a> page, then click <strong>DSBX to DAT</strong> to open it here. Groups are auto-populated from the DSB data. You can <strong>double-click any group tag name</strong> to edit it inline, and <strong>click the controller name</strong> above the grid to rename it. Both are saved to the .dat and JSON exports. Drag cards to reorder groups before downloading.</p>
 </div>
 
 <div id="results-section" style="display:none">
 
   <div class="card">
-    <div class="card-title">2. Review &amp; Optionally Rearrange Groups</div>
+    <div class="card-title">1. Review &amp; Optionally Rearrange Groups</div>
     <div id="blocks-container"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">3. Download</div>
+    <div class="card-title">2. Download</div>
     <p class="muted-text" style="margin-bottom:16px">Choose the target tool version. If your project has multiple controller blocks, a ZIP file will be returned.</p>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-download-c400">Download for AE-C400 Tool</button>
@@ -48,8 +38,6 @@
 window.state = { sessionId: null };
 initFloatingSaveButton('dsbx-to-dat');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
-
-setupDropZone('drop-zone', 'file-input', '/api/upload/dsbx', onUploaded);
 
 function onUploaded(data) {
   state.sessionId = data.session_id;
@@ -72,7 +60,6 @@ function onUploaded(data) {
     initSlotGrid(`group-grid-${idx}`, idx);
   });
 
-  document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
 }

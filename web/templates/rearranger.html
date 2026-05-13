@@ -5,20 +5,11 @@
 {% block content %}
 <h1 class="page-title">Group Rearranger</h1>
 <p class="page-subtitle">Upload a .dat file, drag groups into your preferred order, then download.</p>
+<a href="/config-tools" class="back-link">&larr; Back to Tools</a>
 
-<div class="card" id="upload-card">
-  <div class="card-title">1. Upload Configuration File</div>
-  <div class="drop-zone" id="drop-zone" data-accept=".dat">
-    <div class="icon">&#128196;</div>
-    <p>Drag &amp; drop your <strong>.dat</strong> file here, or click to browse</p>
-    <small>Single or multi-controller .dat &mdash; maximum 5 MB</small>
-    <input type="file" id="file-input" accept=".dat" style="display:none">
-  </div>
-  <div id="upload-error" class="alert alert-error" style="display:none"></div>
-</div>
-
-<div id="bug-btn-pre" class="bug-link-wrap">
-  <a href="/contact?type=issue&tool=rearranger" class="bug-link">🐜 Report a Bug</a>
+<div class="instruct-card">
+  <div class="instruct-title">How to Use</div>
+  <p>Upload a <strong>.dat</strong> file on the <a href="/config-tools">Central Controller Config Tools</a> page, then click <strong>Group Rearranger</strong> to open it here. Drag and drop group cards into the numbered slot positions. Slot numbers stay fixed — groups are automatically renumbered when dropped. Double-click a group tag name to edit it inline, and click the controller name above the grid to rename it. Download the rearranged configuration when finished.</p>
 </div>
 
 <div id="results-section" style="display:none">
@@ -32,7 +23,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">3. Download</div>
+    <div class="card-title">2. Download</div>
     <p class="muted-text" style="margin-bottom:16px">Choose how to export the rearranged configuration.</p>
     <div class="btn-row">
       <button class="btn btn-primary"  id="btn-dl-packaged">Download Packaged .dat</button>
@@ -52,8 +43,6 @@
 window.state = { sessionId: null };
 initFloatingSaveButton('rearranger');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
-
-setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
 
 function onUploaded(data) {
   state.sessionId = data.session_id;
@@ -77,7 +66,6 @@ function onUploaded(data) {
     initSlotGrid(`group-grid-${idx}`, idx);
   });
 
-  document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
 }

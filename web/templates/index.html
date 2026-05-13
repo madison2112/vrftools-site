@@ -23,6 +23,14 @@
   <div id="upload-error" class="alert alert-error" style="display:none"></div>
 </div>
 
+<div id="resume-card" class="resume-card" data-href="" style="display:none">
+  <div class="resume-icon">&#128190;</div>
+  <div class="resume-body">
+    <div class="resume-title">Resume Session</div>
+    <div class="resume-hint">Upload a VRF Tools JSON file to restore your saved session — groups, rearrangements, and names are all preserved.</div>
+  </div>
+</div>
+
 <div class="tool-grid-square">
 
   <div class="tool-card-square" data-tool="dsbx-to-dat" data-href="{{ url_for('page_dsbx_to_dat') }}">
@@ -59,7 +67,15 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-window.state = { sessionId: null, applicableTools: [] };
+window.state = { sessionId: null, applicableTools: [], jsonRedirect: null };
+
+// File-type labels for the "no file uploaded" popup per tool
+var TOOL_FILE_TYPE = {
+  'dsbx-to-dat': '.dsbx',
+  'rearranger': '.dat',
+  'convert':    '.dat',
+  'split':      '.dat'
+};
 
 const TOOL_INFO = {
   'dsbx-to-dat': {
@@ -87,14 +103,33 @@ const TOOL_INFO = {
 setupDropZone('drop-zone', 'file-input', '/api/upload/config-hub', onHubUploaded);
 
 function onHubUploaded(data) {
-  // .json: auto-redirect to the originating tool page
+  // .json: highlight the Resume Session card — user clicks it to navigate
   if (data.redirect) {
-    window.location.href = data.redirect;
+    state.sessionId = data.session_id;
+    state.jsonRedirect = data.redirect;
+    state.applicableTools = [];
+
+    // Clear tool card highlights
+    document.querySelectorAll('.tool-card-square').forEach(function(c) {
+      c.classList.remove('highlighted');
+    });
+
+    // Show and highlight the resume card
+    var resume = document.getElementById('resume-card');
+    resume.style.display = '';
+    resume.dataset.href = data.redirect;
+    resume.classList.add('highlighted');
     return;
   }
 
   state.sessionId = data.session_id;
   state.applicableTools = data.applicable_tools || [];
+  state.jsonRedirect = null;
+
+  // Hide resume card if it was showing
+  var resume = document.getElementById('resume-card');
+  resume.style.display = 'none';
+  resume.classList.remove('highlighted');
 
   // Clear all highlights
   document.querySelectorAll('.tool-card-square').forEach(function(c) {
@@ -107,6 +142,11 @@ function onHubUploaded(data) {
     if (card) card.classList.add('highlighted');
   });
 }
+
+// Resume Session card click
+document.getElementById('resume-card').addEventListener('click', function() {
+  if (this.dataset.href) window.location.href = this.dataset.href;
+});
 
 // Info popup buttons
 document.querySelectorAll('.info-btn').forEach(function(btn) {
@@ -150,14 +190,15 @@ document.querySelectorAll('.tool-card-square').forEach(function(card) {
       return;
     }
 
-    // Session exists but tool isn't applicable — flash red on THIS card
+    // Session exists but tool isn't applicable — flash red
     if (state.sessionId && state.applicableTools.indexOf(tool) === -1) {
       flashCardWarning(card, 'This file type cannot be used with this tool.');
       return;
     }
 
-    // No session — flash red with upload prompt
-    flashCardWarning(card, 'Upload a file before selecting tools.');
+    // No session — per-tool file type message
+    var ext = TOOL_FILE_TYPE[tool] || '.dat';
+    flashCardWarning(card, 'Upload a <strong>' + ext + '</strong> file before accessing this tool.');
   });
 });
 
@@ -166,7 +207,7 @@ function flashCardWarning(card, message) {
   showInfoPopup({
     title: 'Upload Required',
     problem: message,
-    solution: 'Upload a .dsbx, .dat, or .json file in the upload box above, then click the highlighted cards.'
+    solution: 'Upload the required file type in the upload box above, then click the highlighted card.'
   });
 
   setTimeout(function() {

@@ -5,20 +5,11 @@
 {% block content %}
 <h1 class="page-title">Generation Change</h1>
 <p class="page-subtitle">Automatically convert a .dat file between AE-200 and AE-C400A tool versions.</p>
+<a href="/config-tools" class="back-link">&larr; Back to Tools</a>
 
-<div class="card">
-  <div class="card-title">Upload Configuration File</div>
-  <div class="drop-zone" id="drop-zone" data-accept=".dat">
-    <div class="icon">&#128196;</div>
-    <p>Drag &amp; drop your <strong>.dat</strong> file here, or click to browse</p>
-    <small>AE-200, EW-50, AE-C400A, or EW-C50 &mdash; maximum 5 MB</small>
-    <input type="file" id="file-input" accept=".dat" style="display:none">
-  </div>
-  <div id="upload-error" class="alert alert-error" style="display:none"></div>
-</div>
-
-<div id="bug-btn-pre" class="bug-link-wrap">
-  <a href="/contact?type=issue&tool=generation-change" class="bug-link">🐜 Report a Bug</a>
+<div class="instruct-card">
+  <div class="instruct-title">How to Use</div>
+  <p>Upload a <strong>.dat</strong> file on the <a href="/config-tools">Central Controller Config Tools</a> page, then click <strong>Generation Change</strong> to open it here. The controller family is detected automatically and converted to its opposite generation (AE-200 &#8644; AE-C400A, EW-50 &#8644; EW-C50). You can edit the controller name before downloading.</p>
 </div>
 
 <div id="results-section" style="display:none">
@@ -42,11 +33,10 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-const state = { sessionId: null };
+window.state = { sessionId: null };
 initFloatingSaveButton('convert');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
-setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
 
 const OPPOSITE = {
   'AE-200': 'AE-C400A', 'AE-C400A': 'AE-200',
@@ -74,7 +64,6 @@ function onUploaded(data) {
     info.appendChild(div);
   });
 
-  document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
 }

@@ -424,7 +424,7 @@ footer a:hover { text-decoration: underline; }
 /* ── Square tool cards (hub page) ── */
 .tool-grid-square {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 .tool-card-square {
@@ -484,6 +484,9 @@ footer a:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 .tool-card-square .info-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   background: var(--light-gray);
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -498,7 +501,7 @@ footer a:hover { text-decoration: underline; }
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
-  margin-top: 6px;
+  margin: 0;
 }
 .tool-card-square .info-btn:hover {
   background: var(--dark);
@@ -548,6 +551,46 @@ footer a:hover { text-decoration: underline; }
   font-size: 0.85rem;
 }
 
+/* Resume Session card (wide, short, above tool grid on hub page) */
+.resume-card {
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 16px;
+}
+.resume-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+.resume-card.highlighted {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(46,125,50,0.15);
+  background: #f1f8f1;
+}
+.resume-card .resume-icon {
+  font-size: 1.6rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.resume-card.highlighted .resume-icon { color: var(--green); }
+.resume-card .resume-body { flex: 1; }
+.resume-card .resume-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.resume-card .resume-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.resume-card.highlighted .resume-title { color: var(--green); }
+
 @keyframes popupFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── Floating save button ── */
@@ -581,8 +624,8 @@ footer a:hover { text-decoration: underline; }
 .ctrl-name-input {
   font-weight: 700;
   font-size: 1rem;
-  border: 1px solid transparent;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--light-gray);
   padding: 2px 6px;
   border-radius: 4px;
   max-width: 350px;
@@ -591,8 +634,8 @@ footer a:hover { text-decoration: underline; }
   color: var(--dark);
 }
 .ctrl-name-input:hover {
-  border-color: var(--border);
-  background: #fafafa;
+  border-color: var(--gray);
+  background: #e8e8e8;
 }
 .ctrl-name-input:focus {
   outline: none;
@@ -618,4 +661,44 @@ footer a:hover { text-decoration: underline; }
   color: var(--dark);
   outline: none;
   min-width: 60px;
+}
+
+/* ── Back to tools link ── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 16px;
+  transition: color 0.15s;
+}
+.back-link:hover { color: var(--red); }
+
+/* ── Tool instructions card ── */
+.instruct-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--dark);
+}
+.instruct-card .instruct-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gray);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+
+/* ── Responsive hub cards ── */
+@media (max-width: 900px) {
+  .tool-grid-square { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 }
