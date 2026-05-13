@@ -861,8 +861,28 @@ def api_upload_config_hub():
         for idx_str, order in orders.items():
             session_data[f"order_{idx_str}"] = order
         if controller_names:
+            # Apply saved controller names to blocks
+            for idx_str, name in controller_names.items():
+                try:
+                    idx = int(idx_str)
+                    if idx < len(session_data.get("blocks", [])):
+                        session_data["blocks"][idx]["name"] = name
+                except (ValueError, KeyError):
+                    pass
             session_data["controller_names"] = controller_names
         if group_names:
+            # Apply saved group tag names to blocks
+            for block_idx_str, slots in group_names.items():
+                try:
+                    block_idx = int(block_idx_str)
+                    blocks_list = session_data.get("blocks", [])
+                    if block_idx < len(blocks_list):
+                        for slot_str, tag in slots.items():
+                            for g in blocks_list[block_idx].get("groups", []):
+                                if g.get("slot") == int(slot_str):
+                                    g["tag"] = tag
+                except (ValueError, KeyError):
+                    pass
             session_data["group_names"] = group_names
 
         sid = sessions.create(session_data)

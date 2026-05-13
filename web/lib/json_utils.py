@@ -30,6 +30,16 @@ def export_session_json(session_data: dict, tool: str, secret: bytes) -> bytes:
         if key.startswith("order_"):
             orders[key[6:]] = val  # strip "order_" prefix; key becomes string index
 
+    controller_names = session_data.get("controller_names", {})
+    group_names = session_data.get("group_names", {})
+
+    # Also capture current names from blocks (in case they weren't saved to
+    # the dedicated dicts yet)
+    for i, b in enumerate(blocks_clean):
+        name = b.get("name", "")
+        if name and str(i) not in controller_names:
+            controller_names[str(i)] = name
+
     raw = (
         session_data.get("dsbx_data", b"")
         if session_data.get("type") == "dsbx"
@@ -37,12 +47,14 @@ def export_session_json(session_data: dict, tool: str, secret: bytes) -> bytes:
     )
 
     payload = {
-        "v":          1,
-        "tool":       tool,
-        "multi":      session_data.get("multi", False),
-        "source_b64": base64.b64encode(raw).decode(),
-        "blocks":     blocks_clean,
-        "orders":     orders,
+        "v":               1,
+        "tool":            tool,
+        "multi":           session_data.get("multi", False),
+        "source_b64":      base64.b64encode(raw).decode(),
+        "blocks":          blocks_clean,
+        "orders":          orders,
+        "controller_names": controller_names,
+        "group_names":     group_names,
     }
 
     payload["hmac"] = _compute_hmac(payload, secret)
