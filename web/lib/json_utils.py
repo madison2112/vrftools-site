@@ -15,26 +15,30 @@ def _compute_hmac(payload_without_hmac: dict, secret: bytes) -> str:
     return _hmac.new(secret, _canonical(payload_without_hmac), hashlib.sha256).hexdigest()
 
 
-def export_session_json(session_data: dict, tool: str, secret: bytes) -> bytes:
-    """Build a signed, portable JSON payload from a live session."""
+def export_session_json(export_blocks: list, session_data: dict,
+                        tool: str, secret: bytes) -> bytes:
+    """
+    Build a signed, portable JSON payload from canonical export blocks.
+
+    export_blocks comes from _gather_export_state(s) — it already has
+    controller names, group tag names, and rearrangement orders applied.
+    """
     blocks_clean = []
-    for b in session_data.get("blocks", []):
+    for block in export_blocks:
         blocks_clean.append({
-            "name":            b.get("name", ""),
-            "controller_type": b.get("controller_type", ""),
-            "groups":          b.get("groups", []),
+            "name":            block.get("name", ""),
+            "controller_type": block.get("controller_type", ""),
+            "groups":          block.get("groups", []),
         })
 
+    # Orders are already encoded in the group positions — no need to
+    # export raw order_N lists.
     orders = {}
-    for key, val in session_data.items():
-        if key.startswith("order_"):
-            orders[key[6:]] = val  # strip "order_" prefix; key becomes string index
 
     controller_names = session_data.get("controller_names", {})
     group_names = session_data.get("group_names", {})
 
-    # Also capture current names from blocks (in case they weren't saved to
-    # the dedicated dicts yet)
+    # Capture current names from blocks
     for i, b in enumerate(blocks_clean):
         name = b.get("name", "")
         if name and str(i) not in controller_names:
