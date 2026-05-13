@@ -347,3 +347,28 @@ function preloadSession(sid, onSuccess) {
     })
     .catch(() => {});
 }
+
+function initFloatingSaveButton(toolName) {
+  var existing = document.getElementById('float-save-btn');
+  if (existing) existing.remove();
+
+  var btn = document.createElement('button');
+  btn.id = 'float-save-btn';
+  btn.className = 'float-save-btn';
+  btn.innerHTML = '<span class="save-icon">&#128190;</span> Save Session / Share';
+  btn.title = 'Export this session as a shareable JSON file';
+
+  btn.addEventListener('click', function() {
+    if (window.state && window.state.sessionId) {
+      exportJson(window.state.sessionId, toolName);
+    }
+  });
+
+  document.body.appendChild(btn);
+  return btn;
+}
+
+function showFloatingSaveButton() {
+  var btn = document.getElementById('float-save-btn');
+  if (btn) btn.classList.add('visible');
+}

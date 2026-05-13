@@ -32,7 +32,6 @@
     <p class="muted-text" style="margin-bottom:16px">The source family will be detected automatically and converted to its opposite type (AE-200 &#8644; AE-C400A, EW-50 &#8644; EW-C50).</p>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-download">Download Converted DAT</button>
-      {% if codetest %}<button class="btn btn-outline" id="btn-export-json">Export as JSON to Share</button>{% endif %}
       <a href="/contact?type=issue&tool=generation-change" class="bug-link bug-link--inline">🐜 Report a Bug</a>
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
@@ -44,6 +43,7 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 const state = { sessionId: null };
+initFloatingSaveButton('convert');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
 setupDropZone('drop-zone', 'file-input', '/api/upload/dat', onUploaded);
@@ -72,18 +72,13 @@ function onUploaded(data) {
 
   document.getElementById('bug-btn-pre').style.display = 'none';
   document.getElementById('results-section').style.display = '';
+  showFloatingSaveButton();
 }
 
 document.getElementById('btn-download').addEventListener('click', () => {
   if (!state.sessionId) return;
   window.location.href = `/api/download/convert/${state.sessionId}`;
 });
-{% if codetest %}
-document.getElementById('btn-export-json').addEventListener('click', () => {
-  if (!state.sessionId) return;
-  exportJson(state.sessionId, 'convert');
-});
-{% endif %}
 
 if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);
 </script>
