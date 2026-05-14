@@ -31,9 +31,13 @@ def export_session_json(export_blocks: list, session_data: dict,
             "groups":          block.get("groups", []),
         })
 
-    # Orders are already encoded in the group positions — no need to
-    # export raw order_N lists.
+    # PACK both the remapped blocks AND the raw orders — blocks show the
+    # final arrangement for human readers, orders are what the import
+    # actually uses to reconstruct slot positions.
     orders = {}
+    for key, val in session_data.items():
+        if key.startswith("order_"):
+            orders[key[6:]] = val  # strip "order_" prefix; key becomes string index
 
     controller_names = session_data.get("controller_names", {})
     group_names = session_data.get("group_names", {})
