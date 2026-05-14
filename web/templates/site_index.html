@@ -11,58 +11,95 @@
     <p class="page-subtitle">Unofficial Mitsubishi HVAC utilities, built by <a href="https://madisoninnovations.com" target="_blank" rel="noopener" class="brand-link">Madison Innovations</a>.</p>
   </div>
 
-  <div class="home-tool-list">
+  <div class="home-tool-grid">
 
-    <a class="home-tool-row" href="/mtdz/">
-      <div class="home-tool-left">
-        <div class="home-tool-link">
-          <span class="home-tool-icon">📊</span>
-          <div>
-            <div class="home-tool-name">MTDZ Viewer</div>
-            <div class="home-tool-meta">Free &middot; Browser-based</div>
-          </div>
-        </div>
-      </div>
-      <div class="home-tool-right">
-        <p><span class="prob-label">The problem:</span> Mitsubishi Maintenance Tool captures detailed system data during startup and operation, but there is no way to view that data without having the software installed, and no graphing capability — making it difficult to present findings to engineers, facilities managers, or commissioning agents in a format they can work with. There is also no supported method to generate a startup report that can go into project closeout documents.</p>
-        <p><span class="sol-label">The solution:</span> Upload your .MTDZ, .MTLZ, or .MTPZ file and get interactive graphs for every ODU and IDU, a system topology map, and a Word document report exportable from project closeout documents — all without any software installation.</p>
-      </div>
+    {# Central Controller Config Tools — TOP #}
+    <a class="home-tool-card" href="/config-tools">
+      <button class="home-info-btn" data-popup="config-tools" aria-label="More info">i</button>
+      <div class="home-card-icon">🗂️</div>
+      <div class="home-card-name">Central Controller Config Tools</div>
+      <div class="home-card-meta">4 utilities &middot; Free &middot; Browser-based</div>
+      <p class="home-card-desc">Convert DSBX files to loading-ready DAT configs, reorder groups, change controller generations, split multi-controller databases, and save sessions for sharing — no manual data entry required.</p>
     </a>
 
-    <a class="home-tool-row" href="/lev-kit-configurator">
-      <div class="home-tool-left">
-        <div class="home-tool-link">
-          <span class="home-tool-icon">⚙️</span>
-          <div>
-            <div class="home-tool-name">LEV Kit Configurator</div>
-            <div class="home-tool-meta">Free &middot; Mobile-friendly</div>
-          </div>
-        </div>
-      </div>
-      <div class="home-tool-right">
-        <p><span class="prob-label">The problem:</span> LEV kit DIP switch settings are more complicated than standard FCUs and easy to get wrong in the field. There's also no good way to get those settings to a technician — the previous utility was an Excel file that required a PC, and techs were copying images from spreadsheets into submittal documents.</p>
-        <p><span class="sol-label">The solution:</span> A mobile-friendly configuration wizard that walks through the required settings and outputs a clean, easy-to-read switch setting table that can be copied and shared on the spot. On desktop, a batch editor lets you configure multiple units at once and outputs settings in a format ready to drop into submittal documents or mechanical prints.</p>
-      </div>
+    {# MTDZ Viewer — MIDDLE #}
+    <a class="home-tool-card" href="/mtdz/">
+      <button class="home-info-btn" data-popup="mtdz" aria-label="More info">i</button>
+      <div class="home-card-icon">📊</div>
+      <div class="home-card-name">MTDZ Viewer</div>
+      <div class="home-card-meta">Free &middot; Browser-based</div>
+      <p class="home-card-desc">Upload .MTDZ, .MTLZ, or .MTPZ maintenance tool data and get interactive graphs for every outdoor and indoor unit, a system topology map, and a Word document report exportable for project closeout documents — all without installing any software.</p>
     </a>
 
-    <a class="home-tool-row" href="/config-tools">
-      <div class="home-tool-left">
-        <div class="home-tool-link">
-          <span class="home-tool-icon">🗂️</span>
-          <div>
-            <div class="home-tool-name">Central Controller Config Tools</div>
-            <div class="home-tool-meta">4 utilities &middot; Free &middot; Browser-based</div>
-          </div>
-        </div>
-      </div>
-      <div class="home-tool-right">
-        <p><span class="prob-label">The problem:</span> Building a central controller config file requires manually entering the name and M-Net address for every group — data that already exists in the DSB file. Mistakes discovered mid-build often mean starting over, and common tasks like fixing group order, changing controller generations, or splitting a site database for field loading have no tooling support.</p>
-        <p><span class="sol-label">The solution:</span> Upload your DSB .dsbx file and download fully built, loading-ready config files for each centralized system — no manual data entry. Additional tools handle group reordering, generation conversion, and splitting multi-controller databases into individually loadable files.</p>
-      </div>
+    {# LEV Kit Configurator — BOTTOM #}
+    <a class="home-tool-card" href="/lev-kit-configurator">
+      <button class="home-info-btn" data-popup="lev-kit" aria-label="More info">i</button>
+      <div class="home-card-icon">⚙️</div>
+      <div class="home-card-name">LEV Kit Configurator</div>
+      <div class="home-card-meta">Free &middot; Mobile-friendly</div>
+      <p class="home-card-desc">A mobile-friendly configuration wizard that walks through required LEV kit DIP switch settings and outputs a clean switch-setting table. A desktop batch editor handles multiple units at once with submittal-ready output.</p>
     </a>
 
   </div>
 
   {% endblock %}
 </main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+var HOME_TOOL_INFO = {
+  'config-tools': {
+    title: 'Central Controller Config Tools',
+    problem: 'Building a central controller config file requires manually entering the name and M-Net address for every group — data that already exists in the DSB file. Mistakes discovered mid-build often mean starting over, and common tasks like fixing group order, changing controller generations, or splitting a site database for field loading have no tooling support.',
+    solution: 'Upload your DSB .dsbx file and download fully built, loading-ready config files for each centralized system — no manual data entry. Additional tools handle group reordering, generation conversion, and splitting multi-controller databases into individually loadable files.'
+  },
+  'mtdz': {
+    title: 'MTDZ Viewer',
+    problem: 'Mitsubishi Maintenance Tool captures detailed system data during startup and operation, but there is no way to view that data without having the software installed, and no graphing capability — making it difficult to present findings to engineers, facilities managers, or commissioning agents in a format they can work with. There is also no supported method to generate a startup report that can go into project closeout documents.',
+    solution: 'Upload your .MTDZ, .MTLZ, or .MTPZ file and get interactive graphs for every ODU and IDU, a system topology map, and a Word document report exportable for project closeout documents — all without any software installation.'
+  },
+  'lev-kit': {
+    title: 'LEV Kit Configurator',
+    problem: 'LEV kit DIP switch settings are more complicated than standard FCUs and easy to get wrong in the field. There\'s also no good way to get those settings to a technician — the previous utility was an Excel file that required a PC, and techs were copying images from spreadsheets into submittal documents.',
+    solution: 'A mobile-friendly configuration wizard that walks through the required settings and outputs a clean, easy-to-read switch setting table that can be copied and shared on the spot. On desktop, a batch editor lets you configure multiple units at once and outputs settings in a format ready to drop into submittal documents or mechanical prints.'
+  }
+};
+
+document.querySelectorAll('.home-info-btn').forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    var id = btn.dataset.popup;
+    var info = HOME_TOOL_INFO[id];
+    if (!info) return;
+    showHomeInfoPopup(info);
+  });
+});
+
+function showHomeInfoPopup(info) {
+  var overlay = document.createElement('div');
+  overlay.className = 'info-popup-overlay';
+  overlay.innerHTML =
+    '<div class="info-popup">' +
+      '<h3>' + escHtml(info.title) + '</h3>' +
+      '<p><span class="problem-label">The problem:</span> ' + escHtml(info.problem) + '</p>' +
+      '<p><span class="solution-label">The solution:</span> ' + escHtml(info.solution) + '</p>' +
+      '<button class="close-popup">Close</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('.close-popup').addEventListener('click', function() { overlay.remove(); });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;');
+}
+</script>
 {% endblock %}
