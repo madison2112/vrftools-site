@@ -129,9 +129,13 @@ def _gather_export_state(s: dict) -> list:
     """
     Single source of truth for both DAT and JSON exports.
 
-    Parses the raw dat_data (or dsbx_data), applies all user edits from the
-    session — controller names, group tag names, and rearrangement orders —
-    then re-extracts the groups so slot numbers reflect the final arrangement.
+    For DAT sessions: parses raw dat_data, applies all user edits
+    (controller names, group tag names, rearrangement orders), then
+    re-extracts groups so slot numbers reflect the final arrangement.
+
+    For DSBX sessions: there is no .dat to parse, so we build the
+    canonical blocks directly from the in-memory blocks, applying
+    orders to remap group slot positions.
 
     Returns a canonical list of controller blocks:
       [{name, controller_type, xml_bytes, groups, entry}, ...]
@@ -139,15 +143,38 @@ def _gather_export_state(s: dict) -> list:
     from lib.dat_utils import generate_dat_bytes, apply_group_names, apply_rearrangement
 
     session_type = s.get("type", "dat")
-    raw_bytes = (
-        s.get("dsbx_data", b"")
-        if session_type == "dsbx"
-        else s.get("dat_data", b"")
-    )
-
-    blocks = s.get("blocks", [])
     controller_names = s.get("controller_names", {})
     group_names = s.get("group_names", {})
+
+    # DSBX sessions: work from in-memory blocks, no XML to parse
+    if session_type == "dsbx":
+        result = []
+        blocks = s.get("blocks", [])
+        for i, b in enumerate(blocks):
+            groups = [dict(g) for g in b.get("groups", [])]
+            # Apply rearrangement by remapping slot numbers
+            order = s.get(f"order_{i}")
+            if isinstance(order, list) and order:
+                old_to_new = {
+                    old_slot: pos + 1
+                    for pos, old_slot in enumerate(order)
+                    if old_slot > 0
+                }
+                for g in groups:
+                    if g["slot"] in old_to_new:
+                        g["slot"] = old_to_new[g["slot"]]
+            result.append({
+                "name":            controller_names.get(str(i)) or b.get("name", ""),
+                "controller_type": b.get("controller_type", ""),
+                "xml_bytes":       b"",  # no XML for DSBX sessions
+                "groups":          groups,
+                "entry":           str(i + 1),
+            })
+        return result
+
+    # DAT sessions: parse raw bytes, apply edits, re-extract
+    raw_bytes = s.get("dat_data", b"")
+    blocks = s.get("blocks", [])
 
     controllers = parse_dat_controllers(raw_bytes)
 
@@ -705,7 +732,28 @@ def api_get_groups(sid):
     s = sessions.get(sid)
     if not s:
         abort(404, "Session not found or expired.")
-    return jsonify({"blocks": s.get("blocks", [])})
+
+    blocks = s.get("blocks", [])
+
+    # Apply saved rearrangement orders to group slot numbers so the
+    # frontend renders cards in the user's arranged positions, not the
+    # original extraction order.
+    result = []
+    for i, block in enumerate(blocks):
+        order = s.get(f"order_{i}")
+        groups = [dict(g) for g in block.get("groups", [])]
+        if isinstance(order, list):
+            old_to_new = {
+                old_slot: pos + 1
+                for pos, old_slot in enumerate(order)
+                if old_slot > 0
+            }
+            for g in groups:
+                if g["slot"] in old_to_new:
+                    g["slot"] = old_to_new[g["slot"]]
+        result.append({**block, "groups": groups})
+
+    return jsonify({"blocks": result})
 
 
 @app.route("/api/session/<sid>/groups", methods=["POST"])
