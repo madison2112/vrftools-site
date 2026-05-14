@@ -745,33 +745,20 @@ def api_download_dsbx_to_dat(sid):
     except Exception as e:
         abort(500, f"Conversion failed: {e}")
 
-    # Apply any user rearrangements
-    from lib.dat_utils import apply_rearrangement
-    for i, r in enumerate(results):
-        order = s.get(f"order_{i}")
-        if order:
-            try:
-                import xml.etree.ElementTree as ET
-                import pyzipper
-                from lib.zipcrypto import PASSWORD
-                from lib.dat_utils import generate_dat_bytes, parse_dat_controllers
-                controllers = parse_dat_controllers(r["data"])
-                if controllers:
-                    new_xml = apply_rearrangement(controllers[0]["xml_bytes"], order)
-                    r["data"] = generate_dat_bytes(new_xml, r["controller"])
-            except Exception:
-                pass  # rearrangement failure is non-fatal
-
-    # Apply user-edited controller names and group tag names
-    from lib.dat_utils import apply_group_names
+    # Apply user edits in correct order: names FIRST, then rearrangement.
+    # Names must be written to the original Group numbers before
+    # apply_rearrangement remaps them — otherwise renames hit wrong records.
+    from lib.dat_utils import apply_rearrangement, apply_group_names
     controller_names = s.get("controller_names", {})
     group_names = s.get("group_names", {})
+
     for i, r in enumerate(results):
         try:
             controllers = parse_dat_controllers(r["data"])
             if controllers:
                 xml = controllers[0]["xml_bytes"]
-                # Apply controller name
+
+                # 1. Apply controller name
                 name = controller_names.get(str(i))
                 if name:
                     root = ET.fromstring(xml)
@@ -781,14 +768,25 @@ def api_download_dsbx_to_dat(sid):
                     buf = io.BytesIO()
                     ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
                     xml = buf.getvalue()
-                # Apply group tag names
+
+                # 2. Apply group tag names (on original Group numbers)
                 tag_map = group_names.get(str(i), {})
                 int_map = {int(k): v for k, v in tag_map.items()}
                 if int_map:
                     xml = apply_group_names(xml, int_map)
+
+                # 3. Apply rearrangement (remaps Group numbers AFTER names)
+                order = s.get(f"order_{i}")
+                if isinstance(order, list) and order:
+                    xml = apply_rearrangement(xml, order)
+
                 r["data"] = generate_dat_bytes(xml, r["controller"])
+
+                # Use the renamed controller name for the filename
+                if name:
+                    r["name"] = f"{name} {r['controller']}"
         except Exception:
-            pass  # name application failure is non-fatal
+            pass  # non-fatal
 
     if len(results) == 1:
         r = results[0]
