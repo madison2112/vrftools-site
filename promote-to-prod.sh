@@ -98,36 +98,60 @@ fi
 
 # ---- 5. COUNTDOWN SIGNAL SEQUENCE (polled — skips if idle) ----------------
 note "5/7  Countdown — checking for active sessions via Umami"
+echo "    Type FORCE at any time to skip the countdown and promote now."
+echo ""
 
 mkdir -p "$PROD_SIGNAL_DIR"
 write_signal 10
 
-# Poll umami-db at each countdown tick.  If zero active sessions are
-# found, skip the remaining wait and promote immediately.  Falls back
-# to the full 10-minute countdown if the DB query fails for any reason.
-remaining="10 5 2"
-skipped=false
-for wait_min in $remaining; do
-  active=$(docker exec umami-db psql -U umami -d umami -tAc \
-    "SELECT COUNT(DISTINCT we.session_id)
-     FROM website_event we
-     JOIN website w ON w.website_id = we.website_id
-     WHERE w.domain = 'vrftools.com'
-       AND w.deleted_at IS NULL
-       AND we.created_at > NOW() - INTERVAL '30 minutes'" 2>/dev/null || echo "?")
-  active=${active:-0}
+# Poll loop: sleep in 2-second increments so the user can type FORCE
+# at any point.  We also check Umami at each full-minute tick — if no
+# active sessions exist, the countdown ends early.
+force_skip=false
+total=$((10 * 60))           # 10 minutes in seconds
+elapsed=0
+shown_tick=10                # which minute label we last wrote to signal
 
-  if [ "$active" = "0" ]; then
-    echo "    No active sessions — skipping remaining countdown."
-    skipped=true
-    break
+while [ $elapsed -lt $total ]; do
+  # Check for FORCE via non-blocking read (timeout 0 = poll once)
+  if read -t 0 -r input 2>/dev/null; then
+    if [ "$input" = "FORCE" ]; then
+      echo ""
+      echo "    >>> FORCE received — skipping remaining countdown. <<<"
+      force_skip=true
+      break
+    fi
   fi
-  echo "    $active active session(s) — waiting $wait_min min..."
-  sleep $((wait_min * 60))
+
+  # Update the restart signal every full minute that passes
+  tick_min=$(( (total - elapsed + 59) / 60 ))   # ceiling to next minute
+  if [ $elapsed -eq 0 ] || [ $((elapsed % 60)) -eq 0 ]; then
+    if [ $tick_min -ne $shown_tick ] && [ $tick_min -ge 1 ]; then
+      shown_tick=$tick_min
+      write_signal $tick_min
+      # Umami check: if zero active, skip remaining countdown
+      active=$(docker exec umami-db psql -U umami -d umami -tAc \
+        "SELECT COUNT(DISTINCT we.session_id)
+         FROM website_event we
+         JOIN website w ON w.website_id = we.website_id
+         WHERE w.domain = 'vrftools.com'
+           AND w.deleted_at IS NULL
+           AND we.created_at > NOW() - INTERVAL '30 minutes'" 2>/dev/null || echo "?")
+      active=${active:-0}
+      echo "    T-${tick_min}min  |  active sessions: $active"
+      if [ "$active" = "0" ]; then
+        echo "    No active sessions — skipping remaining countdown."
+        break
+      fi
+    fi
+  fi
+
+  sleep 2
+  elapsed=$((elapsed + 2))
 done
 
-if [ "$skipped" = false ]; then
-  echo "    Countdown complete (no idle window detected)."
+if [ "$force_skip" = false ] && [ $elapsed -ge $total ]; then
+  echo "    Countdown complete."
 fi
 
 # ---- 6. PROMOTE ------------------------------------------------------------
