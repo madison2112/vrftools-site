@@ -40,20 +40,9 @@ MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
 APP_ENV = os.environ.get("APP_ENV", "test")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
 
-# Feature flag — new DAT↔JSON tool is only active on the codetest subdomain.
-# Hostname check is the primary gate (both domains hit the same container).
-# CODETEST env var acts as an override for local development.
-_CODETEST_ENV = os.environ.get("CODETEST", "0") == "1"
-
-
-def _is_codetest() -> bool:
-    """True when the request is coming from codetest.vrftools.com (or CODETEST env)."""
-    return _CODETEST_ENV or request.host.startswith("codetest.")
-
-
 @app.context_processor
 def inject_globals():
-    return {"codetest": _is_codetest(), "app_env": APP_ENV}
+    return {"codetest": True, "app_env": APP_ENV}
 
 
 def _read_restart_signal() -> str | None:
@@ -73,9 +62,7 @@ def _read_restart_signal() -> str | None:
 # ---------------------------------------------------------------------------
 
 def _preloaded_session(expected_type: str) -> str | None:
-    """Return a valid session ID from ?session= if CODETEST and type matches."""
-    if not _is_codetest():
-        return None
+    """Return a valid session ID from ?session= if type matches."""
     sid = request.args.get("session")
     if not sid:
         return None
@@ -892,8 +879,6 @@ def api_upload_dat():
 
 @app.route("/api/upload/config-hub", methods=["POST"])
 def api_upload_config_hub():
-    if not _is_codetest():
-        abort(404)
 
     data, ext = _validate_upload(request.files.get("file"), {".dsbx", ".dat", ".json"})
 
@@ -1250,8 +1235,6 @@ _VALID_TOOLS = set(_TOOL_ROUTES.keys())
 
 @app.route("/api/export-json", methods=["POST"])
 def api_export_json():
-    if not _is_codetest():
-        abort(404)
 
     body = request.get_json(force=True) or {}
     sid  = body.get("session_id")
