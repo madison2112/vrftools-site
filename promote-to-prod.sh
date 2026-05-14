@@ -96,18 +96,39 @@ else
   echo "    no prior prod image to back up — first-ever promotion"
 fi
 
-# ---- 5. COUNTDOWN SIGNAL SEQUENCE ------------------------------------------
-note "5/7  Countdown (10 min total — Ctrl+C to abort cleanly)"
+# ---- 5. COUNTDOWN SIGNAL SEQUENCE (polled — skips if idle) ----------------
+note "5/7  Countdown — checking for active sessions via Umami"
 
 mkdir -p "$PROD_SIGNAL_DIR"
 write_signal 10
-echo "    sleeping 5 min..."; sleep 300
 
-write_signal 5
-echo "    sleeping 3 min..."; sleep 180
+# Poll umami-db at each countdown tick.  If zero active sessions are
+# found, skip the remaining wait and promote immediately.  Falls back
+# to the full 10-minute countdown if the DB query fails for any reason.
+remaining="10 5 2"
+skipped=false
+for wait_min in $remaining; do
+  active=$(docker exec umami-db psql -U umami -d umami -tAc \
+    "SELECT COUNT(DISTINCT we.session_id)
+     FROM website_event we
+     JOIN website w ON w.website_id = we.website_id
+     WHERE w.domain = 'vrftools.com'
+       AND w.deleted_at IS NULL
+       AND we.created_at > NOW() - INTERVAL '30 minutes'" 2>/dev/null || echo "?")
+  active=${active:-0}
 
-write_signal 2
-echo "    sleeping 2 min..."; sleep 120
+  if [ "$active" = "0" ]; then
+    echo "    No active sessions — skipping remaining countdown."
+    skipped=true
+    break
+  fi
+  echo "    $active active session(s) — waiting $wait_min min..."
+  sleep $((wait_min * 60))
+done
+
+if [ "$skipped" = false ]; then
+  echo "    Countdown complete (no idle window detected)."
+fi
 
 # ---- 6. PROMOTE ------------------------------------------------------------
 note "6/7  Promote: tag $TEST_IMAGE -> $PROD_IMAGE and swap container"
