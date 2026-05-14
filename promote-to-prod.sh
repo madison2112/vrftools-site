@@ -104,8 +104,9 @@ echo ""
 mkdir -p "$PROD_SIGNAL_DIR"
 write_signal 10
 
-# Poll loop: sleep in 2-second increments so the user can type FORCE
-# at any point.  We also check Umami at each full-minute tick — if no
+# Poll loop: replace sleep with read -t 2 so the script actively
+# listens for FORCE on stdin.  Timeout fires every 2 seconds to
+# advance the clock; Umami runs at each full-minute tick.  If no
 # active sessions exist, the countdown ends early.
 force_skip=false
 total=$((10 * 60))           # 10 minutes in seconds
@@ -113,19 +114,23 @@ elapsed=0
 shown_tick=10                # which minute label we last wrote to signal
 
 while [ $elapsed -lt $total ]; do
-  # Check for FORCE via non-blocking read (timeout 0 = poll once)
-  if read -t 0 -r input 2>/dev/null; then
+  # Block for up to 2 seconds waiting for a line of input.
+  # Returns 0 if the user typed something (even just Enter),
+  # returns >0 on timeout (no input in 2 seconds).
+  if read -t 2 -r input; then
     if [ "$input" = "FORCE" ]; then
       echo ""
       echo "    >>> FORCE received — skipping remaining countdown. <<<"
       force_skip=true
       break
     fi
+    # Any other input is ignored — just keep counting down.
   fi
+  elapsed=$((elapsed + 2))
 
   # Update the restart signal every full minute that passes
   tick_min=$(( (total - elapsed + 59) / 60 ))   # ceiling to next minute
-  if [ $elapsed -eq 0 ] || [ $((elapsed % 60)) -eq 0 ]; then
+  if [ $elapsed -eq 2 ] || [ $((elapsed % 60)) -eq 0 ]; then
     if [ $tick_min -ne $shown_tick ] && [ $tick_min -ge 1 ]; then
       shown_tick=$tick_min
       write_signal $tick_min
@@ -145,9 +150,6 @@ while [ $elapsed -lt $total ]; do
       fi
     fi
   fi
-
-  sleep 2
-  elapsed=$((elapsed + 2))
 done
 
 if [ "$force_skip" = false ] && [ $elapsed -ge $total ]; then
