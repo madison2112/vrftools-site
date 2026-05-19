@@ -10,83 +10,74 @@
 <a href="/">vrftools.com</a> / <span>MTDZ Viewer</span>
 {% endblock %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/mtdz.css') }}">
-{% endblock %}
-
 {% block content %}
 <h1 class="page-title">MTDZ Viewer</h1>
 <p class="page-subtitle">View, report on, and inspect Mitsubishi Maintenance Tool monitoring files (.MTDZ, .MTLZ, .MTPZ).</p>
 
-<!-- Tool catalog — always visible so users can see what's available before uploading -->
-<div class="card" id="tool-catalog-card">
-  <div class="card-title">Choose a Tool</div>
-  <div class="mode-cards">
-    <div class="mode-card" id="btn-viewer">
-      <div class="icon">📈</div>
-      <h3>View Log Data</h3>
-      <p>Interactive graphs for ODUs and IDUs</p>
-      <p class="mobile-note">Not available on mobile — please use a desktop browser</p>
-    </div>
-    <div class="mode-card" id="btn-report">
-      <div class="icon">📄</div>
-      <h3>Generate Report</h3>
-      <p>Creates a Word document with graphed data</p>
-    </div>
-    <div class="mode-card" id="btn-sysconfig">
-      <div class="icon">🗺️</div>
-      <h3>System Config</h3>
-      <p>Shows system layout and port connections on BC</p>
-      <p class="mobile-note">Not available on mobile — please use a desktop browser</p>
-    </div>
-    <div class="mode-card" id="btn-rawdata">
-      <div class="icon">📦</div>
-      <h3>Download Raw Data</h3>
-      <p>Advanced users only. CSV file with all data extracted from the MTDZ file.</p>
-    </div>
-  </div>
-  <div class="error-msg" id="delete-error"></div>
+<div class="suite-overview">
+  <h2>About These Tools</h2>
+  <p>The MTDZ Viewer opens maintenance tool monitoring files directly in the browser. Upload your file below and select a tool to graph log data, generate a diagnostic report, inspect system topology with port connections, or download extracted raw CSV data &mdash; no software installation required.</p>
+  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are deleted nightly at 1:00 AM Pacific Standard Time. Maximum file size: 50 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
 </div>
 
-<!-- Upload card — visible until a file is uploaded -->
 <div class="card" id="upload-card">
-  <div class="card-title">Upload Monitoring File</div>
-  <div class="info-banner privacy-notice">
-    Your uploaded file is automatically deleted after 1 hour of inactivity and is never stored permanently on this server.
+  <div class="card-title">Upload a File to Get Started</div>
+  <div class="drop-zone" id="drop-zone" data-accept=".MTDZ, .MTLZ, .MTPZ">
+    <div class="icon">&#128196;</div>
+    <p>Drag &amp; drop a <strong>.MTDZ</strong>, <strong>.MTLZ</strong>, or <strong>.MTPZ</strong> file here, or click to browse</p>
+    <small>Upload a file to see which tools are applicable. Maximum 50 MB.</small>
+    <input type="file" id="file-input" accept=".mtdz,.MTDZ,.mtlz,.MTLZ,.mtpz,.MTPZ" style="display:none">
   </div>
-  <div class="drop-zone" id="drop-zone" data-accept=".MTDZ">
-    <div class="icon">📂</div>
-    <p>Drag &amp; drop your file here, or click to browse</p>
-    <small>Accepted formats: .MTDZ (single day) &nbsp;·&nbsp; .MTLZ or .MTPZ (multi-day)</small>
-  </div>
-  <input type="file" id="file-input" accept=".mtdz,.MTDZ,.mtlz,.MTLZ,.mtpz,.MTPZ" style="display:none">
   <div class="progress-bar" id="progress-bar"><div class="progress-fill"></div></div>
-  <div class="error-msg" id="error-msg"></div>
+  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+  <div id="file-loaded-badge" class="file-loaded-badge" style="display:none">
+    <span class="file-loaded-icon">&#128206;</span>
+    <span id="file-loaded-name"></span>
+    <button type="button" id="btn-clear-data" class="btn-clear-data">Clear Data</button>
+  </div>
 </div>
 
-<!-- File-status card — visible after a successful upload -->
-<div class="card" id="file-status-card" style="display:none">
-  <div class="card-title" id="file-title">File loaded</div>
-  <div class="mtdz-file-meta" id="day-info"></div>
-  <div class="info-banner privacy-notice">
-    Your file will be automatically deleted after 1 hour of inactivity.
+<div class="tool-grid-square">
+
+  <div class="tool-card-square" data-tool="viewer" data-href="{{ url_for('page_mtdz_viewer') }}">
+    <div class="tool-icon-sq">&#128200;</div>
+    <div class="tool-name-sq">View Log Data</div>
+    <div class="tool-formats-sq"><span class="badge">.MTDZ</span> &rarr; <span class="badge">graphs</span></div>
+    <button class="info-btn" data-popup="viewer">i</button>
   </div>
-  <div class="mode-card-actions">
-    <a href="#" id="btn-different-file" class="back-link">↩ Upload a different file</a>
-    <a href="#" id="btn-delete-file" class="delete-link">🗑 Delete file from server</a>
-    <a href="/contact?type=issue&tool=mtdz" id="btn-report-issue" class="back-link">⚑ Report an issue</a>
+
+  <div class="tool-card-square" data-tool="report" data-href="{{ url_for('page_mtdz_report') }}">
+    <div class="tool-icon-sq">&#128196;</div>
+    <div class="tool-name-sq">Generate Report</div>
+    <div class="tool-formats-sq"><span class="badge">.MTDZ</span> &rarr; <span class="badge">.docx</span></div>
+    <button class="info-btn" data-popup="report">i</button>
   </div>
+
+  <div class="tool-card-square" data-tool="sysconfig" data-href="{{ url_for('page_mtdz_sysinfo') }}">
+    <div class="tool-icon-sq">&#128506;&#65039;</div>
+    <div class="tool-name-sq">System Config</div>
+    <div class="tool-formats-sq"><span class="badge">.MTPZ</span> &rarr; <span class="badge">topology</span></div>
+    <button class="info-btn" data-popup="sysconfig">i</button>
+  </div>
+
+  <div class="tool-card-square" data-tool="rawdata" data-href="{{ url_for('page_mtdz_index') }}">
+    <div class="tool-icon-sq">&#128230;</div>
+    <div class="tool-name-sq">Download Raw Data</div>
+    <div class="tool-formats-sq"><span class="badge">.MTDZ</span> &rarr; <span class="badge">.csv</span></div>
+    <button class="info-btn" data-popup="rawdata">i</button>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
   window.MTDZ_PAGES = {
-    index:     '/mtdz/',
-    viewer:    '/mtdz/viewer',
-    report:    '/mtdz/report',
-    sysconfig: '/mtdz/sysinfo',
+    index:     "{{ url_for('page_mtdz_index') }}",
+    viewer:    "{{ url_for('page_mtdz_viewer') }}",
+    report:    "{{ url_for('page_mtdz_report') }}",
+    sysconfig: "{{ url_for('page_mtdz_sysinfo') }}",
   };
 </script>
-<script src="{{ url_for('static', filename='js/mtdz/upload.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mtdz/hub.js') }}"></script>
 {% endblock %}

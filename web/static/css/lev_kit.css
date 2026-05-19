@@ -346,3 +346,19 @@
 #lk-dat-table-ah001 tr[data-mode="return"]    { display: none; }
 #lk-rat-table-ah002 tr[data-mode="discharge"],
 #lk-rat-table-ah001 tr[data-mode="discharge"] { display: none; }
+
+/* ── Empty-tag warning ─────────────────────────────────────────────── */
+input[data-field="tag"].lk-tag-empty {
+  border-color: var(--color-danger, #e74c3c) !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15);
+  background: rgba(231, 76, 60, 0.04);
+}
+
+/* ── Auto-save status indicator ─────────────────────────────────────── */
+.lk-save-status {
+  font-style: italic;
+  transition: color 0.3s;
+}
+.lk-save-saved  { color: var(--color-success, #27ae60); }
+.lk-save-saving { color: var(--color-warning, #f39c12); }
+.lk-save-error  { color: var(--color-danger, #e74c3c); }

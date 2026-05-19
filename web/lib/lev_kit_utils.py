@@ -268,6 +268,9 @@ def _generate_switch_positions_ah002(config: dict) -> dict:
     if e11 == 1 and temp_adjustment:
         switches["SW3"][7] = 0
 
+    # SW4-1: ON for RAT mode, OFF for DAT
+    switches["SW4"][0] = 1 if e11 == 1 else 0
+
     # SW21-1, SW21-2
     if discharge_enable == "bas" and discharge_setpoint == "bas" and e11 == 0:
         switches["SW21"][0] = 0
@@ -362,6 +365,10 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
     if electric_heat:
         switches["SW2"][2] = 1
 
+    # SW1[0]: RAT mode — room temperature operation
+    if e11 == 1:
+        switches["SW1"][0] = 1
+
     # SW1[5]: run humidifier during heating thermo-off (only meaningful when
     # humidifier installed AND user opted in; both must be true)
     if e11 == 1 and humidifier_installed and run_humidifier:
@@ -371,21 +378,31 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
     if dat_setpoint == 2:
         switches["SW3"][0] = 1
 
-    # SW3[1]: RAT mode flag
-    if e11 == 1:
+    # SW3[1]: RAT mode flag — also ON when electric heat installed
+    if e11 == 1 or electric_heat:
         switches["SW3"][1] = 1
 
     # SW3[2]: enable method (RAT always, or DAT with BAS enable)
     if e11 == 1 or (e11 == 0 and discharge_enable == "bas"):
         switches["SW3"][2] = 1
 
-    # SW3[3]: temp adjustment / stratification logic
-    if (e11 == 0 and discharge_enable == "bas") or (e11 == 1 and temp_adjustment):
+    # SW3[3]: defrost/extra gating
+    #   DAT: ON when LEV kit controls the fan AND run-fan-during-defrost is selected
+    #   RAT: ON when electric heat is used during defrost/error states
+    fan_controlled_by = config.get("fan_controlled_by", "bas")
+    run_fan_defrost   = config.get("run_fan_defrost", False)
+    use_defrost_error = config.get("use_defrost_error", False)
+    if e11 == 0 and fan_controlled_by == "lev" and run_fan_defrost:
+        switches["SW3"][3] = 1
+    elif e11 == 1 and electric_heat and use_defrost_error:
         switches["SW3"][3] = 1
 
     # SW3[5]: dual LEV when capacity index >= 16
     if capacity >= 16:
         switches["SW3"][5] = 1
+
+    # SW4[0]: OFF in DAT, ON in RAT
+    switches["SW4"][0] = 1 if e11 == 1 else 0
 
     # SW3[7..8] and SW4[6..7]: thermo-off pair (DAT only)
     if e11 == 0 and thermo_temp > 0:
@@ -394,7 +411,7 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
         switches["SW3"][8] = opt["sw3"][1]
         switches["SW4"][6] = opt["sw4"][0]
         switches["SW4"][7] = opt["sw4"][1]
-    elif e11 == 1 and temp_adjustment:
+    elif e11 == 1 and not temp_adjustment:
         switches["SW3"][7] = 1
 
     # SWA position (3-position horizontal selector):

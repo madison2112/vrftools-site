@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="10" fill="#1c1c1e"/>
+  <text x="50" y="52" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="46" fill="#ffffff">VRF</text>
+  <rect x="11" y="60" width="78" height="4.3" rx="2" fill="#cc1111"/>
+  <text x="50" y="86" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="22" letter-spacing="1" fill="#cc1111">TOOLS</text>
+</svg>

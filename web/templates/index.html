@@ -9,7 +9,7 @@
 <div class="suite-overview">
   <h2>About These Tools</h2>
   <p>The central controller config file required to load group and address data into an AE-200 or AE-C400A already exists in your DSB file — it just isn't in the right format. The DSBX to DAT converter closes that gap, turning a .dsbx file into one loading-ready config file per centralized system with no manual data entry. The remaining tools handle the next most common pain points: reordering groups after the fact, converting between controller generations, and splitting a site database into individual controller files that can actually be loaded when the IT backbone isn't complete yet.</p>
-  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are automatically deleted after one hour. Maximum file size: 5 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
+  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are deleted nightly at 1:00 AM Pacific Standard Time. Maximum file size: 5 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
 </div>
 
 <div class="card" id="upload-card">
@@ -21,6 +21,11 @@
     <input type="file" id="file-input" accept=".dsbx,.dat,.json" style="display:none">
   </div>
   <div id="upload-error" class="alert alert-error" style="display:none"></div>
+  <div id="file-loaded-badge" class="file-loaded-badge" style="display:none">
+    <span class="file-loaded-icon">&#128206;</span>
+    <span id="file-loaded-name"></span>
+    <button type="button" id="btn-clear-data" class="btn-clear-data">Clear Data</button>
+  </div>
 </div>
 
 <div id="resume-card" class="resume-card" data-href="">
@@ -102,7 +107,28 @@ const TOOL_INFO = {
 
 setupDropZone('drop-zone', 'file-input', '/api/upload/config-hub', onHubUploaded);
 
+// Capture filename before upload so we can show it in the badge.
+// The uploadFile() helper resets the drop zone DOM, so we save it here.
+var _lastUploadFilename = null;
+(function () {
+  var fi = document.getElementById('file-input');
+  var dz = document.getElementById('drop-zone');
+  fi.addEventListener('change', function () {
+    if (fi.files[0]) _lastUploadFilename = fi.files[0].name;
+  });
+  dz.addEventListener('drop', function (e) {
+    if (e.dataTransfer.files[0]) _lastUploadFilename = e.dataTransfer.files[0].name;
+  });
+})();
+
 function onHubUploaded(data) {
+  // Show the loaded-file badge
+  var badge = document.getElementById('file-loaded-badge');
+  var nameEl = document.getElementById('file-loaded-name');
+  if (badge && nameEl && _lastUploadFilename) {
+    nameEl.textContent = _lastUploadFilename;
+    badge.style.display = '';
+  }
   // .json: highlight the Resume Session card — user clicks it to navigate
   if (data.redirect) {
     state.sessionId = data.session_id;
@@ -124,6 +150,7 @@ function onHubUploaded(data) {
       sessionStorage.setItem('hub_session_id', data.session_id);
       sessionStorage.setItem('hub_json_redirect', data.redirect);
       sessionStorage.setItem('hub_applicable_tools', JSON.stringify([]));
+      sessionStorage.setItem('hub_filename', _lastUploadFilename || '');
     } catch(e) {}
     return;
   }
@@ -152,6 +179,7 @@ function onHubUploaded(data) {
     sessionStorage.setItem('hub_session_id', data.session_id);
     sessionStorage.setItem('hub_applicable_tools', JSON.stringify(data.applicable_tools || []));
     sessionStorage.removeItem('hub_json_redirect');
+    sessionStorage.setItem('hub_filename', _lastUploadFilename || '');
   } catch(e) {}
 }
 
@@ -247,6 +275,17 @@ function flashCardWarning(card, message) {
 
         state.sessionId = storedId;
 
+        // Restore filename badge if present
+        var storedFilename = sessionStorage.getItem('hub_filename');
+        if (storedFilename) {
+          var badge = document.getElementById('file-loaded-badge');
+          var nameEl = document.getElementById('file-loaded-name');
+          if (badge && nameEl) {
+            nameEl.textContent = storedFilename;
+            badge.style.display = '';
+          }
+        }
+
         var jsonRedirect = sessionStorage.getItem('hub_json_redirect');
         if (jsonRedirect) {
           state.jsonRedirect = jsonRedirect;
@@ -272,7 +311,25 @@ function clearStoredSession() {
     sessionStorage.removeItem('hub_session_id');
     sessionStorage.removeItem('hub_applicable_tools');
     sessionStorage.removeItem('hub_json_redirect');
+    sessionStorage.removeItem('hub_filename');
   } catch(e) {}
+  // Hide the loaded-file badge
+  var badge = document.getElementById('file-loaded-badge');
+  if (badge) badge.style.display = 'none';
+  // Clear highlights
+  document.querySelectorAll('.tool-card-square').forEach(function(c) {
+    c.classList.remove('highlighted');
+  });
+  var resume = document.getElementById('resume-card');
+  if (resume) { resume.classList.remove('highlighted'); resume.dataset.href = ''; }
+  state.sessionId = null;
+  state.applicableTools = [];
+  state.jsonRedirect = null;
 }
+
+// ── Clear Data button ──────────────────────────────────────────────────
+document.getElementById('btn-clear-data').addEventListener('click', function () {
+  clearStoredSession();
+});
 </script>
 {% endblock %}

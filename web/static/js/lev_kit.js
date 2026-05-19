@@ -90,6 +90,91 @@
   let currentSession = null;
   let rowIdCounter   = 0;
 
+  // ── Auto-save ──────────────────────────────────────────────────────────
+  let _saveTimer   = null;
+  let _saveStatus  = 'saved';    // 'saved' | 'saving' | 'error'
+
+  function _saveIndicatorEl() {
+    return $('#lk-save-status');
+  }
+
+  function _updateSaveIndicator() {
+    const el = _saveIndicatorEl();
+    if (!el) return;
+    el.className = 'lk-save-status lk-save-' + _saveStatus;
+    const labels = { saved: '✓ All changes saved', saving: '● Saving…', error: '⚠ Save failed — retrying' };
+    el.textContent = labels[_saveStatus] || '';
+  }
+
+  function autoSave() {
+    if (!currentSession || !currentSession.session_id) return;
+    _saveStatus = 'saving';
+    _updateSaveIndicator();
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(async () => {
+      try {
+        const payload = collectState();
+        await apiUpdateSession(currentSession.session_id, payload);
+        _saveStatus = 'saved';
+      } catch (_err) {
+        _saveStatus = 'error';
+        // Retry once after a longer delay
+        clearTimeout(_saveTimer);
+        _saveTimer = setTimeout(() => autoSave(), 3000);
+      }
+      _updateSaveIndicator();
+    }, 800);
+  }
+
+  // Apply saved overrides to dropdowns (called on editor entry after
+  // fetching full session data from the new GET endpoint).
+  function applyOverrides(overrides) {
+    // overrides = { tag: { heat_pump: true, thermo_temp: 2, ... }, ... }
+    if (!overrides || !Object.keys(overrides).length) return;
+    const allBasicRows = [
+      ...$$('tr[data-row-id]', els.tables.ah002.basicTbody),
+      ...$$('tr[data-row-id]', els.tables.ah001.basicTbody),
+    ];
+    for (const basicRow of allBasicRows) {
+      const tagInput = basicRow.querySelector('[data-field="tag"]');
+      const tag = tagInput ? tagInput.value.trim() : '';
+      if (!tag) continue;
+      const ovr = overrides[tag];
+      if (!ovr) continue;
+
+      const rowId = basicRow.dataset.rowId;
+      const rowsForUnit = [
+        basicRow,
+        findRowAcrossTables(rowId, 'datTbody'),
+        findRowAcrossTables(rowId, 'ratTbody'),
+      ].filter(Boolean);
+
+      for (const row of rowsForUnit) {
+        for (const el of $$('[data-field]', row)) {
+          const k = el.dataset.field;
+          if (!(k in ovr)) continue;
+          if (el.type === 'checkbox') {
+            el.checked = !!ovr[k];
+          } else {
+            el.value = String(ovr[k]);
+          }
+        }
+      }
+
+      applyEnableLock(rowId);
+      applyAh001Gating(rowId);
+    }
+    updateModeSectionVisibility();
+    _markEmptyTags();
+  }
+
+  // Mark all tag inputs that are empty with the lk-tag-empty warning class.
+  function _markEmptyTags() {
+    for (const input of $$('input[data-field="tag"]')) {
+      input.classList.toggle('lk-tag-empty', !input.value.trim());
+    }
+  }
+
   function nextRowId() { return `r${++rowIdCounter}`; }
 
   function controllerKey(controller_type) {
@@ -446,6 +531,27 @@
       applyAh001Gating(rows.rowId);
     }
     updateModeSectionVisibility();
+    _markEmptyTags();
+
+    // Restore saved overrides from the server session (e.g. on page reload).
+    const sid = currentSession && currentSession.session_id;
+    if (sid) {
+      _updateSaveIndicator();
+      fetch('/api/session/' + encodeURIComponent(sid))
+        .then(r => r.ok ? r.json() : null)
+        .then(full => {
+          if (full && full.overrides) applyOverrides(full.overrides);
+          if (full && full.voltage) els.editor.voltage.value = full.voltage;
+          if (full && full.project_name) els.editor.projectName.value = full.project_name;
+          _saveStatus = 'saved';
+          _updateSaveIndicator();
+        })
+        .catch(() => {
+          _saveStatus = 'error';
+          _updateSaveIndicator();
+        });
+    }
+
     renderWarnings(data.warnings);
     els.editor.voltage.value = '208';
     clearInlineError(els.editor.generateError);
@@ -476,6 +582,9 @@
 
   function handleReset() {
     currentSession = null;
+    clearTimeout(_saveTimer);
+    _saveTimer = null;
+    _saveStatus = 'saved';
     clearInlineError(els.upload.error);
     clearInlineError(els.editor.generateError);
     clearEditorTables();
@@ -484,6 +593,7 @@
     els.editor.step.style.display = 'none';
     els.upload.step.style.display = '';
     resetUploadDropZone();
+    _updateSaveIndicator();
   }
 
   // ---------------------------------------------------------------------------
@@ -547,6 +657,8 @@
       applyEnableLock(rowId);
     } else if (t.dataset.field === 'tag') {
       syncTagDisplay(rowId, t.value);
+      // Toggle empty-tag warning
+      t.classList.toggle('lk-tag-empty', !t.value.trim());
     } else if (
       t.dataset.field === 'fan_controlled_by' ||
       t.dataset.field === 'electric_heat' ||
@@ -554,6 +666,9 @@
     ) {
       applyAh001Gating(rowId);
     }
+
+    // Debounced auto-save on every field change
+    autoSave();
   }
 
   function syncTagDisplay(rowId, newTag) {

@@ -245,12 +245,15 @@ def _package_export_dat(export_blocks: list, raw_bytes: bytes) -> bytes:
 
 @app.route("/status")
 def status():
-    """Liveness + restart-window probe. Read by Docker healthcheck and the
-    frontend banner poller. Cheap by design: no DB, no template render."""
+    """Liveness + restart-window + session-expiry probe. Read by Docker
+    healthcheck and the frontend banner poller. Cheap by design: no DB,
+    no template render."""
+    from lib.sessions import _expiry as _session_expiry
     return jsonify({
         "ok": True,
         "env": APP_ENV,
         "restart_at": _read_restart_signal(),
+        "session_expiry_at": _session_expiry(),
     })
 
 
@@ -402,6 +405,23 @@ def api_session_lev_kit_blank():
         "controllers_found":     {lev_kit_utils.CONTROLLER_AH001: 0,
                                   lev_kit_utils.CONTROLLER_AH002: 0},
         "warnings":              [],
+    })
+
+
+@app.route("/api/session/<sid>", methods=["GET"])
+def api_session_get(sid):
+    """Return full session data so the frontend can restore saved overrides."""
+    s = _lev_kit_session(sid)
+    return jsonify({
+        "session_id":            sid,
+        "project_name":          s.get("project_name", ""),
+        "units":                 s.get("parsed_units", []),
+        "overrides":             s.get("overrides", {}),
+        "voltage":               s.get("voltage", "208"),
+        "layout":                s.get("layout", "horizontal"),
+        "refrigerant_selection": s.get("refrigerant_selection", "ah002"),
+        "controllers_found":     s.get("controllers_found", {}),
+        "warnings":              s.get("warnings", []),
     })
 
 
