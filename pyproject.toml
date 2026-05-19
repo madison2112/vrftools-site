@@ -1,0 +1,31 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+    "templates/",
+    "AE-C400 Initial Setting Tool Software/",
+    "Empty Configs/",
+    "*.dat",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# Ignored rules — existing codebase issues to be addressed in future cards:
+#   E701 (multiple statements on one line, ~5 instances): TODO: address in P2-xx code-style cleanup
+#   E401 (multiple imports on one line, ~1 instance): TODO: address in P2-xx code-style cleanup
+#   E402 (module-level import not at top, ~1 instance): TODO: address in P2-xx code-style cleanup
+#   E501 (line too long, ~50 instances): TODO: address in P2-xx code-style cleanup
+#   F401 (unused imports, ~3 instances in web/app.py): TODO: address in DL-xx or P2-xx
+#   F811 (redefinition of unused name, ~2 instances): TODO: address in DL-xx — shadowed re-import
+#   F821 (undefined name pyzipper, ~1 instance): TODO: address in P2-xx — import shadowing bug
+#   F841 (unused variable, ~1 instance): TODO: address in P2-xx
+#   B007 (unused loop variable, ~10 instances): TODO: address in P2-xx code-style cleanup
+#   B023 (loop variable binding in function def, ~1 instance): TODO: address in P2-xx
+#   B904 (exception chaining, ~1 instance): TODO: address in P2-xx
+#   I001 (import sorting, ~10 instances): TODO: address in P2-xx format cleanup
+#   UP015 (unnecessary mode arg, ~1 instance): TODO: address in P2-xx
+ignore = ["E701", "E401", "E402", "E501", "F401", "F811", "F821", "F841", "B007", "B023", "B904", "I001", "UP015"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
