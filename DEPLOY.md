@@ -52,6 +52,7 @@ VRFTools refactor app deployed at https://tranesubishi.com.
 ## Nginx Config
 
 - **File**: `/etc/nginx/sites-available/tranesubishi` (symlinked in `/etc/nginx/sites-enabled/`)
+- **Reference copy**: `nginx/tranesubishi.nginx.conf` in this repo (committed for reference)
 - **SSL**: Let's Encrypt via certbot, auto-renewing
 - **Cert path**: `/etc/letsencrypt/live/tranesubishi.com/`
 - **Proxy for `/`**: `http://127.0.0.1:5052` (Flask app)

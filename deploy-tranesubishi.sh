@@ -23,6 +23,11 @@ case "$CONTAINER" in *"ccct"*|*"codetest"*|*"prod"*)
   echo "ERROR: deploy-tranesubishi.sh refuses container '$CONTAINER'." >&2
   exit 1
 esac
+HOST_PORT="5052"
+case "$HOST_PORT" in 5050|5051)
+  echo "ERROR: deploy-tranesubishi.sh refuses host port $HOST_PORT (reserved for prod/codetest)." >&2
+  exit 1
+esac
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$REPO_DIR"
@@ -30,26 +35,26 @@ cd "$REPO_DIR"
 mkdir -p "$SIGNAL_DIR"
 
 echo "Building image $IMAGE..."
-sg docker -c "docker build -t '$IMAGE' ."
+docker build -t "$IMAGE" .
 
 echo "Replacing container $CONTAINER..."
-sg docker -c "docker stop '$CONTAINER' 2>/dev/null || true"
-sg docker -c "docker rm   '$CONTAINER' 2>/dev/null || true"
+docker stop "$CONTAINER" 2>/dev/null || true
+docker rm   "$CONTAINER" 2>/dev/null || true
 
-sg docker -c "docker run -d \
-  --name '$CONTAINER' \
+docker run -d \
+  --name "$CONTAINER" \
   --network vrftools-net \
-  -p 127.0.0.1:5052:5050 \
+  -p "127.0.0.1:${HOST_PORT}:5050" \
   --restart unless-stopped \
   -e PYTHONUNBUFFERED=1 \
   -e APP_ENV=production \
-  -e SECRET_KEY=\"\${TRANESUBISHI_SECRET_KEY:-tranesubishi-hmac-key-change-before-going-live}\" \
-  -v '$SIGNAL_DIR':/app/signals \
-  '$IMAGE'"
+  -e SECRET_KEY="${TRANESUBISHI_SECRET_KEY:-tranesubishi-hmac-key-change-before-going-live}" \
+  -v "$SIGNAL_DIR":/app/signals \
+  "$IMAGE"
 
 echo "Waiting for app to start..."
 sleep 3
-sg docker -c "docker logs '$CONTAINER' --tail 5"
+docker logs "$CONTAINER" --tail 5
 
 sleep 1
 
