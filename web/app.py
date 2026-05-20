@@ -1195,11 +1195,10 @@ def api_update_controller_name(sid):
         abort(400, "Invalid block index.")
 
     blocks[block_idx]["name"] = new_name
-    sessions.update(sid, {"blocks": blocks})
 
     names = s.get("controller_names", {})
     names[str(block_idx)] = new_name
-    sessions.update(sid, {"controller_names": names})
+    sessions.update(sid, {"blocks": blocks, "controller_names": names})
 
     return jsonify({"ok": True, "name": new_name})
 
@@ -1235,11 +1234,9 @@ def api_update_group_name(sid):
     if not updated:
         abort(400, f"Slot {slot} not found in block {block_idx}.")
 
-    sessions.update(sid, {"blocks": blocks})
-
     group_names = s.get("group_names", {})
     group_names.setdefault(str(block_idx), {})[str(slot)] = new_tag
-    sessions.update(sid, {"group_names": group_names})
+    sessions.update(sid, {"blocks": blocks, "group_names": group_names})
 
     return jsonify({"ok": True, "tag": new_tag})
 
