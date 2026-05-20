@@ -8,20 +8,12 @@ import os
 import zipfile
 import xml.etree.ElementTree as ET
 
-from .dat_utils import safe_filename
+from .dat_utils import safe_filename, FAMILY_MAP, NEEDS_IMG, NEEDS_NETWORK
+from .zipcrypto import build_dat_bytes
 
 REPO_ROOT    = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 TEMPLATES_DIR = os.path.join(REPO_ROOT, "templates")
 DEFAULT_MAP  = os.path.join(REPO_ROOT, "dsbx_dat_mapping.json")
-
-FAMILY_MAP = {
-    "AE-C400A": {"AE": "AE-C400A", "EW": "EW-C50"},
-    "AE-200":   {"AE": "AE-200",   "EW": "EW-50"},
-}
-
-# Which controllers include optional ZIP entries
-NEEDS_IMG     = {"AE-C400A", "EW-C50", "EW-50"}
-NEEDS_NETWORK = {"AE-C400A", "EW-C50"}
 
 
 def load_mapping():
@@ -272,8 +264,6 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
 
     Returns list of {"name": str, "controller": str, "data": bytes}
     """
-    from .zipcrypto import build_dat_bytes
-
     mapping   = load_mapping()
     dsb_root  = parse_dsbx_bytes(dsbx_data)
     g50_list  = get_groupof50_list(dsb_root)
