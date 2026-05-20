@@ -23,23 +23,23 @@ import pyzipper
 import xml.etree.ElementTree as ET
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PASSWORD   = b"MELCO"
+PASSWORD = b"MELCO"
 
 EMPTY_CONFIGS = {
     "AE-C400A": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-C400 Config Empty.dat"),
-    "AE-200":   os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
-    "EW-C50":   os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
-    "EW-50":    os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
+    "AE-200": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
+    "EW-C50": os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
+    "EW-50": os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
 }
 
 # Data-bearing lists to carry over — same meaning across all controller types
-DATA_LISTS = {"MnetGroupList", "ViewInfoList", "MnetList",
-              "AreaGroupList", "AreaList"}
+DATA_LISTS = {"MnetGroupList", "ViewInfoList", "MnetList", "AreaGroupList", "AreaList"}
 
 
 # ---------------------------------------------------------------------------
 # ZipCrypto writer
 # ---------------------------------------------------------------------------
+
 
 def _make_crc_table():
     table = []
@@ -50,10 +50,13 @@ def _make_crc_table():
         table.append(c)
     return table
 
+
 _CRC_TABLE = _make_crc_table()
+
 
 def _crc32_byte(crc, byte):
     return _CRC_TABLE[(crc ^ byte) & 0xFF] ^ (crc >> 8)
+
 
 def _init_keys(password):
     k = [0x12345678, 0x23456789, 0x34567890]
@@ -61,15 +64,18 @@ def _init_keys(password):
         _update_keys(k, b)
     return k
 
+
 def _update_keys(k, byte):
     k[0] = _crc32_byte(k[0], byte)
     k[1] = (k[1] + (k[0] & 0xFF)) & 0xFFFFFFFF
     k[1] = (k[1] * 134775813 + 1) & 0xFFFFFFFF
     k[2] = _crc32_byte(k[2], (k[1] >> 24) & 0xFF)
 
+
 def _stream_byte(k):
     t = (k[2] | 2) & 0xFFFF
     return ((t * (t ^ 1)) >> 8) & 0xFF
+
 
 def _encrypt(data, password, crc32_val):
     keys = _init_keys(password)
@@ -84,13 +90,16 @@ def _encrypt(data, password, crc32_val):
         _update_keys(keys, b)
     return bytes(enc_header), bytes(enc_data)
 
+
 def _dos_time():
     import time
+
     t = time.localtime()
     return (
         (t.tm_sec // 2) | (t.tm_min << 5) | (t.tm_hour << 11),
         t.tm_mday | (t.tm_mon << 5) | ((t.tm_year - 1980) << 9),
     )
+
 
 def write_zipcrypto(output_path, entries, password):
     buf = io.BytesIO()
@@ -102,11 +111,32 @@ def write_zipcrypto(output_path, entries, password):
         off = buf.tell()
 
         if data is None:
-            buf.write(struct.pack("<4s5H3I2H",
-                b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb)
-            cds.append(struct.pack("<4s6H3I5HII",
-                b"PK\x01\x02", 20, 20, 0, 0, dt, dd, 0, 0, 0,
-                len(nb), 0, 0, 0, 0, 0x10, off) + nb)
+            buf.write(
+                struct.pack("<4s5H3I2H", b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb
+            )
+            cds.append(
+                struct.pack(
+                    "<4s6H3I5HII",
+                    b"PK\x01\x02",
+                    20,
+                    20,
+                    0,
+                    0,
+                    dt,
+                    dd,
+                    0,
+                    0,
+                    0,
+                    len(nb),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0x10,
+                    off,
+                )
+                + nb
+            )
             continue
 
         compressed = zlib.compress(data, 9)[2:-4]
@@ -117,20 +147,52 @@ def write_zipcrypto(output_path, entries, password):
         else:
             payload = compressed
 
-        buf.write(struct.pack("<4s5H3I2H",
-            b"PK\x03\x04", 20, 0x0001 if enc else 0, 8, dt, dd,
-            crc & 0xFFFFFFFF, len(payload), len(data), len(nb), 0) + nb)
+        buf.write(
+            struct.pack(
+                "<4s5H3I2H",
+                b"PK\x03\x04",
+                20,
+                0x0001 if enc else 0,
+                8,
+                dt,
+                dd,
+                crc & 0xFFFFFFFF,
+                len(payload),
+                len(data),
+                len(nb),
+                0,
+            )
+            + nb
+        )
         buf.write(payload)
-        cds.append(struct.pack("<4s6H3I5HII",
-            b"PK\x01\x02", 20, 20, 0x0001 if enc else 0, 8, dt, dd,
-            crc & 0xFFFFFFFF, len(payload), len(data),
-            len(nb), 0, 0, 0, 0, 0, off) + nb)
+        cds.append(
+            struct.pack(
+                "<4s6H3I5HII",
+                b"PK\x01\x02",
+                20,
+                20,
+                0x0001 if enc else 0,
+                8,
+                dt,
+                dd,
+                crc & 0xFFFFFFFF,
+                len(payload),
+                len(data),
+                len(nb),
+                0,
+                0,
+                0,
+                0,
+                0,
+                off,
+            )
+            + nb
+        )
 
     cd_off = buf.tell()
     cd = b"".join(cds)
     buf.write(cd)
-    buf.write(struct.pack("<4s4H2IH",
-        b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
+    buf.write(struct.pack("<4s4H2IH", b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
 
     with open(output_path, "wb") as f:
         f.write(buf.getvalue())
@@ -139,6 +201,7 @@ def write_zipcrypto(output_path, entries, password):
 # ---------------------------------------------------------------------------
 # Conversion logic
 # ---------------------------------------------------------------------------
+
 
 def convert(input_path, target_controller, output_dir):
     template_path = os.path.join(SCRIPT_DIR, "templates", f"{target_controller}.xml")
@@ -151,16 +214,16 @@ def convert(input_path, target_controller, output_dir):
         src_xml = z.read("1", pwd=PASSWORD)
 
     src_root = ET.fromstring(src_xml)
-    src_sd   = src_root.find(".//SystemData")
-    src_cg   = src_root.find(".//ControlGroup")
+    src_sd = src_root.find(".//SystemData")
+    src_cg = src_root.find(".//ControlGroup")
 
     system_name = src_sd.get("Name", "")
 
     # Load target template
     tmpl_tree = ET.parse(template_path)
     tmpl_root = tmpl_tree.getroot()
-    tmpl_sd   = tmpl_root.find(".//SystemData")
-    tmpl_cg   = tmpl_root.find(".//ControlGroup")
+    tmpl_sd = tmpl_root.find(".//SystemData")
+    tmpl_cg = tmpl_root.find(".//ControlGroup")
 
     # 1. Set Name only in target SystemData
     tmpl_sd.set("Name", system_name)
@@ -186,8 +249,9 @@ def convert(input_path, target_controller, output_dir):
     with pyzipper.AESZipFile(empty_dat) as z:
         available = z.namelist()
         if "NetworkSetting.xml" in available:
-            zip_entries.append(("NetworkSetting.xml",
-                                z.read("NetworkSetting.xml", pwd=PASSWORD), True))
+            zip_entries.append(
+                ("NetworkSetting.xml", z.read("NetworkSetting.xml", pwd=PASSWORD), True)
+            )
     if any(n.endswith("/") for n in available):
         zip_entries.append(("IMG/", None, False))
 
@@ -209,13 +273,19 @@ def convert(input_path, target_controller, output_dir):
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="Convert .dat between controller types")
     parser.add_argument("input", help="Input .dat file")
-    parser.add_argument("--to", required=True, dest="target",
-                        help=f"Target controller type: {', '.join(EMPTY_CONFIGS)}")
-    parser.add_argument("output_dir", nargs="?", default=None,
-                        help="Output folder (default: same as input)")
+    parser.add_argument(
+        "--to",
+        required=True,
+        dest="target",
+        help=f"Target controller type: {', '.join(EMPTY_CONFIGS)}",
+    )
+    parser.add_argument(
+        "output_dir", nargs="?", default=None, help="Output folder (default: same as input)"
+    )
     args = parser.parse_args()
 
     if args.target not in EMPTY_CONFIGS:

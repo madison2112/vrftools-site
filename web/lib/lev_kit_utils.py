@@ -52,34 +52,148 @@ REFRIGERANT_LABEL = {
 # ---------------------------------------------------------------------------
 
 CAPACITY_OPTIONS: list[dict] = [
-    {"value":  0, "label": "--- LEV Kit Size ---", "btuh":      0, "lev": "--- Not Selected ---", "sw2": [0, 0, 0, 0, 0, 0]},
-    {"value":  1, "label": "6 MBH",                "btuh":   6000, "lev": "PAC-LV24AC-1",          "sw2": [0, 0, 1, 0, 0, 0]},
-    {"value":  2, "label": "8 MBH",                "btuh":   8000, "lev": "PAC-LV24AC-1",          "sw2": [1, 0, 1, 0, 0, 0]},
-    {"value":  3, "label": "12 MBH",               "btuh":  12000, "lev": "PAC-LV24AC-1",          "sw2": [0, 1, 1, 0, 0, 0]},
-    {"value":  4, "label": "15 MBH",               "btuh":  15000, "lev": "PAC-LV24AC-1",          "sw2": [0, 0, 0, 1, 0, 0]},
-    {"value":  5, "label": "18 MBH",               "btuh":  18000, "lev": "PAC-LV24AC-1",          "sw2": [0, 1, 0, 1, 0, 0]},
-    {"value":  6, "label": "24 MBH",               "btuh":  24000, "lev": "PAC-LV24AC-1",          "sw2": [1, 0, 1, 1, 0, 0]},
-    {"value":  7, "label": "27 MBH",               "btuh":  27000, "lev": "PAC-LV48AC-1",          "sw2": [0, 1, 1, 1, 0, 0]},
-    {"value":  8, "label": "30 MBH",               "btuh":  30000, "lev": "PAC-LV48AC-1",          "sw2": [0, 0, 0, 0, 1, 0]},
-    {"value":  9, "label": "36 MBH",               "btuh":  36000, "lev": "PAC-LV48AC-1",          "sw2": [0, 0, 1, 0, 1, 0]},
-    {"value": 10, "label": "48 MBH",               "btuh":  48000, "lev": "PAC-LV48AC-1",          "sw2": [1, 0, 0, 1, 1, 0]},
-    {"value": 11, "label": "54 MBH",               "btuh":  54000, "lev": "PAC-LV60AC-1",          "sw2": [0, 0, 1, 1, 1, 0]},
-    {"value": 12, "label": "60 MBH",               "btuh":  60000, "lev": "PAC-LV60AC-1",          "sw2": [1, 1, 1, 1, 1, 0]},
-    {"value": 13, "label": "72 MBH",               "btuh":  72000, "lev": "PAC-LV96AC-1",          "sw2": [0, 0, 0, 1, 0, 1]},
-    {"value": 14, "label": "96 MBH",               "btuh":  96000, "lev": "PAC-LV96AC-1",          "sw2": [0, 1, 0, 0, 1, 1]},
-    {"value": 15, "label": "120 MBH",              "btuh": 120000, "lev": "PAC-LV120AC-1",         "sw2": [0, 0, 1, 1, 1, 1]},
-    {"value": 16, "label": "144 MBH",              "btuh": 144000, "lev": "PAC-LV96AC-1 (x2)",     "sw2": [0, 0, 0, 0, 1, 0]},
-    {"value": 17, "label": "168 MBH",              "btuh": 168000, "lev": "PAC-LV96AC-1 (x2)",     "sw2": [0, 1, 0, 1, 1, 0]},
-    {"value": 18, "label": "192 MBH",              "btuh": 192000, "lev": "PAC-LV96AC-1 (x2)",     "sw2": [0, 0, 1, 0, 0, 1]},
-    {"value": 19, "label": "216 MBH",              "btuh": 216000, "lev": "PAC-LV120AC-1 (x2)",    "sw2": [0, 1, 1, 1, 0, 1]},
-    {"value": 20, "label": "240 MBH",              "btuh": 240000, "lev": "PAC-LV120AC-1 (x2)",    "sw2": [0, 0, 0, 1, 1, 1]},
+    {
+        "value": 0,
+        "label": "--- LEV Kit Size ---",
+        "btuh": 0,
+        "lev": "--- Not Selected ---",
+        "sw2": [0, 0, 0, 0, 0, 0],
+    },
+    {"value": 1, "label": "6 MBH", "btuh": 6000, "lev": "PAC-LV24AC-1", "sw2": [0, 0, 1, 0, 0, 0]},
+    {"value": 2, "label": "8 MBH", "btuh": 8000, "lev": "PAC-LV24AC-1", "sw2": [1, 0, 1, 0, 0, 0]},
+    {
+        "value": 3,
+        "label": "12 MBH",
+        "btuh": 12000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [0, 1, 1, 0, 0, 0],
+    },
+    {
+        "value": 4,
+        "label": "15 MBH",
+        "btuh": 15000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [0, 0, 0, 1, 0, 0],
+    },
+    {
+        "value": 5,
+        "label": "18 MBH",
+        "btuh": 18000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [0, 1, 0, 1, 0, 0],
+    },
+    {
+        "value": 6,
+        "label": "24 MBH",
+        "btuh": 24000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [1, 0, 1, 1, 0, 0],
+    },
+    {
+        "value": 7,
+        "label": "27 MBH",
+        "btuh": 27000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [0, 1, 1, 1, 0, 0],
+    },
+    {
+        "value": 8,
+        "label": "30 MBH",
+        "btuh": 30000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [0, 0, 0, 0, 1, 0],
+    },
+    {
+        "value": 9,
+        "label": "36 MBH",
+        "btuh": 36000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [0, 0, 1, 0, 1, 0],
+    },
+    {
+        "value": 10,
+        "label": "48 MBH",
+        "btuh": 48000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [1, 0, 0, 1, 1, 0],
+    },
+    {
+        "value": 11,
+        "label": "54 MBH",
+        "btuh": 54000,
+        "lev": "PAC-LV60AC-1",
+        "sw2": [0, 0, 1, 1, 1, 0],
+    },
+    {
+        "value": 12,
+        "label": "60 MBH",
+        "btuh": 60000,
+        "lev": "PAC-LV60AC-1",
+        "sw2": [1, 1, 1, 1, 1, 0],
+    },
+    {
+        "value": 13,
+        "label": "72 MBH",
+        "btuh": 72000,
+        "lev": "PAC-LV96AC-1",
+        "sw2": [0, 0, 0, 1, 0, 1],
+    },
+    {
+        "value": 14,
+        "label": "96 MBH",
+        "btuh": 96000,
+        "lev": "PAC-LV96AC-1",
+        "sw2": [0, 1, 0, 0, 1, 1],
+    },
+    {
+        "value": 15,
+        "label": "120 MBH",
+        "btuh": 120000,
+        "lev": "PAC-LV120AC-1",
+        "sw2": [0, 0, 1, 1, 1, 1],
+    },
+    {
+        "value": 16,
+        "label": "144 MBH",
+        "btuh": 144000,
+        "lev": "PAC-LV96AC-1 (x2)",
+        "sw2": [0, 0, 0, 0, 1, 0],
+    },
+    {
+        "value": 17,
+        "label": "168 MBH",
+        "btuh": 168000,
+        "lev": "PAC-LV96AC-1 (x2)",
+        "sw2": [0, 1, 0, 1, 1, 0],
+    },
+    {
+        "value": 18,
+        "label": "192 MBH",
+        "btuh": 192000,
+        "lev": "PAC-LV96AC-1 (x2)",
+        "sw2": [0, 0, 1, 0, 0, 1],
+    },
+    {
+        "value": 19,
+        "label": "216 MBH",
+        "btuh": 216000,
+        "lev": "PAC-LV120AC-1 (x2)",
+        "sw2": [0, 1, 1, 1, 0, 1],
+    },
+    {
+        "value": 20,
+        "label": "240 MBH",
+        "btuh": 240000,
+        "lev": "PAC-LV120AC-1 (x2)",
+        "sw2": [0, 0, 0, 1, 1, 1],
+    },
 ]
 
 THERMO_OPTIONS: list[dict] = [
     {"value": 2, "label": "Thermo OFF at 82°F (Default)", "sw3": [1, 0]},
-    {"value": 3, "label": "Thermo OFF at 70°F",           "sw3": [0, 0]},
-    {"value": 4, "label": "Thermo OFF at 59°F",           "sw3": [1, 1]},
-    {"value": 1, "label": "Thermo OFF at 50°F",           "sw3": [0, 1]},
+    {"value": 3, "label": "Thermo OFF at 70°F", "sw3": [0, 0]},
+    {"value": 4, "label": "Thermo OFF at 59°F", "sw3": [1, 1]},
+    {"value": 1, "label": "Thermo OFF at 50°F", "sw3": [0, 1]},
 ]
 
 HEATING_SETPOINT_OPTIONS: list[dict] = [
@@ -88,17 +202,22 @@ HEATING_SETPOINT_OPTIONS: list[dict] = [
 ]
 
 DEFAULT_SWITCHES: dict[str, list[int]] = {
-    "SW1":  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    "SW2":  [0, 0, 0, 0, 0, 0],
-    "SW3":  [0, 0, 0, 0, 1, 0, 0, 1, 0, 1],
-    "SW4":  [0, 0, 1, 1, 1, 0],
+    "SW1": [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    "SW2": [0, 0, 0, 0, 0, 0],
+    "SW3": [0, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+    "SW4": [0, 0, 1, 1, 1, 0],
     "SW21": [0, 0, 0, 0, 0, 0, 0, 0],
     "SW22": [0, 0, 0, 0],
 }
 
 # Bank ordering and position counts (used by PDF renderer and validators)
 SWITCH_BANKS: list[tuple[str, int]] = [
-    ("SW1", 10), ("SW2", 6), ("SW3", 10), ("SW4", 6), ("SW21", 8), ("SW22", 4),
+    ("SW1", 10),
+    ("SW2", 6),
+    ("SW3", 10),
+    ("SW4", 6),
+    ("SW21", 8),
+    ("SW22", 4),
 ]
 
 
@@ -110,34 +229,148 @@ SWITCH_BANKS: list[tuple[str, int]] = [
 # ---------------------------------------------------------------------------
 
 CAPACITY_OPTIONS_AH001: list[dict] = [
-    {"value":  0, "label": "--- LEV Kit Size ---", "btuh":      0, "lev": "--- Not Selected ---", "sw2": [0, 0, 0, 0, 0, 0]},
-    {"value":  1, "label": "6 MBH",                "btuh":   6000, "lev": "PAC-LV24AC-1",          "sw2": [0, 0, 1, 0, 0, 0]},
-    {"value":  2, "label": "8 MBH",                "btuh":   8000, "lev": "PAC-LV24AC-1",          "sw2": [1, 0, 1, 0, 0, 0]},
-    {"value":  3, "label": "12 MBH",               "btuh":  12000, "lev": "PAC-LV24AC-1",          "sw2": [0, 1, 1, 0, 0, 0]},
-    {"value":  4, "label": "15 MBH",               "btuh":  15000, "lev": "PAC-LV24AC-1",          "sw2": [0, 0, 0, 1, 0, 0]},
-    {"value":  5, "label": "18 MBH",               "btuh":  18000, "lev": "PAC-LV24AC-1",          "sw2": [0, 1, 0, 1, 0, 0]},
-    {"value":  6, "label": "24 MBH",               "btuh":  24000, "lev": "PAC-LV24AC-1",          "sw2": [1, 0, 1, 1, 0, 0]},
-    {"value":  7, "label": "27 MBH",               "btuh":  27000, "lev": "PAC-LV48AC-1",          "sw2": [0, 1, 1, 1, 0, 0]},
-    {"value":  8, "label": "30 MBH",               "btuh":  30000, "lev": "PAC-LV48AC-1",          "sw2": [0, 0, 0, 0, 1, 0]},
-    {"value":  9, "label": "36 MBH",               "btuh":  36000, "lev": "PAC-LV48AC-1",          "sw2": [0, 0, 1, 0, 1, 0]},
-    {"value": 10, "label": "48 MBH",               "btuh":  48000, "lev": "PAC-LV48AC-1",          "sw2": [1, 0, 0, 1, 1, 0]},
-    {"value": 11, "label": "54 MBH",               "btuh":  54000, "lev": "PAC-LV60AC-1",          "sw2": [0, 0, 1, 1, 1, 0]},
-    {"value": 12, "label": "60 MBH",               "btuh":  60000, "lev": "PAC-LV60AC-1",          "sw2": [1, 1, 1, 1, 1, 0]},
-    {"value": 13, "label": "72 MBH",               "btuh":  72000, "lev": "PAC-LV96AC-1",          "sw2": [0, 0, 0, 1, 0, 1]},
-    {"value": 14, "label": "96 MBH",               "btuh":  96000, "lev": "PAC-LV96AC-1",          "sw2": [0, 1, 0, 0, 1, 1]},
-    {"value": 15, "label": "120 MBH",              "btuh": 120000, "lev": "PAC-LV120AC-1",         "sw2": [0, 0, 1, 1, 1, 1]},
-    {"value": 16, "label": "144 MBH",              "btuh": 144000, "lev": "PAC-LV96AC-1 (x2)",     "sw2": [0, 0, 0, 0, 1, 0]},
-    {"value": 17, "label": "168 MBH",              "btuh": 168000, "lev": "PAC-LV96AC-1 (x2)",     "sw2": [0, 1, 0, 1, 1, 0]},
-    {"value": 18, "label": "192 MBH",              "btuh": 192000, "lev": "PAC-LV96AC-1 (x2)",     "sw2": [0, 0, 1, 0, 0, 1]},
-    {"value": 19, "label": "216 MBH",              "btuh": 216000, "lev": "PAC-LV120AC-1 (x2)",    "sw2": [0, 1, 1, 1, 0, 1]},
-    {"value": 20, "label": "240 MBH",              "btuh": 240000, "lev": "PAC-LV120AC-1 (x2)",    "sw2": [0, 0, 0, 1, 1, 1]},
+    {
+        "value": 0,
+        "label": "--- LEV Kit Size ---",
+        "btuh": 0,
+        "lev": "--- Not Selected ---",
+        "sw2": [0, 0, 0, 0, 0, 0],
+    },
+    {"value": 1, "label": "6 MBH", "btuh": 6000, "lev": "PAC-LV24AC-1", "sw2": [0, 0, 1, 0, 0, 0]},
+    {"value": 2, "label": "8 MBH", "btuh": 8000, "lev": "PAC-LV24AC-1", "sw2": [1, 0, 1, 0, 0, 0]},
+    {
+        "value": 3,
+        "label": "12 MBH",
+        "btuh": 12000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [0, 1, 1, 0, 0, 0],
+    },
+    {
+        "value": 4,
+        "label": "15 MBH",
+        "btuh": 15000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [0, 0, 0, 1, 0, 0],
+    },
+    {
+        "value": 5,
+        "label": "18 MBH",
+        "btuh": 18000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [0, 1, 0, 1, 0, 0],
+    },
+    {
+        "value": 6,
+        "label": "24 MBH",
+        "btuh": 24000,
+        "lev": "PAC-LV24AC-1",
+        "sw2": [1, 0, 1, 1, 0, 0],
+    },
+    {
+        "value": 7,
+        "label": "27 MBH",
+        "btuh": 27000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [0, 1, 1, 1, 0, 0],
+    },
+    {
+        "value": 8,
+        "label": "30 MBH",
+        "btuh": 30000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [0, 0, 0, 0, 1, 0],
+    },
+    {
+        "value": 9,
+        "label": "36 MBH",
+        "btuh": 36000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [0, 0, 1, 0, 1, 0],
+    },
+    {
+        "value": 10,
+        "label": "48 MBH",
+        "btuh": 48000,
+        "lev": "PAC-LV48AC-1",
+        "sw2": [1, 0, 0, 1, 1, 0],
+    },
+    {
+        "value": 11,
+        "label": "54 MBH",
+        "btuh": 54000,
+        "lev": "PAC-LV60AC-1",
+        "sw2": [0, 0, 1, 1, 1, 0],
+    },
+    {
+        "value": 12,
+        "label": "60 MBH",
+        "btuh": 60000,
+        "lev": "PAC-LV60AC-1",
+        "sw2": [1, 1, 1, 1, 1, 0],
+    },
+    {
+        "value": 13,
+        "label": "72 MBH",
+        "btuh": 72000,
+        "lev": "PAC-LV96AC-1",
+        "sw2": [0, 0, 0, 1, 0, 1],
+    },
+    {
+        "value": 14,
+        "label": "96 MBH",
+        "btuh": 96000,
+        "lev": "PAC-LV96AC-1",
+        "sw2": [0, 1, 0, 0, 1, 1],
+    },
+    {
+        "value": 15,
+        "label": "120 MBH",
+        "btuh": 120000,
+        "lev": "PAC-LV120AC-1",
+        "sw2": [0, 0, 1, 1, 1, 1],
+    },
+    {
+        "value": 16,
+        "label": "144 MBH",
+        "btuh": 144000,
+        "lev": "PAC-LV96AC-1 (x2)",
+        "sw2": [0, 0, 0, 0, 1, 0],
+    },
+    {
+        "value": 17,
+        "label": "168 MBH",
+        "btuh": 168000,
+        "lev": "PAC-LV96AC-1 (x2)",
+        "sw2": [0, 1, 0, 1, 1, 0],
+    },
+    {
+        "value": 18,
+        "label": "192 MBH",
+        "btuh": 192000,
+        "lev": "PAC-LV96AC-1 (x2)",
+        "sw2": [0, 0, 1, 0, 0, 1],
+    },
+    {
+        "value": 19,
+        "label": "216 MBH",
+        "btuh": 216000,
+        "lev": "PAC-LV120AC-1 (x2)",
+        "sw2": [0, 1, 1, 1, 0, 1],
+    },
+    {
+        "value": 20,
+        "label": "240 MBH",
+        "btuh": 240000,
+        "lev": "PAC-LV120AC-1 (x2)",
+        "sw2": [0, 0, 0, 1, 1, 1],
+    },
 ]
 
 # AH001 only has three thermo-off options (no 82°F option, which is AH002-specific)
 THERMO_OPTIONS_AH001: list[dict] = [
     {"value": 4, "label": "Thermo OFF at 59°F (Default)", "sw3": [1, 1], "sw4": [1, 1]},
-    {"value": 3, "label": "Thermo OFF at 70°F",           "sw3": [0, 0], "sw4": [0, 0]},
-    {"value": 1, "label": "Thermo OFF at 50°F",           "sw3": [0, 1], "sw4": [0, 1]},
+    {"value": 3, "label": "Thermo OFF at 70°F", "sw3": [0, 0], "sw4": [0, 0]},
+    {"value": 1, "label": "Thermo OFF at 50°F", "sw3": [0, 1], "sw4": [0, 1]},
 ]
 
 # AH001 DAT setpoint range options (encoded via SW3[0])
@@ -159,13 +392,19 @@ DEFAULT_SWITCHES_AH001: dict[str, list[int]] = {
 # 3-position horizontal selector, SW5 is a 2-position horizontal voltage toggle
 # rendered as a 1-bit array (0 = right cell active = 208V, 1 = left cell = 230V).
 SWITCH_BANKS_AH001: list[tuple[str, int]] = [
-    ("SW1", 10), ("SW2", 6), ("SW3", 10), ("SW4", 10), ("SWA", 3), ("SW5", 1),
+    ("SW1", 10),
+    ("SW2", 6),
+    ("SW3", 10),
+    ("SW4", 10),
+    ("SWA", 3),
+    ("SW5", 1),
 ]
 
 
 # ---------------------------------------------------------------------------
 # Per-unit switch generation (verbatim port of generateSwitchPositions, v4.6)
 # ---------------------------------------------------------------------------
+
 
 def _capacity_by_value(value: int, controller_type: str = CONTROLLER_AH002) -> dict:
     table = CAPACITY_OPTIONS_AH001 if controller_type == CONTROLLER_AH001 else CAPACITY_OPTIONS
@@ -212,17 +451,17 @@ def _generate_switch_positions_ah002(config: dict) -> dict:
       return_enable       str   "central" or "bas"   (RAT only)
       temp_adjustment     bool  DAT BAS setpoint OR RAT stratification offset
     """
-    capacity           = config["capacity"]
-    control_mode       = config["control_mode"]
-    heat_pump          = config["heat_pump"]
-    input_voltage      = str(config["input_voltage"])
-    discharge_enable   = config.get("discharge_enable", "central")
+    capacity = config["capacity"]
+    control_mode = config["control_mode"]
+    heat_pump = config["heat_pump"]
+    input_voltage = str(config["input_voltage"])
+    discharge_enable = config.get("discharge_enable", "central")
     discharge_setpoint = config.get("discharge_setpoint", "central")
-    thermo_temp        = config.get("thermo_temp", 0)
-    dat_setpoint       = config.get("dat_setpoint", 2)
-    return_control     = config.get("return_control", "room")
-    return_enable      = config.get("return_enable", "central")
-    temp_adjustment    = config.get("temp_adjustment", False)
+    thermo_temp = config.get("thermo_temp", 0)
+    dat_setpoint = config.get("dat_setpoint", 2)
+    return_control = config.get("return_control", "room")
+    return_enable = config.get("return_enable", "central")
+    temp_adjustment = config.get("temp_adjustment", False)
 
     switches = {bank: list(values) for bank, values in DEFAULT_SWITCHES.items()}
     e11 = 1 if control_mode == "return" else 0
@@ -335,20 +574,20 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
       humidifier_installed  bool RAT-only extra
       run_humidifier        bool only when humidifier_installed=True
     """
-    capacity           = config["capacity"]
-    control_mode       = config["control_mode"]
-    heat_pump          = config["heat_pump"]
-    input_voltage      = str(config["input_voltage"])
-    discharge_enable   = config.get("discharge_enable", "central")
+    capacity = config["capacity"]
+    control_mode = config["control_mode"]
+    heat_pump = config["heat_pump"]
+    input_voltage = str(config["input_voltage"])
+    discharge_enable = config.get("discharge_enable", "central")
     discharge_setpoint = config.get("discharge_setpoint", "central")
-    thermo_temp        = config.get("thermo_temp", 4)        # AH001 default = 59°F
-    dat_setpoint       = config.get("dat_setpoint", 1)       # AH001 default = 82°F upper
-    return_control     = config.get("return_control", "rat")
-    return_enable      = config.get("return_enable", "central")
-    temp_adjustment    = config.get("temp_adjustment", False)
-    electric_heat      = config.get("electric_heat", False)
+    thermo_temp = config.get("thermo_temp", 4)  # AH001 default = 59°F
+    dat_setpoint = config.get("dat_setpoint", 1)  # AH001 default = 82°F upper
+    return_control = config.get("return_control", "rat")
+    return_enable = config.get("return_enable", "central")
+    temp_adjustment = config.get("temp_adjustment", False)
+    electric_heat = config.get("electric_heat", False)
     humidifier_installed = config.get("humidifier_installed", False)
-    run_humidifier     = config.get("run_humidifier", False)
+    run_humidifier = config.get("run_humidifier", False)
 
     switches = {bank: list(values) for bank, values in DEFAULT_SWITCHES_AH001.items()}
     e11 = 1 if control_mode == "return" else 0
@@ -390,7 +629,7 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
     #   DAT: ON when LEV kit controls the fan AND run-fan-during-defrost is selected
     #   RAT: ON when electric heat is used during defrost/error states
     fan_controlled_by = config.get("fan_controlled_by", "bas")
-    run_fan_defrost   = config.get("run_fan_defrost", False)
+    run_fan_defrost = config.get("run_fan_defrost", False)
     use_defrost_error = config.get("use_defrost_error", False)
     if e11 == 0 and fan_controlled_by == "lev" and run_fan_defrost:
         switches["SW3"][3] = 1
@@ -446,17 +685,18 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
 # .dsbx parsing
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ParsedUnit:
     tag: str
     mnet: int | None
     btuh: int
-    capacity_index: int           # index into the controller's CAPACITY_OPTIONS table
+    capacity_index: int  # index into the controller's CAPACITY_OPTIONS table
     capacity_label: str
     lev_assembly: str
-    control_mode: str             # "discharge" | "return"
+    control_mode: str  # "discharge" | "return"
     raw_application_option: str
-    controller_type: str          # CONTROLLER_AH001 or CONTROLLER_AH002
+    controller_type: str  # CONTROLLER_AH001 or CONTROLLER_AH002
 
     def to_dict(self) -> dict:
         return {
@@ -486,10 +726,10 @@ def _capacity_index_for_btuh(btuh: int, controller_type: str = CONTROLLER_AH002)
 def _control_mode_from_application(opt: str) -> str:
     """Map dsbx LEVApplicationOption to v4.6 controlMode string."""
     if opt == "Ventilation":
-        return "discharge"   # DAT default for ventilation/DOAS
+        return "discharge"  # DAT default for ventilation/DOAS
     if opt == "RoomAirConditioning":
-        return "return"      # RAT default for indoor space conditioning
-    return "discharge"       # safe fallback
+        return "return"  # RAT default for indoor space conditioning
+    return "discharge"  # safe fallback
 
 
 def parse_dsbx(file_bytes: bytes) -> dict:
@@ -512,9 +752,7 @@ def parse_dsbx(file_bytes: bytes) -> dict:
         with zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
             names = zf.namelist()
             if "xml" not in names:
-                raise ValueError(
-                    f".dsbx archive missing 'xml' member (found: {names})"
-                )
+                raise ValueError(f".dsbx archive missing 'xml' member (found: {names})")
             xml_bytes = zf.read("xml")
     except zipfile.BadZipFile as exc:
         raise ValueError(f"Not a valid .dsbx archive: {exc}") from exc
@@ -536,7 +774,7 @@ def parse_dsbx(file_bytes: bytes) -> dict:
     for idu in root.iter("IndoorUnit"):
         model = (idu.findtext("ModelNumber") or "").strip()
         if "lev kit" not in model.lower():
-            continue                                                # FCU - ignore
+            continue  # FCU - ignore
 
         tag = (idu.findtext("ReferenceTag") or "").strip()
         application = (idu.findtext("LEVApplicationOption") or "").strip()
@@ -598,17 +836,18 @@ def parse_dsbx(file_bytes: bytes) -> dict:
     units.sort(key=_sort_key)
 
     return {
-        "project_name":      project_name,
-        "units":             units,
+        "project_name": project_name,
+        "units": units,
         "controllers_found": controllers_found,
-        "skipped_r410a":     [],
-        "warnings":          warnings,
+        "skipped_r410a": [],
+        "warnings": warnings,
     }
 
 
 # ---------------------------------------------------------------------------
 # Per-unit record assembly (turn parsed unit + user choices into a PDF row)
 # ---------------------------------------------------------------------------
+
 
 def thermistor_wiring(control_mode: str) -> tuple[str, str]:
     """Return (TH21_Air, TH24_Air) labels for the given control mode."""
@@ -636,7 +875,9 @@ def _enable_text(unit_cfg: dict) -> str:
 def _setpoint_text(unit_cfg: dict) -> str:
     """Short label for the PDF's Setpoint Type column (AH001 only)."""
     if unit_cfg["control_mode"] == "discharge":
-        return "0-10VDC from BAS" if unit_cfg["discharge_setpoint"] == "bas" else "Central Controller"
+        return (
+            "0-10VDC from BAS" if unit_cfg["discharge_setpoint"] == "bas" else "Central Controller"
+        )
     return "Return Air Sensor" if unit_cfg["return_control"] == "rat" else "Room Temp Remote"
 
 
@@ -659,75 +900,80 @@ def build_unit_record(parsed: dict, **overrides: Any) -> dict:
     is_ah001 = controller_type == CONTROLLER_AH001
 
     config = {
-        "controller_type":    controller_type,
-        "capacity":           parsed["capacity_index"],
-        "control_mode":       overrides.get("control_mode", parsed["control_mode"]),
-        "heat_pump":          overrides.get("heat_pump", True),
-        "input_voltage":      overrides.get("input_voltage", "208"),
-        "discharge_enable":   overrides.get("discharge_enable",   "central"),
+        "controller_type": controller_type,
+        "capacity": parsed["capacity_index"],
+        "control_mode": overrides.get("control_mode", parsed["control_mode"]),
+        "heat_pump": overrides.get("heat_pump", True),
+        "input_voltage": overrides.get("input_voltage", "208"),
+        "discharge_enable": overrides.get("discharge_enable", "central"),
         "discharge_setpoint": overrides.get("discharge_setpoint", "central"),
         # AH001 defaults differ from AH002: thermo 59°F (value 4), dat 82°F (value 1)
-        "thermo_temp":        overrides.get("thermo_temp",        4 if is_ah001 else 2),
-        "dat_setpoint":       overrides.get("dat_setpoint",       1 if is_ah001 else 2),
-        "return_control":     overrides.get("return_control",     "room"),
-        "return_enable":      overrides.get("return_enable",      "central"),
-        "temp_adjustment":    overrides.get("temp_adjustment",    False),
+        "thermo_temp": overrides.get("thermo_temp", 4 if is_ah001 else 2),
+        "dat_setpoint": overrides.get("dat_setpoint", 1 if is_ah001 else 2),
+        "return_control": overrides.get("return_control", "room"),
+        "return_enable": overrides.get("return_enable", "central"),
+        "temp_adjustment": overrides.get("temp_adjustment", False),
     }
     if is_ah001:
-        config.update({
-            "fan_controlled_by":    overrides.get("fan_controlled_by", "bas"),
-            "run_fan_defrost":      overrides.get("run_fan_defrost", False),
-            "electric_heat":        overrides.get("electric_heat", False),
-            "use_defrost_error":    overrides.get("use_defrost_error", False),
-            "humidifier_installed": overrides.get("humidifier_installed", False),
-            "run_humidifier":       overrides.get("run_humidifier", False),
-        })
+        config.update(
+            {
+                "fan_controlled_by": overrides.get("fan_controlled_by", "bas"),
+                "run_fan_defrost": overrides.get("run_fan_defrost", False),
+                "electric_heat": overrides.get("electric_heat", False),
+                "use_defrost_error": overrides.get("use_defrost_error", False),
+                "humidifier_installed": overrides.get("humidifier_installed", False),
+                "run_humidifier": overrides.get("run_humidifier", False),
+            }
+        )
 
     result = generate_switch_positions(config)
     cap_opt = _capacity_by_value(config["capacity"], controller_type)
     th21, th24 = thermistor_wiring(config["control_mode"])
 
     record = {
-        "tag":              parsed["tag"],
-        "mnet":             parsed.get("mnet"),
-        "controller_type":  controller_type,
-        "capacity_index":   config["capacity"],
-        "capacity_label":   cap_opt["label"],
-        "lev_assembly":     cap_opt["lev"],
-        "control_mode":     config["control_mode"],
-        "return_control":   config["return_control"],
-        "heat_pump":        config["heat_pump"],
-        "input_voltage":    config["input_voltage"],
-        "discharge_enable":   config["discharge_enable"],
+        "tag": parsed["tag"],
+        "mnet": parsed.get("mnet"),
+        "controller_type": controller_type,
+        "capacity_index": config["capacity"],
+        "capacity_label": cap_opt["label"],
+        "lev_assembly": cap_opt["lev"],
+        "control_mode": config["control_mode"],
+        "return_control": config["return_control"],
+        "heat_pump": config["heat_pump"],
+        "input_voltage": config["input_voltage"],
+        "discharge_enable": config["discharge_enable"],
         "discharge_setpoint": config["discharge_setpoint"],
-        "thermo_temp":        config["thermo_temp"],
-        "dat_setpoint":       config["dat_setpoint"],
-        "return_enable":      config["return_enable"],
-        "temp_adjustment":    config["temp_adjustment"],
-        "switches":           result["switches"],
-        "cnrm_connected":     result["cnrm_connected"],
-        "th21_air":           th21,
-        "th24_air":           th24,
+        "thermo_temp": config["thermo_temp"],
+        "dat_setpoint": config["dat_setpoint"],
+        "return_enable": config["return_enable"],
+        "temp_adjustment": config["temp_adjustment"],
+        "switches": result["switches"],
+        "cnrm_connected": result["cnrm_connected"],
+        "th21_air": th21,
+        "th24_air": th24,
     }
     if is_ah001:
-        record.update({
-            "fan_controlled_by":    config["fan_controlled_by"],
-            "run_fan_defrost":      config["run_fan_defrost"],
-            "electric_heat":        config["electric_heat"],
-            "use_defrost_error":    config["use_defrost_error"],
-            "humidifier_installed": config["humidifier_installed"],
-            "run_humidifier":       config["run_humidifier"],
-            # Derived strings for the PDF (AH001 prints these inline in place of
-            # the TH21A/TH24A thermistor labels used on AH002 pages).
-            "enable_text":          _enable_text(config),
-            "setpoint_text":        _setpoint_text(config),
-        })
+        record.update(
+            {
+                "fan_controlled_by": config["fan_controlled_by"],
+                "run_fan_defrost": config["run_fan_defrost"],
+                "electric_heat": config["electric_heat"],
+                "use_defrost_error": config["use_defrost_error"],
+                "humidifier_installed": config["humidifier_installed"],
+                "run_humidifier": config["run_humidifier"],
+                # Derived strings for the PDF (AH001 prints these inline in place of
+                # the TH21A/TH24A thermistor labels used on AH002 pages).
+                "enable_text": _enable_text(config),
+                "setpoint_text": _setpoint_text(config),
+            }
+        )
     return record
 
 
 # ---------------------------------------------------------------------------
 # Footnotes
 # ---------------------------------------------------------------------------
+
 
 def _unit_note_texts(u: dict) -> list[str]:
     """Per-unit list of note texts (excluding the always-present legend).
@@ -757,7 +1003,9 @@ def _unit_note_texts(u: dict) -> list[str]:
         # AH001=value 4); only flag when the user picked a non-default.
         default_thermo = 4 if is_ah001 else 2
         if u["thermo_temp"] != default_thermo:
-            lbl = _thermo_by_value(u["thermo_temp"], controller_type)["label"].replace(" (Default)", "")
+            lbl = _thermo_by_value(u["thermo_temp"], controller_type)["label"].replace(
+                " (Default)", ""
+            )
             texts.append(lbl)
         # DAT setpoint scaling note — AH001 default is 82°F, AH002 default is 95°F
         if is_ah001:
@@ -842,12 +1090,13 @@ def compute_footnotes(units: list[dict]) -> tuple[list[str], dict[str, list[int]
 # PDF rendering
 # ---------------------------------------------------------------------------
 
+
 def render_submittal_pdf(
-    units:                  list[dict],
-    project_name:           str,
-    voltage:                str = "208",
-    layout:                 str = "horizontal",
-    refrigerant_selection:  str = "ah002",
+    units: list[dict],
+    project_name: str,
+    voltage: str = "208",
+    layout: str = "horizontal",
+    refrigerant_selection: str = "ah002",
 ) -> bytes:
     """
     Render the LEV Kit submittal PDF.
@@ -879,7 +1128,12 @@ def render_submittal_pdf(
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
     from reportlab.platypus import (
-        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, KeepTogether,
+        SimpleDocTemplate,
+        Table,
+        TableStyle,
+        Paragraph,
+        Spacer,
+        KeepTogether,
         PageBreak,
     )
 
@@ -899,15 +1153,16 @@ def render_submittal_pdf(
             every side by INSET, including the mid-gap between cells, so
             whitespace is consistent in all directions.
         """
-        CELL_W    = 6        # painted cell width
-        CELL_H    = 12       # painted cell height
-        INSET     = 2.0      # whitespace in every direction (top/bottom/left/right/mid)
-        FRAME_LW  = 1.5      # outer/per-switch box stroke
-        INNER_LW  = 0.4      # cell-border stroke
-        LABEL_W   = 14       # left margin reserved for ON/OFF text
-        POS_GAP   = 2        # gap between frame bottom and position numbers
-        FONT      = "Helvetica"
-        FONT_SZ   = 6
+
+        CELL_W = 6  # painted cell width
+        CELL_H = 12  # painted cell height
+        INSET = 2.0  # whitespace in every direction (top/bottom/left/right/mid)
+        FRAME_LW = 1.5  # outer/per-switch box stroke
+        INNER_LW = 0.4  # cell-border stroke
+        LABEL_W = 14  # left margin reserved for ON/OFF text
+        POS_GAP = 2  # gap between frame bottom and position numbers
+        FONT = "Helvetica"
+        FONT_SZ = 6
 
         def __init__(self, label: str, values: list[int], show_label: bool = True):
             super().__init__()
@@ -916,11 +1171,10 @@ def render_submittal_pdf(
             self.show_label = show_label
             self.n = len(values)
             self.slot_w = self.CELL_W + 2 * self.INSET
-            self.slot_h = 2 * self.CELL_H + 3 * self.INSET   # top + cell + mid + cell + bottom
+            self.slot_h = 2 * self.CELL_H + 3 * self.INSET  # top + cell + mid + cell + bottom
             self.width = self.LABEL_W + self.n * self.slot_w
             label_h = (self.FONT_SZ + 2) if show_label else 0
-            self.height = (self.FONT_SZ + 2 + self.POS_GAP
-                           + self.slot_h + label_h)
+            self.height = self.FONT_SZ + 2 + self.POS_GAP + self.slot_h + label_h
 
         def draw(self):
             c = self.canv
@@ -937,9 +1191,9 @@ def render_submittal_pdf(
             fy = y
 
             # ON / OFF labels at the left, centered on each cell's vertical midline
-            on_text_y  = fy + 2 * self.INSET + self.CELL_H + self.CELL_H / 2 - self.FONT_SZ / 2 + 1
-            off_text_y = fy +     self.INSET                + self.CELL_H / 2 - self.FONT_SZ / 2 + 1
-            c.drawRightString(self.LABEL_W - 2, on_text_y,  "ON")
+            on_text_y = fy + 2 * self.INSET + self.CELL_H + self.CELL_H / 2 - self.FONT_SZ / 2 + 1
+            off_text_y = fy + self.INSET + self.CELL_H / 2 - self.FONT_SZ / 2 + 1
+            c.drawRightString(self.LABEL_W - 2, on_text_y, "ON")
             c.drawRightString(self.LABEL_W - 2, off_text_y, "OFF")
 
             c.setStrokeColor(colors.black)
@@ -954,30 +1208,26 @@ def render_submittal_pdf(
                 if i == 0:
                     c.rect(sx, fy, self.slot_w, self.slot_h, stroke=1, fill=0)
                 else:
-                    c.line(sx,                   fy + self.slot_h, sx + self.slot_w, fy + self.slot_h)
-                    c.line(sx + self.slot_w,     fy,               sx + self.slot_w, fy + self.slot_h)
-                    c.line(sx,                   fy,               sx + self.slot_w, fy)
+                    c.line(sx, fy + self.slot_h, sx + self.slot_w, fy + self.slot_h)
+                    c.line(sx + self.slot_w, fy, sx + self.slot_w, fy + self.slot_h)
+                    c.line(sx, fy, sx + self.slot_w, fy)
 
                 # Inner cells: thin border, black fill on the active side
                 c.setLineWidth(self.INNER_LW)
                 cell_x = sx + self.INSET
-                on_cell_y  = fy + 2 * self.INSET + self.CELL_H
-                off_cell_y = fy +     self.INSET
+                on_cell_y = fy + 2 * self.INSET + self.CELL_H
+                off_cell_y = fy + self.INSET
                 c.setFillColor(colors.black if v == 1 else colors.white)
-                c.rect(cell_x, on_cell_y, self.CELL_W, self.CELL_H,
-                       stroke=1, fill=1)
+                c.rect(cell_x, on_cell_y, self.CELL_W, self.CELL_H, stroke=1, fill=1)
                 c.setFillColor(colors.black if v == 0 else colors.white)
-                c.rect(cell_x, off_cell_y, self.CELL_W, self.CELL_H,
-                       stroke=1, fill=1)
+                c.rect(cell_x, off_cell_y, self.CELL_W, self.CELL_H, stroke=1, fill=1)
 
             c.setFillColor(colors.black)
             c.setLineWidth(1)
 
             if self.show_label:
                 c.setFont("Helvetica-Bold", 7)
-                c.drawString(self.LABEL_W,
-                             fy + self.slot_h + 2,
-                             self.label)
+                c.drawString(self.LABEL_W, fy + self.slot_h + 2, self.label)
 
     class SingleRowSwitchBank(Flowable):
         """Half-height single-row selector bank used by AH001 SWA and SW5.
@@ -990,23 +1240,25 @@ def render_submittal_pdf(
         Caller supplies the cell labels and a per-cell values list — index 0
         means "cell unfilled (white)", 1 means "cell filled (black)".
         """
-        CELL_W   = 6
-        CELL_H   = 12
-        INSET    = 2.0
+
+        CELL_W = 6
+        CELL_H = 12
+        INSET = 2.0
         FRAME_LW = 1.5
         INNER_LW = 0.4
-        POS_GAP  = 2
-        FONT     = "Helvetica"
-        FONT_SZ  = 6
+        POS_GAP = 2
+        FONT = "Helvetica"
+        FONT_SZ = 6
 
-        def __init__(self, label: str, cell_labels: list[str],
-                     values: list[int], show_label: bool = True):
+        def __init__(
+            self, label: str, cell_labels: list[str], values: list[int], show_label: bool = True
+        ):
             super().__init__()
-            self.label       = label
+            self.label = label
             self.cell_labels = cell_labels
-            self.values      = values
-            self.show_label  = show_label
-            self.n           = len(values)
+            self.values = values
+            self.show_label = show_label
+            self.n = len(values)
             # Cells always share edges (single continuous bordered bank). When
             # labels like "230V" / "208V" are wider than the default cell
             # width, the cell+inner-rect grow horizontally to fit — accepting
@@ -1014,13 +1266,13 @@ def render_submittal_pdf(
             # but can overflow slightly into the gap-free space; user-confirmed
             # acceptable trade.
             max_lbl_chars = max((len(s) for s in cell_labels), default=1)
-            min_cell_w_for_labels = max_lbl_chars * 3.6 + 1      # ~3.6pt per char @ size 6
-            self.cell_w      = max(self.CELL_W, min_cell_w_for_labels)
-            self.cell_box_w  = self.cell_w + 2 * self.INSET
-            self.slot_h      = self.CELL_H + 2 * self.INSET
-            self.width       = self.n * self.cell_box_w
-            bank_lbl_h       = (self.FONT_SZ + 2) if show_label else 0
-            self.height      = self.FONT_SZ + 2 + self.POS_GAP + self.slot_h + bank_lbl_h
+            min_cell_w_for_labels = max_lbl_chars * 3.6 + 1  # ~3.6pt per char @ size 6
+            self.cell_w = max(self.CELL_W, min_cell_w_for_labels)
+            self.cell_box_w = self.cell_w + 2 * self.INSET
+            self.slot_h = self.CELL_H + 2 * self.INSET
+            self.width = self.n * self.cell_box_w
+            bank_lbl_h = (self.FONT_SZ + 2) if show_label else 0
+            self.height = self.FONT_SZ + 2 + self.POS_GAP + self.slot_h + bank_lbl_h
 
         def draw(self):
             c = self.canv
@@ -1046,12 +1298,9 @@ def render_submittal_pdf(
                 if i == 0:
                     c.rect(sx, fy, self.cell_box_w, self.slot_h, stroke=1, fill=0)
                 else:
-                    c.line(sx,                    fy + self.slot_h,
-                           sx + self.cell_box_w,  fy + self.slot_h)
-                    c.line(sx + self.cell_box_w,  fy,
-                           sx + self.cell_box_w,  fy + self.slot_h)
-                    c.line(sx,                    fy,
-                           sx + self.cell_box_w,  fy)
+                    c.line(sx, fy + self.slot_h, sx + self.cell_box_w, fy + self.slot_h)
+                    c.line(sx + self.cell_box_w, fy, sx + self.cell_box_w, fy + self.slot_h)
+                    c.line(sx, fy, sx + self.cell_box_w, fy)
 
                 c.setLineWidth(self.INNER_LW)
                 cell_x = sx + self.INSET
@@ -1090,38 +1339,63 @@ def render_submittal_pdf(
     doc = SimpleDocTemplate(
         buf,
         pagesize=pagesize,
-        leftMargin=margin, rightMargin=margin,
-        topMargin=margin,  bottomMargin=margin,
+        leftMargin=margin,
+        rightMargin=margin,
+        topMargin=margin,
+        bottomMargin=margin,
         title=f"{project_name} - LEV Kit Configuration",
     )
 
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
-        "TitleCenter", parent=styles["Title"],
-        fontName="Helvetica-Bold", fontSize=14, leading=16, alignment=1,
+        "TitleCenter",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=14,
+        leading=16,
+        alignment=1,
         spaceAfter=4,
     )
     sub_style = ParagraphStyle(
-        "Sub", parent=styles["Normal"],
-        fontName="Helvetica", fontSize=9, alignment=1, spaceAfter=8,
+        "Sub",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9,
+        alignment=1,
+        spaceAfter=8,
     )
     body_style = ParagraphStyle(
-        "Body", parent=styles["Normal"],
-        fontName="Helvetica", fontSize=8, leading=10, alignment=1,
+        "Body",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
+        alignment=1,
     )
     notes_header = ParagraphStyle(
-        "NotesHeader", parent=styles["Normal"],
-        fontName="Helvetica-Bold", fontSize=10, spaceAfter=4,
+        "NotesHeader",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        spaceAfter=4,
     )
     notes_body_style = ParagraphStyle(
-        "NotesBody", parent=styles["Normal"],
-        fontName="Helvetica", fontSize=8, leading=10,
+        "NotesBody",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
     )
 
     chunk_title_style = ParagraphStyle(
-        "ChunkTitle", parent=styles["Title"],
-        fontName="Helvetica-Bold", fontSize=12, leading=14, alignment=1,
-        spaceAfter=8, spaceBefore=4,
+        "ChunkTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        leading=14,
+        alignment=1,
+        spaceAfter=8,
+        spaceBefore=4,
     )
 
     # --- Header --------------------------------------------------------------
@@ -1134,8 +1408,9 @@ def render_submittal_pdf(
     ]
 
     # --- Partition units by controller; render each non-empty group ---------
-    ah002_units = [u for u in units
-                   if u.get("controller_type", CONTROLLER_AH002) == CONTROLLER_AH002]
+    ah002_units = [
+        u for u in units if u.get("controller_type", CONTROLLER_AH002) == CONTROLLER_AH002
+    ]
     ah001_units = [u for u in units if u.get("controller_type") == CONTROLLER_AH001]
     groups: list[tuple[str, list[dict]]] = []
     if ah002_units:
@@ -1154,31 +1429,43 @@ def render_submittal_pdf(
             story.append(PageBreak())
 
         is_ah001 = ctrl == CONTROLLER_AH001
-        ref_lbl  = REFRIGERANT_LABEL[ctrl]
-        story.append(Paragraph(
-            f"LEV Kit Configuration &ndash; {ctrl} ({ref_lbl})",
-            chunk_title_style,
-        ))
+        ref_lbl = REFRIGERANT_LABEL[ctrl]
+        story.append(
+            Paragraph(
+                f"LEV Kit Configuration &ndash; {ctrl} ({ref_lbl})",
+                chunk_title_style,
+            )
+        )
 
         # Footnotes are computed per-group so numbering resets between
         # controllers (matches the "AH002 pages then AH001 pages" structure).
         footnote_lines, per_unit_refs = compute_footnotes(group_units)
 
         def _guide_note_flowables(footnote_lines=footnote_lines):
-            lon  = DipSwitchBank("ON",  [1], show_label=False)
+            lon = DipSwitchBank("ON", [1], show_label=False)
             loff = DipSwitchBank("OFF", [0], show_label=False)
             ltbl = Table(
-                [[lon,  Paragraph("= Switch ON,",  body_style),
-                  loff, Paragraph("= Switch OFF", body_style)]],
+                [
+                    [
+                        lon,
+                        Paragraph("= Switch ON,", body_style),
+                        loff,
+                        Paragraph("= Switch OFF", body_style),
+                    ]
+                ],
                 colWidths=[lon.width + 6, 70, loff.width + 6, 70],
             )
-            ltbl.setStyle(TableStyle([
-                ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING",   (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING",  (0, 0), (-1, -1), 4),
-                ("TOPPADDING",    (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ]))
+            ltbl.setStyle(
+                TableStyle(
+                    [
+                        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                        ("TOPPADDING", (0, 0), (-1, -1), 0),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ]
+                )
+            )
             ltbl.hAlign = "LEFT"
             result = [KeepTogether([Paragraph("Switch Position Guide", notes_header), ltbl])]
             if footnote_lines:
@@ -1195,39 +1482,89 @@ def render_submittal_pdf(
             # and cell content differ.
             if is_ah001:
                 header_top = [
-                    "Unit Tag", "Capacity", "Control\nMode", "Required\nLEV",
-                    "SW1", "SW2", "SW3", "SW4", "SWA", "SW5",
-                    "Enable\nType", "Setpoint\nType",
-                    "CNRM\nJumper", "Notes",
+                    "Unit Tag",
+                    "Capacity",
+                    "Control\nMode",
+                    "Required\nLEV",
+                    "SW1",
+                    "SW2",
+                    "SW3",
+                    "SW4",
+                    "SWA",
+                    "SW5",
+                    "Enable\nType",
+                    "Setpoint\nType",
+                    "CNRM\nJumper",
+                    "Notes",
                 ]
                 header_sub = [""] * 14
                 # AH001 col widths: SW4 grew 6→10 positions, SWA/SW5 narrower
                 # than SW21/SW22, enable/setpoint text columns are wider than
                 # the AH002 thermistor columns. Total ≈ 1145pt (same budget).
                 col_widths = [
-                    65, 60, 100, 85,
-                    120, 80, 120, 120, 55, 55,
-                    85, 85,
-                    70, 50,
+                    65,
+                    60,
+                    100,
+                    85,
+                    120,
+                    80,
+                    120,
+                    120,
+                    55,
+                    55,
+                    85,
+                    85,
+                    70,
+                    50,
                 ]
             else:
                 header_top = [
-                    "Unit Tag", "Capacity", "Control\nMode", "Required\nLEV",
-                    "SW1", "SW2", "SW3", "SW4", "SW21", "SW22",
-                    "Thermistor Wiring", "",
-                    "CNRM\nJumper", "Notes",
+                    "Unit Tag",
+                    "Capacity",
+                    "Control\nMode",
+                    "Required\nLEV",
+                    "SW1",
+                    "SW2",
+                    "SW3",
+                    "SW4",
+                    "SW21",
+                    "SW22",
+                    "Thermistor Wiring",
+                    "",
+                    "CNRM\nJumper",
+                    "Notes",
                 ]
                 header_sub = [
-                    "", "", "", "",
-                    "", "", "", "", "", "",
-                    "TH21\nAir", "TH24\nAir",
-                    "", "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "TH21\nAir",
+                    "TH24\nAir",
+                    "",
+                    "",
                 ]
                 col_widths = [
-                    65, 60, 100, 85,
-                    120, 80, 120, 80, 100, 60,
-                    75, 75,
-                    70, 55,
+                    65,
+                    60,
+                    100,
+                    85,
+                    120,
+                    80,
+                    120,
+                    80,
+                    100,
+                    60,
+                    75,
+                    75,
+                    70,
+                    55,
                 ]
 
             data_rows: list[list] = []
@@ -1235,46 +1572,54 @@ def render_submittal_pdf(
                 if is_ah001:
                     swa_visual = _swa_visual(u["switches"]["SWA"])
                     sw5_visual = _sw5_visual(u["switches"]["SW5"])
-                    data_rows.append([
-                        u["tag"],
-                        u["capacity_label"],
-                        Paragraph(control_mode_display(u).replace(" ", "<br/>", 1), body_style),
-                        u["lev_assembly"],
-                        DipSwitchBank("SW1", u["switches"]["SW1"], show_label=False),
-                        DipSwitchBank("SW2", u["switches"]["SW2"], show_label=False),
-                        DipSwitchBank("SW3", u["switches"]["SW3"], show_label=False),
-                        DipSwitchBank("SW4", u["switches"]["SW4"], show_label=False),
-                        SingleRowSwitchBank("SWA", ["3", "2", "1"], swa_visual, show_label=False),
-                        SingleRowSwitchBank("SW5", ["230V", "208V"], sw5_visual, show_label=False),
-                        Paragraph(u.get("enable_text", ""), body_style),
-                        Paragraph(u.get("setpoint_text", ""), body_style),
-                        "Connected" if u["cnrm_connected"] else "Disconnected",
-                        _ref(u),
-                    ])
+                    data_rows.append(
+                        [
+                            u["tag"],
+                            u["capacity_label"],
+                            Paragraph(control_mode_display(u).replace(" ", "<br/>", 1), body_style),
+                            u["lev_assembly"],
+                            DipSwitchBank("SW1", u["switches"]["SW1"], show_label=False),
+                            DipSwitchBank("SW2", u["switches"]["SW2"], show_label=False),
+                            DipSwitchBank("SW3", u["switches"]["SW3"], show_label=False),
+                            DipSwitchBank("SW4", u["switches"]["SW4"], show_label=False),
+                            SingleRowSwitchBank(
+                                "SWA", ["3", "2", "1"], swa_visual, show_label=False
+                            ),
+                            SingleRowSwitchBank(
+                                "SW5", ["230V", "208V"], sw5_visual, show_label=False
+                            ),
+                            Paragraph(u.get("enable_text", ""), body_style),
+                            Paragraph(u.get("setpoint_text", ""), body_style),
+                            "Connected" if u["cnrm_connected"] else "Disconnected",
+                            _ref(u),
+                        ]
+                    )
                 else:
-                    data_rows.append([
-                        u["tag"],
-                        u["capacity_label"],
-                        Paragraph(control_mode_display(u).replace(" ", "<br/>", 1), body_style),
-                        u["lev_assembly"],
-                        DipSwitchBank("SW1",  u["switches"]["SW1"],  show_label=False),
-                        DipSwitchBank("SW2",  u["switches"]["SW2"],  show_label=False),
-                        DipSwitchBank("SW3",  u["switches"]["SW3"],  show_label=False),
-                        DipSwitchBank("SW4",  u["switches"]["SW4"],  show_label=False),
-                        DipSwitchBank("SW21", u["switches"]["SW21"], show_label=False),
-                        DipSwitchBank("SW22", u["switches"]["SW22"], show_label=False),
-                        Paragraph(u["th21_air"].replace(" ", "<br/>", 1), body_style),
-                        Paragraph(u["th24_air"].replace(" ", "<br/>", 1), body_style),
-                        "Connected" if u["cnrm_connected"] else "Disconnected",
-                        _ref(u),
-                    ])
+                    data_rows.append(
+                        [
+                            u["tag"],
+                            u["capacity_label"],
+                            Paragraph(control_mode_display(u).replace(" ", "<br/>", 1), body_style),
+                            u["lev_assembly"],
+                            DipSwitchBank("SW1", u["switches"]["SW1"], show_label=False),
+                            DipSwitchBank("SW2", u["switches"]["SW2"], show_label=False),
+                            DipSwitchBank("SW3", u["switches"]["SW3"], show_label=False),
+                            DipSwitchBank("SW4", u["switches"]["SW4"], show_label=False),
+                            DipSwitchBank("SW21", u["switches"]["SW21"], show_label=False),
+                            DipSwitchBank("SW22", u["switches"]["SW22"], show_label=False),
+                            Paragraph(u["th21_air"].replace(" ", "<br/>", 1), body_style),
+                            Paragraph(u["th24_air"].replace(" ", "<br/>", 1), body_style),
+                            "Connected" if u["cnrm_connected"] else "Disconnected",
+                            _ref(u),
+                        ]
+                    )
 
             ts_cmds = [
-                ("BACKGROUND",   (0, 0), (-1, 1), grey),
-                ("FONTNAME",     (0, 0), (-1, 1), "Helvetica-Bold"),
-                ("FONTSIZE",     (0, 0), (-1, 1), 8),
-                ("ALIGN",        (0, 0), (-1, 1), "CENTER"),
-                ("VALIGN",       (0, 0), (-1, 1), "MIDDLE"),
+                ("BACKGROUND", (0, 0), (-1, 1), grey),
+                ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 1), 8),
+                ("ALIGN", (0, 0), (-1, 1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, 1), "MIDDLE"),
             ]
             # On AH002 pages, "Thermistor Wiring" spans columns 10-11 on the top
             # header row; AH001 pages have independent Enable/Setpoint columns
@@ -1290,25 +1635,24 @@ def render_submittal_pdf(
             for c_idx in single_row_cols:
                 ts_cmds.append(("SPAN", (c_idx, 0), (c_idx, 1)))
             ts_cmds += [
-                ("FONTNAME",     (0, 2), (-1, -1), "Helvetica"),
-                ("FONTSIZE",     (0, 2), (-1, -1), 8),
-                ("ALIGN",        (0, 2), (-1, -1), "CENTER"),
-                ("VALIGN",       (0, 2), (-1, -1), "MIDDLE"),
-                ("FONTNAME",     (0, 2), (0, -1), "Helvetica-Bold"),
-                ("GRID",         (0, 0), (-1, -1), 0.4, colors.black),
-                ("LEFTPADDING",  (0, 0), (-1, -1), 3),
+                ("FONTNAME", (0, 2), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 2), (-1, -1), 8),
+                ("ALIGN", (0, 2), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 2), (-1, -1), "MIDDLE"),
+                ("FONTNAME", (0, 2), (0, -1), "Helvetica-Bold"),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.black),
+                ("LEFTPADDING", (0, 0), (-1, -1), 3),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-                ("TOPPADDING",   (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING",(0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
             ]
             ts = TableStyle(ts_cmds)
 
             H_ROWS_PER_PAGE = 10
-            h_chunks = (
-                [data_rows[i:i + H_ROWS_PER_PAGE]
-                 for i in range(0, len(data_rows), H_ROWS_PER_PAGE)]
-                or [[]]
-            )
+            h_chunks = [
+                data_rows[i : i + H_ROWS_PER_PAGE]
+                for i in range(0, len(data_rows), H_ROWS_PER_PAGE)
+            ] or [[]]
             for ci, chunk_rows in enumerate(h_chunks):
                 chunk_tbl = Table([header_top, header_sub] + chunk_rows, colWidths=col_widths)
                 chunk_tbl.setStyle(ts)
@@ -1327,11 +1671,9 @@ def render_submittal_pdf(
             usable = pagesize[0] - 2 * margin - label_col
             units_per_page = max(1, int(usable // min_unit_col))
 
-            v_chunks = (
-                [group_units[i:i + units_per_page]
-                 for i in range(0, n_units, units_per_page)]
-                or [[]]
-            )
+            v_chunks = [
+                group_units[i : i + units_per_page] for i in range(0, n_units, units_per_page)
+            ] or [[]]
 
             for chunk_idx, chunk in enumerate(v_chunks):
                 chunk_n = len(chunk)
@@ -1351,28 +1693,36 @@ def render_submittal_pdf(
 
                 for bank, _n in banks:
                     if bank == "SWA":
-                        rows.append([bank] + [
-                            SingleRowSwitchBank(
-                                bank, ["3", "2", "1"],
-                                _swa_visual(u["switches"]["SWA"]),
-                                show_label=False,
-                            )
-                            for u in chunk
-                        ])
+                        rows.append(
+                            [bank]
+                            + [
+                                SingleRowSwitchBank(
+                                    bank,
+                                    ["3", "2", "1"],
+                                    _swa_visual(u["switches"]["SWA"]),
+                                    show_label=False,
+                                )
+                                for u in chunk
+                            ]
+                        )
                     elif bank == "SW5":
-                        rows.append([bank] + [
-                            SingleRowSwitchBank(
-                                bank, ["230V", "208V"],
-                                _sw5_visual(u["switches"]["SW5"]),
-                                show_label=False,
-                            )
-                            for u in chunk
-                        ])
+                        rows.append(
+                            [bank]
+                            + [
+                                SingleRowSwitchBank(
+                                    bank,
+                                    ["230V", "208V"],
+                                    _sw5_visual(u["switches"]["SW5"]),
+                                    show_label=False,
+                                )
+                                for u in chunk
+                            ]
+                        )
                     else:
-                        rows.append([bank] + [
-                            DipSwitchBank(bank, u["switches"][bank], False)
-                            for u in chunk
-                        ])
+                        rows.append(
+                            [bank]
+                            + [DipSwitchBank(bank, u["switches"][bank], False) for u in chunk]
+                        )
 
                 if is_ah001:
                     rows.append(
@@ -1395,32 +1745,32 @@ def render_submittal_pdf(
 
                 rows.append(
                     ["CNRM Jumper"]
-                    + ["Connected" if u["cnrm_connected"] else "Disconnected"
-                       for u in chunk]
+                    + ["Connected" if u["cnrm_connected"] else "Disconnected" for u in chunk]
                 )
                 rows.append(
                     ["Notes"]
-                    + [", ".join(str(n) for n in per_unit_refs.get(u["tag"], []))
-                       for u in chunk]
+                    + [", ".join(str(n) for n in per_unit_refs.get(u["tag"], [])) for u in chunk]
                 )
 
                 col_widths = [label_col] + [unit_col] * chunk_n
                 table = Table(rows, colWidths=col_widths)
-                ts = TableStyle([
-                    ("BACKGROUND",   (0, 0), (0, -1), grey),
-                    ("FONTNAME",     (0, 0), (0, -1), "Helvetica-Bold"),
-                    ("FONTSIZE",     (0, 0), (-1, -1), 9),
-                    ("ALIGN",        (0, 0), (-1, -1), "CENTER"),
-                    ("VALIGN",       (0, 0), (-1, -1), "MIDDLE"),
-                    ("ALIGN",        (0, 0), (0, -1), "LEFT"),
-                    ("LEFTPADDING",  (0, 0), (0, -1), 6),
-                    ("FONTNAME",     (1, 0), (-1, 0), "Helvetica-Bold"),
-                    ("GRID",         (0, 0), (-1, -1), 0.4, colors.black),
-                    ("LEFTPADDING",  (1, 0), (-1, -1), 3),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 3),
-                    ("TOPPADDING",   (0, 0), (-1, -1), 4),
-                    ("BOTTOMPADDING",(0, 0), (-1, -1), 4),
-                ])
+                ts = TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (0, -1), grey),
+                        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 9),
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                        ("ALIGN", (0, 0), (0, -1), "LEFT"),
+                        ("LEFTPADDING", (0, 0), (0, -1), 6),
+                        ("FONTNAME", (1, 0), (-1, 0), "Helvetica-Bold"),
+                        ("GRID", (0, 0), (-1, -1), 0.4, colors.black),
+                        ("LEFTPADDING", (1, 0), (-1, -1), 3),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+                        ("TOPPADDING", (0, 0), (-1, -1), 4),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ]
+                )
                 table.setStyle(ts)
                 story.append(table)
                 story.append(Spacer(1, 12))

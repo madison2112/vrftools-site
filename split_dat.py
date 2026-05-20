@@ -32,6 +32,7 @@ PASSWORD = b"MELCO"
 # ZipCrypto writer (same implementation as dsbx_to_dat.py)
 # ---------------------------------------------------------------------------
 
+
 def _make_crc_table():
     table = []
     for i in range(256):
@@ -41,10 +42,13 @@ def _make_crc_table():
         table.append(c)
     return table
 
+
 _CRC_TABLE = _make_crc_table()
+
 
 def _crc32_byte(crc, byte):
     return _CRC_TABLE[(crc ^ byte) & 0xFF] ^ (crc >> 8)
+
 
 def _init_keys(password):
     k = [0x12345678, 0x23456789, 0x34567890]
@@ -52,15 +56,18 @@ def _init_keys(password):
         _update_keys(k, b)
     return k
 
+
 def _update_keys(k, byte):
     k[0] = _crc32_byte(k[0], byte)
     k[1] = (k[1] + (k[0] & 0xFF)) & 0xFFFFFFFF
     k[1] = (k[1] * 134775813 + 1) & 0xFFFFFFFF
     k[2] = _crc32_byte(k[2], (k[1] >> 24) & 0xFF)
 
+
 def _stream_byte(k):
     t = (k[2] | 2) & 0xFFFF
     return ((t * (t ^ 1)) >> 8) & 0xFF
+
 
 def _encrypt(data, password, crc32_val):
     keys = _init_keys(password)
@@ -75,13 +82,16 @@ def _encrypt(data, password, crc32_val):
         _update_keys(keys, b)
     return bytes(enc_header), bytes(enc_data)
 
+
 def _dos_time():
     import time
+
     t = time.localtime()
     return (
         (t.tm_sec // 2) | (t.tm_min << 5) | (t.tm_hour << 11),
         t.tm_mday | (t.tm_mon << 5) | ((t.tm_year - 1980) << 9),
     )
+
 
 def write_zipcrypto(output_path, entries, password):
     """entries: list of (name_str, data_bytes_or_None, encrypt_bool)"""
@@ -94,11 +104,32 @@ def write_zipcrypto(output_path, entries, password):
         off = buf.tell()
 
         if data is None:
-            buf.write(struct.pack("<4s5H3I2H",
-                b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb)
-            cds.append(struct.pack("<4s6H3I5HII",
-                b"PK\x01\x02", 20, 20, 0, 0, dt, dd, 0, 0, 0,
-                len(nb), 0, 0, 0, 0, 0x10, off) + nb)
+            buf.write(
+                struct.pack("<4s5H3I2H", b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb
+            )
+            cds.append(
+                struct.pack(
+                    "<4s6H3I5HII",
+                    b"PK\x01\x02",
+                    20,
+                    20,
+                    0,
+                    0,
+                    dt,
+                    dd,
+                    0,
+                    0,
+                    0,
+                    len(nb),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0x10,
+                    off,
+                )
+                + nb
+            )
             continue
 
         compressed = zlib.compress(data, 9)[2:-4]
@@ -110,20 +141,52 @@ def write_zipcrypto(output_path, entries, password):
             payload = compressed
 
         nb2 = nb
-        buf.write(struct.pack("<4s5H3I2H",
-            b"PK\x03\x04", 20, 0x0001 if enc else 0, 8, dt, dd,
-            crc & 0xFFFFFFFF, len(payload), len(data), len(nb2), 0) + nb2)
+        buf.write(
+            struct.pack(
+                "<4s5H3I2H",
+                b"PK\x03\x04",
+                20,
+                0x0001 if enc else 0,
+                8,
+                dt,
+                dd,
+                crc & 0xFFFFFFFF,
+                len(payload),
+                len(data),
+                len(nb2),
+                0,
+            )
+            + nb2
+        )
         buf.write(payload)
-        cds.append(struct.pack("<4s6H3I5HII",
-            b"PK\x01\x02", 20, 20, 0x0001 if enc else 0, 8, dt, dd,
-            crc & 0xFFFFFFFF, len(payload), len(data),
-            len(nb2), 0, 0, 0, 0, 0, off) + nb2)
+        cds.append(
+            struct.pack(
+                "<4s6H3I5HII",
+                b"PK\x01\x02",
+                20,
+                20,
+                0x0001 if enc else 0,
+                8,
+                dt,
+                dd,
+                crc & 0xFFFFFFFF,
+                len(payload),
+                len(data),
+                len(nb2),
+                0,
+                0,
+                0,
+                0,
+                0,
+                off,
+            )
+            + nb2
+        )
 
     cd_off = buf.tell()
     cd = b"".join(cds)
     buf.write(cd)
-    buf.write(struct.pack("<4s4H2IH",
-        b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
+    buf.write(struct.pack("<4s4H2IH", b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
 
     with open(output_path, "wb") as f:
         f.write(buf.getvalue())
@@ -132,6 +195,7 @@ def write_zipcrypto(output_path, entries, password):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def safe_filename(name):
     """Strip characters that are invalid in Windows filenames."""
@@ -167,8 +231,8 @@ def main():
                 root = ET.fromstring(xml_bytes)
                 sd = root.find(".//SystemData")
                 ctrl_name = sd.get("Name", entry) if sd is not None else entry
-                model     = sd.get("Model", "unknown") if sd is not None else "unknown"
-                groups    = len(root.findall(".//MnetRecord"))
+                model = sd.get("Model", "unknown") if sd is not None else "unknown"
+                groups = len(root.findall(".//MnetRecord"))
             except ET.ParseError as e:
                 print(f"  [{entry}] XML parse error: {e} — skipping")
                 continue
@@ -177,10 +241,14 @@ def main():
             out_path = os.path.join(output_dir, filename)
 
             # Each standalone DAT just needs "1" + "IMG/"
-            write_zipcrypto(out_path, [
-                ("1",    xml_bytes, True),
-                ("IMG/", None,      False),
-            ], PASSWORD)
+            write_zipcrypto(
+                out_path,
+                [
+                    ("1", xml_bytes, True),
+                    ("IMG/", None, False),
+                ],
+                PASSWORD,
+            )
 
             print(f"  [{entry}] {model} | '{ctrl_name}' | {groups} groups -> {filename}")
 
