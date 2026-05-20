@@ -29,7 +29,7 @@
     <input type="file" id="file-input" accept=".mtdz,.MTDZ,.mtlz,.MTLZ,.mtpz,.MTPZ" style="display:none">
   </div>
   <div class="progress-bar" id="progress-bar"><div class="progress-fill"></div></div>
-  <div id="upload-error" class="alert alert-error" style="display:none"></div>
+  <div id="upload-error" class="alert alert-error" style="display:none" role="alert"></div>
   <div id="file-loaded-badge" class="file-loaded-badge" style="display:none">
     <span class="file-loaded-icon">&#128206;</span>
     <span id="file-loaded-name"></span>
@@ -79,5 +79,6 @@
     sysconfig: "{{ url_for('page_mtdz_sysinfo') }}",
   };
 </script>
+<script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mtdz/hub.js') }}"></script>
 {% endblock %}

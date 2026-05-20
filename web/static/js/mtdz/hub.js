@@ -4,9 +4,7 @@
 (function () {
   'use strict';
 
-  var API = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
   var PAGES = window.MTDZ_PAGES || {};
-  var isMobile = function () { return window.innerWidth < 768; };
 
   // ── DOM refs ─────────────────────────────────────────────────────────
   var dropZone    = document.getElementById('drop-zone');
@@ -87,26 +85,16 @@
     } catch (e) { /* ignore quota errors */ }
   }
 
-  function clearStoredSession() {
+  // Wraps global clearStoredSession() from common.js to also reset local state
+  // and hide the loaded-file badge.
+  function clearSession() {
     state.sessionId = null;
     state.fileName  = null;
     state.fileType  = null;
     state.days      = [];
-    try {
-      sessionStorage.removeItem('mtdz_session_id');
-      sessionStorage.removeItem('mtdz_file_name');
-      sessionStorage.removeItem('mtdz_file_type');
-      sessionStorage.removeItem('mtdz_days');
-      localStorage.removeItem('session_id');
-      localStorage.removeItem('file_type');
-      localStorage.removeItem('days');
-      localStorage.removeItem('systems');
-      localStorage.removeItem('sensor_catalog');
-      localStorage.removeItem('topology');
-      localStorage.removeItem('filename');
-      // Hide the loaded-file badge
-      if (fileBadge) fileBadge.style.display = 'none';
-    } catch (e) {}
+    clearStoredSession();
+    if (fileBadge) fileBadge.style.display = 'none';
+    clearHighlights();
   }
 
   function restoreSession() {
@@ -196,12 +184,6 @@
   }
 
   // ── Info popup (same as central control hub pattern) ──────────────────
-  function escHtml(str) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-  }
-
   function showInfoPopup(info) {
     var overlay = document.createElement('div');
     overlay.className = 'info-popup-overlay';
@@ -271,8 +253,7 @@
     try {
       var resp = await fetch(API + '/api/rawdata/' + state.sessionId);
       if (resp.status === 404) {
-        clearStoredSession();
-        clearHighlights();
+        clearSession();
         showUploadError('Your session expired — please re-upload your file.');
         return;
       }
@@ -328,10 +309,8 @@
   var btnClear = document.getElementById('btn-clear-data');
   if (btnClear) {
     btnClear.addEventListener('click', function () {
-      clearStoredSession();
-      clearHighlights();
+      clearSession();
       clearUploadError();
-      if (fileBadge) fileBadge.style.display = 'none';
     });
   }
 })();

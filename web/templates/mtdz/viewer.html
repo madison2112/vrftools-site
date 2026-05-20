@@ -30,7 +30,7 @@
   <select id="system-select"></select>
 </div>
 
-<div id="error-msg" class="error-msg"></div>
+<div id="error-msg" class="error-msg" role="alert"></div>
 
 <div class="card" id="odu-section">
   <div class="card-title">Outdoor Unit (ODU)</div>
@@ -56,5 +56,6 @@
     sysconfig: '/mtdz/sysinfo',
   };
 </script>
+<script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mtdz/viewer.js') }}"></script>
 {% endblock %}
