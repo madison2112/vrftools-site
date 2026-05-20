@@ -30,7 +30,7 @@ import re
 import zipfile
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
+from typing import Any, Dict, Literal, Union
 from xml.etree import ElementTree as ET
 
 
@@ -422,18 +422,28 @@ def _thermo_by_value(value: int, controller_type: str = CONTROLLER_AH002) -> dic
     raise ValueError(f"Unknown thermo value: {value} (controller={controller_type})")
 
 
-def generate_switch_positions(config: dict) -> dict:
-    """
-    Compute final DIP switch positions and CNRM connection state for a single unit.
+def generate_switch_positions(config: Union[SwitchConfig, dict]) -> dict:
+    """Compute final DIP switch positions and CNRM connection state for a single unit.
+
+    Accepts either a SwitchConfig dataclass (preferred) or a plain dict for
+    backward compatibility. Dicts are passed through directly; SwitchConfig
+    instances are converted to dict via their dataclass fields.
 
     Dispatches on config["controller_type"]: defaults to PAC-AH002 for back-compat.
 
     Returns: {"switches": {"SW1": [...], ...}, "cnrm_connected": bool}
     """
-    controller_type = config.get("controller_type", CONTROLLER_AH002)
+    if isinstance(config, SwitchConfig):
+        config_dict = {
+            f.name: getattr(config, f.name)
+            for f in config.__dataclass_fields__.values()
+        }
+    else:
+        config_dict = config
+    controller_type = config_dict.get("controller_type", CONTROLLER_AH002)
     if controller_type == CONTROLLER_AH001:
-        return _generate_switch_positions_ah001(config)
-    return _generate_switch_positions_ah002(config)
+        return _generate_switch_positions_ah001(config_dict)
+    return _generate_switch_positions_ah002(config_dict)
 
 
 def _generate_switch_positions_ah002(config: dict) -> dict:
@@ -710,6 +720,44 @@ class ParsedUnit:
             "raw_application_option": self.raw_application_option,
             "controller_type": self.controller_type,
         }
+
+
+@dataclass
+class SwitchConfig:
+    """Typed configuration for generate_switch_positions().
+
+    Replace the untyped dict with magic string keys. All fields have defaults
+    matching the v4.6 HTML tool initial state (AH002 Defaults).
+
+    Callers may construct directly or use SwitchConfig.from_dict(d) for
+    backward-compatible dict conversion.
+    """
+
+    controller_type: str = CONTROLLER_AH002
+    capacity: int = 1
+    control_mode: Literal["discharge", "return"] = "discharge"
+    heat_pump: bool = True
+    input_voltage: Literal["208", "230"] = "208"
+    discharge_enable: str = "central"
+    discharge_setpoint: str = "central"
+    thermo_temp: int = 2
+    dat_setpoint: int = 2
+    return_control: str = "room"
+    return_enable: str = "central"
+    temp_adjustment: bool = False
+    # AH001-only fields
+    fan_controlled_by: str = "bas"
+    run_fan_defrost: bool = False
+    electric_heat: bool = False
+    use_defrost_error: bool = False
+    humidifier_installed: bool = False
+    run_humidifier: bool = False
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "SwitchConfig":
+        """Construct a SwitchConfig from a plain dict, ignoring unknown keys."""
+        valid_keys = {f.name for f in cls.__dataclass_fields__.values()}
+        return cls(**{k: v for k, v in d.items() if k in valid_keys})
 
 
 _BTUH_RE = re.compile(r"(\d+)\s*Btu\s*/\s*h", re.IGNORECASE)
