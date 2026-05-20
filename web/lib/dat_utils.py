@@ -26,7 +26,7 @@ OPPOSITE = {
 }
 
 
-def _safe_filename(name: str) -> str:
+def safe_filename(name: str) -> str:
     for ch in r'\/:*?"<>|':
         name = name.replace(ch, "_")
     return name.strip() or "unnamed"
@@ -204,7 +204,7 @@ def convert_dat_bytes(dat_bytes: bytes) -> list:
         tmpl_tree.write(out_buf, encoding="utf-8", xml_declaration=True)
 
         results.append({
-            "name":       f"{_safe_filename(sys_name)} {tgt_type}",
+            "name":       f"{safe_filename(sys_name)} {tgt_type}",
             "controller": tgt_type,
             "data":       generate_dat_bytes(out_buf.getvalue(), tgt_type),
         })
@@ -224,7 +224,7 @@ def split_dat_bytes(dat_bytes: bytes) -> list:
     results = []
     for ctrl in controllers:
         results.append({
-            "name":       _safe_filename(ctrl["name"]),
+            "name":       safe_filename(ctrl["name"]),
             "controller": ctrl["controller_type"],
             "data":       generate_dat_bytes(ctrl["xml_bytes"], ctrl["controller_type"]),
         })
@@ -333,7 +333,7 @@ def rearrange_and_split_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
         order = orders.get(i)
         xml = apply_rearrangement(ctrl["xml_bytes"], order) if order else ctrl["xml_bytes"]
         results.append({
-            "name":       _safe_filename(ctrl["name"]),
+            "name":       safe_filename(ctrl["name"]),
             "controller": ctrl["controller_type"],
             "data":       generate_dat_bytes(xml, ctrl["controller_type"]),
         })
@@ -380,7 +380,7 @@ def rearrange_and_convert_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
         out_buf = io.BytesIO()
         tmpl_tree.write(out_buf, encoding="utf-8", xml_declaration=True)
         results.append({
-            "name":       f"{_safe_filename(sys_name)} {tgt_type}",
+            "name":       f"{safe_filename(sys_name)} {tgt_type}",
             "controller": tgt_type,
             "data":       generate_dat_bytes(out_buf.getvalue(), tgt_type),
         })

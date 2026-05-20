@@ -8,6 +8,8 @@ import os
 import zipfile
 import xml.etree.ElementTree as ET
 
+from .dat_utils import safe_filename
+
 REPO_ROOT    = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 TEMPLATES_DIR = os.path.join(REPO_ROOT, "templates")
 DEFAULT_MAP  = os.path.join(REPO_ROOT, "dsbx_dat_mapping.json")
@@ -311,9 +313,7 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
         if controller in NEEDS_IMG:
             entries.append(("IMG/", None, False))
 
-        safe_name = _text(groupof50, "Name")
-        for ch in r'\/:*?"<>|':
-            safe_name = safe_name.replace(ch, "_")
+        safe_name = safe_filename(_text(groupof50, "Name"))
 
         results.append({
             "name":       f"{safe_name} {controller}",

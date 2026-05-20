@@ -24,7 +24,9 @@ import xml.etree.ElementTree as ET
 
 import pyzipper
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"))
+
+from lib.dat_utils import safe_filename
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_MAP = os.path.join(SCRIPT_DIR, "dsbx_dat_mapping.json")
@@ -411,9 +413,7 @@ def main():
         if has_img:
             entries.append(("IMG/", None, False))
 
-        safe_name = _text(groupof50, "Name")
-        for ch in r'\/:*?"<>|':
-            safe_name = safe_name.replace(ch, "_")
+        safe_name = safe_filename(_text(groupof50, "Name"))
         out_path = os.path.join(out_dir, f"{safe_name} {block_controller}.dat")
 
         write_zipcrypto(out_path, entries, PASSWORD)

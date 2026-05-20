@@ -22,7 +22,9 @@ import zlib
 import pyzipper
 import xml.etree.ElementTree as ET
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"))
+
+from lib.dat_utils import safe_filename
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PASSWORD   = b"MELCO"
@@ -194,9 +196,7 @@ def convert(input_path, target_controller, output_dir):
         zip_entries.append(("IMG/", None, False))
 
     # Output filename: "{Name} {controller}.dat"
-    safe_name = system_name
-    for ch in r'\/:*?"<>|':
-        safe_name = safe_name.replace(ch, "_")
+    safe_name = safe_filename(system_name)
     out_filename = f"{safe_name} {target_controller}.dat"
     out_path = os.path.join(output_dir, out_filename)
 

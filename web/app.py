@@ -18,7 +18,7 @@ from lib.dat_utils import (
     parse_dat_controllers, rearrange_and_repackage_dat_bytes,
     rearrange_and_split_dat_bytes, rearrange_and_convert_dat_bytes,
     sort_groups_by_tag, split_dat_bytes, apply_rearrangement,
-    generate_dat_bytes,_check_warnings, _safe_filename,
+    generate_dat_bytes,_check_warnings, safe_filename,
 )
 from lib.dsbx_utils import (
     dsbx_to_dat_bytes, extract_group_cards, get_groupof50_list,
@@ -1092,7 +1092,7 @@ def api_download_rearrange(sid):
 
         else:  # packaged (default)
             result = rearrange_and_repackage_dat_bytes(dat_data, {})
-            base = _safe_filename(blocks[0]["name"]) if blocks else "rearranged"
+            base = safe_filename(blocks[0]["name"]) if blocks else "rearranged"
             fname = f"{base}_rearranged.dat" if len(blocks) == 1 else "rearranged.dat"
             return _send_dat(result, fname)
 
