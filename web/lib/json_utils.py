@@ -1,6 +1,7 @@
 """
 HMAC-signed JSON export/import for portable session sharing.
 """
+
 import base64
 import hashlib
 import hmac as _hmac
@@ -8,15 +9,14 @@ import json
 
 
 def _canonical(payload: dict) -> bytes:
-    return json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _compute_hmac(payload_without_hmac: dict, secret: bytes) -> str:
     return _hmac.new(secret, _canonical(payload_without_hmac), hashlib.sha256).hexdigest()
 
 
-def export_session_json(export_blocks: list, session_data: dict,
-                        tool: str, secret: bytes) -> bytes:
+def export_session_json(export_blocks: list, session_data: dict, tool: str, secret: bytes) -> bytes:
     """
     Build a signed, portable JSON payload from canonical export blocks.
 
@@ -25,11 +25,13 @@ def export_session_json(export_blocks: list, session_data: dict,
     """
     blocks_clean = []
     for block in export_blocks:
-        blocks_clean.append({
-            "name":            block.get("name", ""),
-            "controller_type": block.get("controller_type", ""),
-            "groups":          block.get("groups", []),
-        })
+        blocks_clean.append(
+            {
+                "name": block.get("name", ""),
+                "controller_type": block.get("controller_type", ""),
+                "groups": block.get("groups", []),
+            }
+        )
 
     # PACK both the remapped blocks AND the raw orders — blocks show the
     # final arrangement for human readers, orders are what the import
@@ -55,14 +57,14 @@ def export_session_json(export_blocks: list, session_data: dict,
     )
 
     payload = {
-        "v":               1,
-        "tool":            tool,
-        "multi":           session_data.get("multi", False),
-        "source_b64":      base64.b64encode(raw).decode(),
-        "blocks":          blocks_clean,
-        "orders":          orders,
+        "v": 1,
+        "tool": tool,
+        "multi": session_data.get("multi", False),
+        "source_b64": base64.b64encode(raw).decode(),
+        "blocks": blocks_clean,
+        "orders": orders,
         "controller_names": controller_names,
-        "group_names":     group_names,
+        "group_names": group_names,
     }
 
     payload["hmac"] = _compute_hmac(payload, secret)

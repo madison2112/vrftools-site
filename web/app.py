@@ -1,6 +1,7 @@
 """
 Central Controller Config Tools — Flask web application.
 """
+
 import base64
 import io
 import os
@@ -8,21 +9,31 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 import requests as req_lib
-from flask import (Flask, Response, jsonify, render_template, request,
-                   send_file, abort)
+from flask import Flask, Response, jsonify, render_template, request, send_file, abort
 
 from lib import sessions
 from lib import lev_kit_utils
 from lib.dat_utils import (
-    convert_dat_bytes, detect_controller_type, extract_groups_from_xml,
-    parse_dat_controllers, rearrange_and_repackage_dat_bytes,
-    rearrange_and_split_dat_bytes, rearrange_and_convert_dat_bytes,
-    sort_groups_by_tag, split_dat_bytes, apply_rearrangement,
-    generate_dat_bytes,_check_warnings, safe_filename,
+    convert_dat_bytes,
+    detect_controller_type,
+    extract_groups_from_xml,
+    parse_dat_controllers,
+    rearrange_and_repackage_dat_bytes,
+    rearrange_and_split_dat_bytes,
+    rearrange_and_convert_dat_bytes,
+    sort_groups_by_tag,
+    split_dat_bytes,
+    apply_rearrangement,
+    generate_dat_bytes,
+    _check_warnings,
+    safe_filename,
 )
 from lib.dsbx_utils import (
-    dsbx_to_dat_bytes, extract_group_cards, get_groupof50_list,
-    load_mapping, parse_dsbx_bytes,
+    dsbx_to_dat_bytes,
+    extract_group_cards,
+    get_groupof50_list,
+    load_mapping,
+    parse_dsbx_bytes,
 )
 from lib.json_utils import export_session_json, import_session_json
 from lib.agent_routes import agent_bp
@@ -40,6 +51,7 @@ MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
 APP_ENV = os.environ.get("APP_ENV", "test")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
 
+
 @app.context_processor
 def inject_globals():
     return {"codetest": True, "app_env": APP_ENV}
@@ -50,6 +62,7 @@ def _read_restart_signal() -> str | None:
     try:
         with open(SIGNAL_FILE, "r") as f:
             import json as _json
+
             data = _json.load(f)
         ts = data.get("restart_at")
         return ts if isinstance(ts, str) and ts else None
@@ -60,6 +73,7 @@ def _read_restart_signal() -> str | None:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _preloaded_session(expected_type: str) -> str | None:
     """Return a valid session ID from ?session= if type matches."""
@@ -143,20 +157,20 @@ def _gather_export_state(s: dict) -> list:
             order = s.get(f"order_{i}")
             if isinstance(order, list) and order:
                 old_to_new = {
-                    old_slot: pos + 1
-                    for pos, old_slot in enumerate(order)
-                    if old_slot > 0
+                    old_slot: pos + 1 for pos, old_slot in enumerate(order) if old_slot > 0
                 }
                 for g in groups:
                     if g["slot"] in old_to_new:
                         g["slot"] = old_to_new[g["slot"]]
-            result.append({
-                "name":            controller_names.get(str(i)) or b.get("name", ""),
-                "controller_type": b.get("controller_type", ""),
-                "xml_bytes":       b"",  # no XML for DSBX sessions
-                "groups":          groups,
-                "entry":           str(i + 1),
-            })
+            result.append(
+                {
+                    "name": controller_names.get(str(i)) or b.get("name", ""),
+                    "controller_type": b.get("controller_type", ""),
+                    "xml_bytes": b"",  # no XML for DSBX sessions
+                    "groups": groups,
+                    "entry": str(i + 1),
+                }
+            )
         return result
 
     # DAT sessions: parse raw bytes, apply edits, re-extract
@@ -170,7 +184,9 @@ def _gather_export_state(s: dict) -> list:
         xml = ctrl["xml_bytes"]
 
         # 1. Apply controller name
-        name = controller_names.get(str(i)) or (blocks[i].get("name", "") if i < len(blocks) else "")
+        name = controller_names.get(str(i)) or (
+            blocks[i].get("name", "") if i < len(blocks) else ""
+        )
         if name:
             try:
                 root = ET.fromstring(xml)
@@ -200,13 +216,15 @@ def _gather_export_state(s: dict) -> list:
         # 4. Re-extract groups with final slot positions
         groups = extract_groups_from_xml(xml)
 
-        result.append({
-            "name":            name or ctrl["name"],
-            "controller_type": ctrl["controller_type"],
-            "xml_bytes":       xml,
-            "groups":          groups,
-            "entry":           ctrl["entry"],
-        })
+        result.append(
+            {
+                "name": name or ctrl["name"],
+                "controller_type": ctrl["controller_type"],
+                "xml_bytes": xml,
+                "groups": groups,
+                "entry": ctrl["entry"],
+            }
+        )
 
     return result
 
@@ -243,18 +261,22 @@ def _package_export_dat(export_blocks: list, raw_bytes: bytes) -> bytes:
 # Page routes
 # ---------------------------------------------------------------------------
 
+
 @app.route("/status")
 def status():
     """Liveness + restart-window + session-expiry probe. Read by Docker
     healthcheck and the frontend banner poller. Cheap by design: no DB,
     no template render."""
     from lib.sessions import _expiry as _session_expiry
-    return jsonify({
-        "ok": True,
-        "env": APP_ENV,
-        "restart_at": _read_restart_signal(),
-        "session_expiry_at": _session_expiry(),
-    })
+
+    return jsonify(
+        {
+            "ok": True,
+            "env": APP_ENV,
+            "restart_at": _read_restart_signal(),
+            "session_expiry_at": _session_expiry(),
+        }
+    )
 
 
 @app.route("/")
@@ -320,7 +342,7 @@ def page_lev_kit_single_ah001():
 import io as _io_lev_kit
 
 LEV_KIT_VOLTAGES = {"208", "230"}
-LEV_KIT_LAYOUTS  = {"horizontal", "vertical"}
+LEV_KIT_LAYOUTS = {"horizontal", "vertical"}
 LEV_KIT_REFRIGERANTS = {"ah001", "ah002", "both"}
 LEV_KIT_CONTROLLER_TYPES = {
     lev_kit_utils.CONTROLLER_AH001,
@@ -334,15 +356,24 @@ LEV_KIT_CONTROLLER_TYPES = {
 # AH001-specific fields (fan_controlled_by, run_fan_defrost, electric_heat,
 # use_defrost_error, humidifier_installed, run_humidifier) ride through as
 # overrides as well; build_unit_record ignores them on AH002 records.
-LEV_KIT_OVERRIDE_KEYS = frozenset({
-    "heat_pump",
-    "discharge_enable", "discharge_setpoint",
-    "thermo_temp", "dat_setpoint",
-    "return_control", "return_enable", "temp_adjustment",
-    "fan_controlled_by", "run_fan_defrost",
-    "electric_heat", "use_defrost_error",
-    "humidifier_installed", "run_humidifier",
-})
+LEV_KIT_OVERRIDE_KEYS = frozenset(
+    {
+        "heat_pump",
+        "discharge_enable",
+        "discharge_setpoint",
+        "thermo_temp",
+        "dat_setpoint",
+        "return_control",
+        "return_enable",
+        "temp_adjustment",
+        "fan_controlled_by",
+        "run_fan_defrost",
+        "electric_heat",
+        "use_defrost_error",
+        "humidifier_installed",
+        "run_humidifier",
+    }
+)
 LEV_KIT_CONTROL_MODES = {"discharge", "return"}
 LEV_KIT_CAPACITY_RANGE = range(0, 21)
 LEV_KIT_PROJECT_NAME_MAX = 120
@@ -376,53 +407,64 @@ def _lev_kit_session(sid):
 
 
 def _lev_kit_filename(project_name):
-    safe = "".join(
-        c if c.isalnum() or c in " -_" else "_"
-        for c in (project_name or "")
-    ).strip().replace(" ", "_")
+    safe = (
+        "".join(c if c.isalnum() or c in " -_" else "_" for c in (project_name or ""))
+        .strip()
+        .replace(" ", "_")
+    )
     return f"{safe or 'LEV_Config'}_LEV_Kit_Config.pdf"
 
 
 @app.route("/api/session/lev-kit-blank", methods=["POST"])
 def api_session_lev_kit_blank():
-    sid = sessions.create({
-        "type":                  "lev-kit",
-        "project_name":          "",
-        "parsed_units":          [],
-        "voltage":               "208",
-        "layout":                "horizontal",
-        "refrigerant_selection": "ah002",   # manual default = R-32
-        "overrides":             {},
-        "controllers_found":     {lev_kit_utils.CONTROLLER_AH001: 0,
-                                  lev_kit_utils.CONTROLLER_AH002: 0},
-        "warnings":              [],
-    })
-    return jsonify({
-        "session_id":            sid,
-        "project_name":          "",
-        "units":                 [],
-        "refrigerant_selection": "ah002",
-        "controllers_found":     {lev_kit_utils.CONTROLLER_AH001: 0,
-                                  lev_kit_utils.CONTROLLER_AH002: 0},
-        "warnings":              [],
-    })
+    sid = sessions.create(
+        {
+            "type": "lev-kit",
+            "project_name": "",
+            "parsed_units": [],
+            "voltage": "208",
+            "layout": "horizontal",
+            "refrigerant_selection": "ah002",  # manual default = R-32
+            "overrides": {},
+            "controllers_found": {
+                lev_kit_utils.CONTROLLER_AH001: 0,
+                lev_kit_utils.CONTROLLER_AH002: 0,
+            },
+            "warnings": [],
+        }
+    )
+    return jsonify(
+        {
+            "session_id": sid,
+            "project_name": "",
+            "units": [],
+            "refrigerant_selection": "ah002",
+            "controllers_found": {
+                lev_kit_utils.CONTROLLER_AH001: 0,
+                lev_kit_utils.CONTROLLER_AH002: 0,
+            },
+            "warnings": [],
+        }
+    )
 
 
 @app.route("/api/session/<sid>", methods=["GET"])
 def api_session_get(sid):
     """Return full session data so the frontend can restore saved overrides."""
     s = _lev_kit_session(sid)
-    return jsonify({
-        "session_id":            sid,
-        "project_name":          s.get("project_name", ""),
-        "units":                 s.get("parsed_units", []),
-        "overrides":             s.get("overrides", {}),
-        "voltage":               s.get("voltage", "208"),
-        "layout":                s.get("layout", "horizontal"),
-        "refrigerant_selection": s.get("refrigerant_selection", "ah002"),
-        "controllers_found":     s.get("controllers_found", {}),
-        "warnings":              s.get("warnings", []),
-    })
+    return jsonify(
+        {
+            "session_id": sid,
+            "project_name": s.get("project_name", ""),
+            "units": s.get("parsed_units", []),
+            "overrides": s.get("overrides", {}),
+            "voltage": s.get("voltage", "208"),
+            "layout": s.get("layout", "horizontal"),
+            "refrigerant_selection": s.get("refrigerant_selection", "ah002"),
+            "controllers_found": s.get("controllers_found", {}),
+            "warnings": s.get("warnings", []),
+        }
+    )
 
 
 @app.route("/api/upload/lev-kit", methods=["POST"])
@@ -438,25 +480,29 @@ def api_upload_lev_kit():
 
     refrigerant_selection = _refrigerant_from_controllers(parsed["controllers_found"])
 
-    sid = sessions.create({
-        "type":                  "lev-kit",
-        "project_name":          parsed["project_name"],
-        "parsed_units":          parsed["units"],
-        "voltage":               "208",
-        "layout":                "horizontal",
-        "refrigerant_selection": refrigerant_selection,
-        "overrides":             {},
-        "controllers_found":     parsed["controllers_found"],
-        "warnings":              parsed["warnings"],
-    })
-    return jsonify({
-        "session_id":            sid,
-        "project_name":          parsed["project_name"],
-        "units":                 parsed["units"],
-        "refrigerant_selection": refrigerant_selection,
-        "controllers_found":     parsed["controllers_found"],
-        "warnings":              parsed["warnings"],
-    })
+    sid = sessions.create(
+        {
+            "type": "lev-kit",
+            "project_name": parsed["project_name"],
+            "parsed_units": parsed["units"],
+            "voltage": "208",
+            "layout": "horizontal",
+            "refrigerant_selection": refrigerant_selection,
+            "overrides": {},
+            "controllers_found": parsed["controllers_found"],
+            "warnings": parsed["warnings"],
+        }
+    )
+    return jsonify(
+        {
+            "session_id": sid,
+            "project_name": parsed["project_name"],
+            "units": parsed["units"],
+            "refrigerant_selection": refrigerant_selection,
+            "controllers_found": parsed["controllers_found"],
+            "warnings": parsed["warnings"],
+        }
+    )
 
 
 @app.route("/api/session/<sid>/lev-kit-update", methods=["POST"])
@@ -465,7 +511,7 @@ def api_lev_kit_update(sid):
     body = request.get_json(silent=True) or {}
 
     voltage = str(body.get("voltage", s["voltage"]))
-    layout  = str(body.get("layout",  s["layout"]))
+    layout = str(body.get("layout", s["layout"]))
     if voltage not in LEV_KIT_VOLTAGES:
         abort(400, f"Voltage must be one of {sorted(LEV_KIT_VOLTAGES)}.")
     if layout not in LEV_KIT_LAYOUTS:
@@ -514,25 +560,28 @@ def api_lev_kit_update(sid):
         if mnet is None and i < len(prior_parsed):
             mnet = prior_parsed[i].get("mnet")
 
-        new_parsed.append({
-            "tag":             tag,
-            "capacity_index":  cap_idx,
-            "control_mode":    control_mode,
-            "mnet":            mnet,
-            "controller_type": controller_type,
-        })
-        new_overrides[tag] = {
-            k: entry[k] for k in LEV_KIT_OVERRIDE_KEYS if k in entry
-        }
+        new_parsed.append(
+            {
+                "tag": tag,
+                "capacity_index": cap_idx,
+                "control_mode": control_mode,
+                "mnet": mnet,
+                "controller_type": controller_type,
+            }
+        )
+        new_overrides[tag] = {k: entry[k] for k in LEV_KIT_OVERRIDE_KEYS if k in entry}
 
-    sessions.update(sid, {
-        "voltage":               voltage,
-        "layout":                layout,
-        "project_name":          project_name,
-        "parsed_units":          new_parsed,
-        "overrides":             new_overrides,
-        "refrigerant_selection": refrigerant_selection,
-    })
+    sessions.update(
+        sid,
+        {
+            "voltage": voltage,
+            "layout": layout,
+            "project_name": project_name,
+            "parsed_units": new_parsed,
+            "overrides": new_overrides,
+            "refrigerant_selection": refrigerant_selection,
+        },
+    )
     return jsonify({"ok": True})
 
 
@@ -571,29 +620,31 @@ def api_download_lev_kit(sid):
 
 @app.route("/api/lev-kit/config-data", methods=["GET"])
 def api_lev_kit_config_data():
-    return jsonify({
-        # Top-level keys remain for back-compat (AH002 callers consume these directly)
-        "capacityOptions":        lev_kit_utils.CAPACITY_OPTIONS,
-        "thermoOptions":          lev_kit_utils.THERMO_OPTIONS,
-        "heatingSetpointOptions": lev_kit_utils.HEATING_SETPOINT_OPTIONS,
-        # Per-controller subtrees for clients that need both
-        "controllers": {
-            lev_kit_utils.CONTROLLER_AH002: {
-                "label":                  "PAC-AH002 (R-32)",
-                "capacityOptions":        lev_kit_utils.CAPACITY_OPTIONS,
-                "thermoOptions":          lev_kit_utils.THERMO_OPTIONS,
-                "heatingSetpointOptions": lev_kit_utils.HEATING_SETPOINT_OPTIONS,
-                "switchBanks":            lev_kit_utils.SWITCH_BANKS,
+    return jsonify(
+        {
+            # Top-level keys remain for back-compat (AH002 callers consume these directly)
+            "capacityOptions": lev_kit_utils.CAPACITY_OPTIONS,
+            "thermoOptions": lev_kit_utils.THERMO_OPTIONS,
+            "heatingSetpointOptions": lev_kit_utils.HEATING_SETPOINT_OPTIONS,
+            # Per-controller subtrees for clients that need both
+            "controllers": {
+                lev_kit_utils.CONTROLLER_AH002: {
+                    "label": "PAC-AH002 (R-32)",
+                    "capacityOptions": lev_kit_utils.CAPACITY_OPTIONS,
+                    "thermoOptions": lev_kit_utils.THERMO_OPTIONS,
+                    "heatingSetpointOptions": lev_kit_utils.HEATING_SETPOINT_OPTIONS,
+                    "switchBanks": lev_kit_utils.SWITCH_BANKS,
+                },
+                lev_kit_utils.CONTROLLER_AH001: {
+                    "label": "PAC-AH001 (R-410A)",
+                    "capacityOptions": lev_kit_utils.CAPACITY_OPTIONS_AH001,
+                    "thermoOptions": lev_kit_utils.THERMO_OPTIONS_AH001,
+                    "heatingSetpointOptions": lev_kit_utils.DAT_SETPOINT_OPTIONS_AH001,
+                    "switchBanks": lev_kit_utils.SWITCH_BANKS_AH001,
+                },
             },
-            lev_kit_utils.CONTROLLER_AH001: {
-                "label":                  "PAC-AH001 (R-410A)",
-                "capacityOptions":        lev_kit_utils.CAPACITY_OPTIONS_AH001,
-                "thermoOptions":          lev_kit_utils.THERMO_OPTIONS_AH001,
-                "heatingSetpointOptions": lev_kit_utils.DAT_SETPOINT_OPTIONS_AH001,
-                "switchBanks":            lev_kit_utils.SWITCH_BANKS_AH001,
-            },
-        },
-    })
+        }
+    )
 
 
 @app.route("/api/lev-kit/compute-switches", methods=["POST"])
@@ -607,37 +658,41 @@ def api_lev_kit_compute_switches():
 
     # Defaults differ per controller: AH001 thermo default = 4 (59°F), dat = 1 (82°F upper)
     default_thermo = 4 if is_ah001 else 0
-    default_dat    = 1 if is_ah001 else 2
+    default_dat = 1 if is_ah001 else 2
 
     config = {
-        "controller_type":    controller_type,
-        "capacity":           body.get("capacity", 0),
-        "control_mode":       body.get("controlMode", "discharge"),
-        "heat_pump":          body.get("heatPump", True),
-        "input_voltage":      body.get("inputVoltage", "208"),
-        "discharge_enable":   body.get("dischargeEnableType", "central"),
+        "controller_type": controller_type,
+        "capacity": body.get("capacity", 0),
+        "control_mode": body.get("controlMode", "discharge"),
+        "heat_pump": body.get("heatPump", True),
+        "input_voltage": body.get("inputVoltage", "208"),
+        "discharge_enable": body.get("dischargeEnableType", "central"),
         "discharge_setpoint": body.get("dischargeSetpointType", "central"),
-        "thermo_temp":        body.get("thermoTemp", default_thermo),
-        "dat_setpoint":       body.get("datSetpoint", default_dat),
-        "return_control":     body.get("returnControl", "rat"),
-        "return_enable":      body.get("returnEnableMethod", "central"),
-        "temp_adjustment":    bool(body.get("tempAdjustment", False)),
+        "thermo_temp": body.get("thermoTemp", default_thermo),
+        "dat_setpoint": body.get("datSetpoint", default_dat),
+        "return_control": body.get("returnControl", "rat"),
+        "return_enable": body.get("returnEnableMethod", "central"),
+        "temp_adjustment": bool(body.get("tempAdjustment", False)),
     }
     if is_ah001:
-        config.update({
-            "fan_controlled_by":    body.get("fanControlledBy", "bas"),
-            "run_fan_defrost":      bool(body.get("runFanDefrost", False)),
-            "electric_heat":        bool(body.get("electricHeat", False)),
-            "use_defrost_error":    bool(body.get("useDefrostError", False)),
-            "humidifier_installed": bool(body.get("humidifierInstalled", False)),
-            "run_humidifier":       bool(body.get("runHumidifier", False)),
-        })
+        config.update(
+            {
+                "fan_controlled_by": body.get("fanControlledBy", "bas"),
+                "run_fan_defrost": bool(body.get("runFanDefrost", False)),
+                "electric_heat": bool(body.get("electricHeat", False)),
+                "use_defrost_error": bool(body.get("useDefrostError", False)),
+                "humidifier_installed": bool(body.get("humidifierInstalled", False)),
+                "run_humidifier": bool(body.get("runHumidifier", False)),
+            }
+        )
 
     result = lev_kit_utils.generate_switch_positions(config)
-    return jsonify({
-        "switches":      result["switches"],
-        "cnrmConnected": result["cnrm_connected"],
-    })
+    return jsonify(
+        {
+            "switches": result["switches"],
+            "cnrmConnected": result["cnrm_connected"],
+        }
+    )
 
 
 @app.route("/disclaimer")
@@ -694,12 +749,10 @@ def page_docs():
     return render_template("docs.html")
 
 
-
-
-
 # ---------------------------------------------------------------------------
 # API — DSBX to DAT
 # ---------------------------------------------------------------------------
+
 
 @app.route("/api/upload/dsbx", methods=["POST"])
 def api_upload_dsbx():
@@ -710,26 +763,30 @@ def api_upload_dsbx():
         abort(400, "File does not appear to be a valid .dsbx archive.")
 
     try:
-        mapping   = load_mapping()
-        dsb_root  = parse_dsbx_bytes(data)
-        g50_list  = get_groupof50_list(dsb_root)
+        mapping = load_mapping()
+        dsb_root = parse_dsbx_bytes(data)
+        g50_list = get_groupof50_list(dsb_root)
     except Exception as e:
         abort(400, f"Could not parse .dsbx file: {e}")
 
     blocks = []
     for g50 in g50_list:
         cards = extract_group_cards(g50, mapping)
-        blocks.append({
-            "name":     g50.findtext("Name") or "",
-            "groups":   cards,
-            "warnings": _check_warnings(cards),
-        })
+        blocks.append(
+            {
+                "name": g50.findtext("Name") or "",
+                "groups": cards,
+                "warnings": _check_warnings(cards),
+            }
+        )
 
-    sid = sessions.create({
-        "type":      "dsbx",
-        "dsbx_data": data,
-        "blocks":    blocks,
-    })
+    sid = sessions.create(
+        {
+            "type": "dsbx",
+            "dsbx_data": data,
+            "blocks": blocks,
+        }
+    )
 
     return jsonify({"session_id": sid, "blocks": blocks})
 
@@ -750,11 +807,7 @@ def api_get_groups(sid):
         order = s.get(f"order_{i}")
         groups = [dict(g) for g in block.get("groups", [])]
         if isinstance(order, list):
-            old_to_new = {
-                old_slot: pos + 1
-                for pos, old_slot in enumerate(order)
-                if old_slot > 0
-            }
+            old_to_new = {old_slot: pos + 1 for pos, old_slot in enumerate(order) if old_slot > 0}
             for g in groups:
                 if g["slot"] in old_to_new:
                     g["slot"] = old_to_new[g["slot"]]
@@ -770,8 +823,8 @@ def api_update_groups(sid):
     if not s:
         abort(404, "Session not found or expired.")
 
-    body      = request.get_json(force=True) or {}
-    new_order = body.get("new_order")       # list of old slot numbers
+    body = request.get_json(force=True) or {}
+    new_order = body.get("new_order")  # list of old slot numbers
     block_idx = body.get("block_index", 0)  # which Groupof50 block (dsbx only)
 
     if not isinstance(new_order, list):
@@ -784,6 +837,7 @@ def api_update_groups(sid):
 # ---------------------------------------------------------------------------
 # API — Download DSBX→DAT
 # ---------------------------------------------------------------------------
+
 
 @app.route("/api/download/dsbx-to-dat/<sid>")
 def api_download_dsbx_to_dat(sid):
@@ -804,6 +858,7 @@ def api_download_dsbx_to_dat(sid):
     # Names must be written to the original Group numbers before
     # apply_rearrangement remaps them — otherwise renames hit wrong records.
     from lib.dat_utils import apply_rearrangement, apply_group_names
+
     controller_names = s.get("controller_names", {})
     group_names = s.get("group_names", {})
 
@@ -854,6 +909,7 @@ def api_download_dsbx_to_dat(sid):
 # API — DAT upload (shared by rearranger, convert, split)
 # ---------------------------------------------------------------------------
 
+
 @app.route("/api/upload/dat", methods=["POST"])
 def api_upload_dat():
     data, _ = _validate_upload(request.files.get("file"), {".dat"})
@@ -872,30 +928,37 @@ def api_upload_dat():
     blocks = []
     for ctrl in controllers:
         cards = extract_groups_from_xml(ctrl["xml_bytes"])
-        blocks.append({
-            "name":            ctrl["name"],
-            "controller_type": ctrl["controller_type"],
-            "groups":          cards,
-            "warnings":        _check_warnings(cards),
-        })
+        blocks.append(
+            {
+                "name": ctrl["name"],
+                "controller_type": ctrl["controller_type"],
+                "groups": cards,
+                "warnings": _check_warnings(cards),
+            }
+        )
 
-    sid = sessions.create({
-        "type":      "dat",
-        "dat_data":  data,
-        "blocks":    blocks,
-        "multi":     len(controllers) > 1,
-    })
+    sid = sessions.create(
+        {
+            "type": "dat",
+            "dat_data": data,
+            "blocks": blocks,
+            "multi": len(controllers) > 1,
+        }
+    )
 
-    return jsonify({
-        "session_id": sid,
-        "blocks":     blocks,
-        "multi":      len(controllers) > 1,
-    })
+    return jsonify(
+        {
+            "session_id": sid,
+            "blocks": blocks,
+            "multi": len(controllers) > 1,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # API — Config Hub unified upload (codetest feature)
 # ---------------------------------------------------------------------------
+
 
 @app.route("/api/upload/config-hub", methods=["POST"])
 def api_upload_config_hub():
@@ -929,11 +992,13 @@ def api_upload_config_hub():
             blocks = []
             for g50 in g50_list:
                 cards = extract_group_cards(g50, mapping)
-                blocks.append({
-                    "name": g50.findtext("Name") or "",
-                    "groups": cards,
-                    "warnings": _check_warnings(cards),
-                })
+                blocks.append(
+                    {
+                        "name": g50.findtext("Name") or "",
+                        "groups": cards,
+                        "warnings": _check_warnings(cards),
+                    }
+                )
             session_data = {"type": "dsbx", "dsbx_data": source_bytes, "blocks": blocks}
         else:
             if not source_bytes[:4] == b"PK\x03\x04":
@@ -949,12 +1014,14 @@ def api_upload_config_hub():
             blocks = []
             for ctrl in controllers:
                 cards = extract_groups_from_xml(ctrl["xml_bytes"])
-                blocks.append({
-                    "name": ctrl["name"],
-                    "controller_type": ctrl["controller_type"],
-                    "groups": cards,
-                    "warnings": _check_warnings(cards),
-                })
+                blocks.append(
+                    {
+                        "name": ctrl["name"],
+                        "controller_type": ctrl["controller_type"],
+                        "groups": cards,
+                        "warnings": _check_warnings(cards),
+                    }
+                )
 
             session_type = "dat-json" if tool == "dat-json" else "dat"
             session_data = {
@@ -993,10 +1060,12 @@ def api_upload_config_hub():
 
         sid = sessions.create(session_data)
         redirect_url = _TOOL_ROUTES.get(tool, "/rearranger") + f"?session={sid}"
-        return jsonify({
-            "session_id": sid,
-            "redirect": redirect_url,
-        })
+        return jsonify(
+            {
+                "session_id": sid,
+                "redirect": redirect_url,
+            }
+        )
 
     # --- .dsbx: create session, return applicable tool list ---
     if ext == ".dsbx":
@@ -1012,22 +1081,28 @@ def api_upload_config_hub():
         blocks = []
         for g50 in g50_list:
             cards = extract_group_cards(g50, mapping)
-            blocks.append({
-                "name": g50.findtext("Name") or "",
-                "groups": cards,
-                "warnings": _check_warnings(cards),
-            })
+            blocks.append(
+                {
+                    "name": g50.findtext("Name") or "",
+                    "groups": cards,
+                    "warnings": _check_warnings(cards),
+                }
+            )
 
-        sid = sessions.create({
-            "type": "dsbx",
-            "dsbx_data": data,
-            "blocks": blocks,
-        })
-        return jsonify({
-            "session_id": sid,
-            "applicable_tools": ["dsbx-to-dat"],
-            "blocks": blocks,
-        })
+        sid = sessions.create(
+            {
+                "type": "dsbx",
+                "dsbx_data": data,
+                "blocks": blocks,
+            }
+        )
+        return jsonify(
+            {
+                "session_id": sid,
+                "applicable_tools": ["dsbx-to-dat"],
+                "blocks": blocks,
+            }
+        )
 
     # --- .dat: create session, return applicable tool list ---
     if not data[:4] == b"PK\x03\x04":
@@ -1042,29 +1117,36 @@ def api_upload_config_hub():
     blocks = []
     for ctrl in controllers:
         cards = extract_groups_from_xml(ctrl["xml_bytes"])
-        blocks.append({
-            "name": ctrl["name"],
-            "controller_type": ctrl["controller_type"],
-            "groups": cards,
-            "warnings": _check_warnings(cards),
-        })
+        blocks.append(
+            {
+                "name": ctrl["name"],
+                "controller_type": ctrl["controller_type"],
+                "groups": cards,
+                "warnings": _check_warnings(cards),
+            }
+        )
 
-    sid = sessions.create({
-        "type": "dat",
-        "dat_data": data,
-        "blocks": blocks,
-        "multi": len(controllers) > 1,
-    })
-    return jsonify({
-        "session_id": sid,
-        "applicable_tools": ["rearranger", "convert", "split"],
-        "blocks": blocks,
-    })
+    sid = sessions.create(
+        {
+            "type": "dat",
+            "dat_data": data,
+            "blocks": blocks,
+            "multi": len(controllers) > 1,
+        }
+    )
+    return jsonify(
+        {
+            "session_id": sid,
+            "applicable_tools": ["rearranger", "convert", "split"],
+            "blocks": blocks,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # API — Download: rearrange
 # ---------------------------------------------------------------------------
+
 
 @app.route("/api/download/rearrange/<sid>")
 def api_download_rearrange(sid):
@@ -1104,6 +1186,7 @@ def api_download_rearrange(sid):
 # API — Download: convert
 # ---------------------------------------------------------------------------
 
+
 @app.route("/api/download/convert/<sid>")
 def api_download_convert(sid):
     s = sessions.get(sid)
@@ -1129,6 +1212,7 @@ def api_download_convert(sid):
 # API — Download: split
 # ---------------------------------------------------------------------------
 
+
 @app.route("/api/download/split/<sid>")
 def api_download_split(sid):
     s = sessions.get(sid)
@@ -1152,20 +1236,21 @@ def api_download_split(sid):
 # API — Sort groups by tag name
 # ---------------------------------------------------------------------------
 
+
 @app.route("/api/session/<sid>/sort", methods=["POST"])
 def api_sort_groups(sid):
     s = sessions.get(sid)
     if not s:
         abort(404, "Session not found or expired.")
 
-    body      = request.get_json(force=True) or {}
+    body = request.get_json(force=True) or {}
     block_idx = body.get("block_index", 0)
 
     blocks = s.get("blocks", [])
     if block_idx >= len(blocks):
         abort(400, "Invalid block index.")
 
-    cards     = blocks[block_idx]["groups"]
+    cards = blocks[block_idx]["groups"]
     new_order = sort_groups_by_tag(cards)
     sessions.update(sid, {f"order_{block_idx}": new_order})
 
@@ -1245,9 +1330,9 @@ def api_update_group_name(sid):
 
 _TOOL_ROUTES = {
     "dsbx-to-dat": "/dsbx-to-dat",
-    "rearranger":   "/rearranger",
-    "convert":      "/convert",
-    "split":        "/split",
+    "rearranger": "/rearranger",
+    "convert": "/convert",
+    "split": "/split",
 }
 
 _VALID_TOOLS = set(_TOOL_ROUTES.keys())
@@ -1257,7 +1342,7 @@ _VALID_TOOLS = set(_TOOL_ROUTES.keys())
 def api_export_json():
 
     body = request.get_json(force=True) or {}
-    sid  = body.get("session_id")
+    sid = body.get("session_id")
     tool = body.get("tool")
 
     if tool not in _VALID_TOOLS:
@@ -1300,13 +1385,13 @@ def api_export_json():
 # MTDZ backend proxy — catch-all for any /api/ paths not handled above
 # ---------------------------------------------------------------------------
 
+
 @app.route("/api/<path:path>", methods=["GET", "POST", "DELETE", "PUT", "PATCH"])
 def proxy_mtdz(path):
     url = f"{MTDZ_BACKEND}/api/{path}"
     try:
         if request.files:
-            files = {k: (v.filename, v.stream, v.content_type)
-                     for k, v in request.files.items()}
+            files = {k: (v.filename, v.stream, v.content_type) for k, v in request.files.items()}
             form = {k: v for k, v in request.form.items()}
             resp = req_lib.request(
                 method=request.method,
@@ -1341,6 +1426,7 @@ def proxy_mtdz(path):
 # ---------------------------------------------------------------------------
 # Error handlers
 # ---------------------------------------------------------------------------
+
 
 @app.errorhandler(400)
 @app.errorhandler(404)

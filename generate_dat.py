@@ -36,6 +36,7 @@ PASSWORD = b"MELCO"
 # Produces traditional PKWARE encryption identical to the original .dat files
 # ---------------------------------------------------------------------------
 
+
 def _make_crc_table():
     table = []
     for i in range(256):
@@ -48,10 +49,13 @@ def _make_crc_table():
         table.append(c)
     return table
 
+
 _CRC_TABLE = _make_crc_table()
+
 
 def _crc32_byte(crc, byte):
     return _CRC_TABLE[(crc ^ byte) & 0xFF] ^ (crc >> 8)
+
 
 def _init_keys(password):
     k = [0x12345678, 0x23456789, 0x34567890]
@@ -59,15 +63,18 @@ def _init_keys(password):
         _update_keys(k, b)
     return k
 
+
 def _update_keys(k, byte):
     k[0] = _crc32_byte(k[0], byte)
     k[1] = (k[1] + (k[0] & 0xFF)) & 0xFFFFFFFF
     k[1] = (k[1] * 134775813 + 1) & 0xFFFFFFFF
     k[2] = _crc32_byte(k[2], (k[1] >> 24) & 0xFF)
 
+
 def _stream_byte(k):
     t = (k[2] | 2) & 0xFFFF
     return ((t * (t ^ 1)) >> 8) & 0xFF
+
 
 def _encrypt(data, password, crc32_val):
     """Return (encryption_header_12_bytes, encrypted_data_bytes)."""
@@ -88,64 +95,76 @@ def _encrypt(data, password, crc32_val):
 def _dos_time(ts=None):
     """Return (dos_time, dos_date) for the given time.time() value (or now)."""
     import time
+
     t = time.localtime(ts)
     dos_time = (t.tm_sec // 2) | (t.tm_min << 5) | (t.tm_hour << 11)
     dos_date = t.tm_mday | (t.tm_mon << 5) | ((t.tm_year - 1980) << 9)
     return dos_time, dos_date
 
 
-def _local_file_header(name_bytes, compressed_size, uncompressed_size, crc, dos_time, dos_date, encrypted=True):
+def _local_file_header(
+    name_bytes, compressed_size, uncompressed_size, crc, dos_time, dos_date, encrypted=True
+):
     flags = 0x0001 if encrypted else 0x0000
-    return struct.pack(
-        "<4s5H3I2H",
-        b"PK\x03\x04",   # signature
-        20,              # version needed (2.0)
-        flags,           # general purpose bit flags
-        8,               # compression method: Deflate
-        dos_time,
-        dos_date,
-        crc & 0xFFFFFFFF,
-        compressed_size,
-        uncompressed_size,
-        len(name_bytes),
-        0,               # extra field length
-    ) + name_bytes
+    return (
+        struct.pack(
+            "<4s5H3I2H",
+            b"PK\x03\x04",  # signature
+            20,  # version needed (2.0)
+            flags,  # general purpose bit flags
+            8,  # compression method: Deflate
+            dos_time,
+            dos_date,
+            crc & 0xFFFFFFFF,
+            compressed_size,
+            uncompressed_size,
+            len(name_bytes),
+            0,  # extra field length
+        )
+        + name_bytes
+    )
 
 
-def _central_dir_entry(name_bytes, compressed_size, uncompressed_size, crc, dos_time, dos_date, offset, encrypted=True):
+def _central_dir_entry(
+    name_bytes, compressed_size, uncompressed_size, crc, dos_time, dos_date, offset, encrypted=True
+):
     flags = 0x0001 if encrypted else 0x0000
-    return struct.pack(
-        "<4s6H3I5HII",
-        b"PK\x01\x02",   # signature
-        20,              # version made by
-        20,              # version needed
-        flags,           # general purpose bit flags
-        8,               # compression: Deflate
-        dos_time,
-        dos_date,
-        crc & 0xFFFFFFFF,
-        compressed_size,
-        uncompressed_size,
-        len(name_bytes),
-        0,               # extra field length
-        0,               # file comment length
-        0,               # disk number start
-        0,               # internal attributes
-        0,               # external attributes
-        offset,          # relative offset of local header
-    ) + name_bytes
+    return (
+        struct.pack(
+            "<4s6H3I5HII",
+            b"PK\x01\x02",  # signature
+            20,  # version made by
+            20,  # version needed
+            flags,  # general purpose bit flags
+            8,  # compression: Deflate
+            dos_time,
+            dos_date,
+            crc & 0xFFFFFFFF,
+            compressed_size,
+            uncompressed_size,
+            len(name_bytes),
+            0,  # extra field length
+            0,  # file comment length
+            0,  # disk number start
+            0,  # internal attributes
+            0,  # external attributes
+            offset,  # relative offset of local header
+        )
+        + name_bytes
+    )
 
 
 def _end_of_central_dir(num_entries, cd_size, cd_offset):
     return struct.pack(
         "<4s4H2IH",
         b"PK\x05\x06",
-        0, 0,            # disk number, disk with start of CD
+        0,
+        0,  # disk number, disk with start of CD
         num_entries,
         num_entries,
         cd_size,
         cd_offset,
-        0,               # comment length
+        0,  # comment length
     )
 
 
@@ -164,19 +183,47 @@ def write_zipcrypto(output_path, entries, password):
 
         if data is None:
             # Directory entry
-            lh = struct.pack(
-                "<4s5H3I2H",
-                b"PK\x03\x04",
-                20, 0, 0, dt, dd, 0, 0, 0,
-                len(name_bytes), 0,
-            ) + name_bytes
+            lh = (
+                struct.pack(
+                    "<4s5H3I2H",
+                    b"PK\x03\x04",
+                    20,
+                    0,
+                    0,
+                    dt,
+                    dd,
+                    0,
+                    0,
+                    0,
+                    len(name_bytes),
+                    0,
+                )
+                + name_bytes
+            )
             buf.write(lh)
-            cd = struct.pack(
-                "<4s6H3I5HII",
-                b"PK\x01\x02",
-                20, 20, 0, 0, dt, dd, 0, 0, 0,
-                len(name_bytes), 0, 0, 0, 0, 0x10, offset,
-            ) + name_bytes
+            cd = (
+                struct.pack(
+                    "<4s6H3I5HII",
+                    b"PK\x01\x02",
+                    20,
+                    20,
+                    0,
+                    0,
+                    dt,
+                    dd,
+                    0,
+                    0,
+                    0,
+                    len(name_bytes),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0x10,
+                    offset,
+                )
+                + name_bytes
+            )
             cd_entries.append(cd)
             continue
 
@@ -209,6 +256,7 @@ def write_zipcrypto(output_path, entries, password):
 # XML manipulation
 # ---------------------------------------------------------------------------
 
+
 def load_template_xml():
     with pyzipper.AESZipFile(TEMPLATE) as z:
         return z.read("1", pwd=PASSWORD), z.read("NetworkSetting.xml", pwd=PASSWORD)
@@ -226,18 +274,15 @@ def build_xml(xml_bytes, groups):
     cg = root.find(".//ControlGroup")
 
     for tag, records in [
-        ("MnetGroupList", [
-            {"Group": str(g), "Address": str(a), "Model": "IC", "SubModel": ""}
-            for g, a, _ in groups
-        ]),
-        ("MnetList", [
-            {"Group": str(g), "GroupNameWeb": name}
-            for g, _, name in groups
-        ]),
-        ("ViewInfoList", [
-            {"Group": str(g), "Icon": "0"}
-            for g, _, _ in groups
-        ]),
+        (
+            "MnetGroupList",
+            [
+                {"Group": str(g), "Address": str(a), "Model": "IC", "SubModel": ""}
+                for g, a, _ in groups
+            ],
+        ),
+        ("MnetList", [{"Group": str(g), "GroupNameWeb": name} for g, _, name in groups]),
+        ("ViewInfoList", [{"Group": str(g), "Icon": "0"} for g, _, _ in groups]),
     ]:
         elem = cg.find(tag)
         elem.clear()
@@ -256,6 +301,7 @@ def build_xml(xml_bytes, groups):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main():
     if len(sys.argv) != 3:
@@ -277,9 +323,9 @@ def main():
     write_zipcrypto(
         output_path,
         [
-            ("1",                    new_xml, True),
-            ("NetworkSetting.xml",   net_xml, True),
-            ("IMG/",                 None,    False),
+            ("1", new_xml, True),
+            ("NetworkSetting.xml", net_xml, True),
+            ("IMG/", None, False),
         ],
         PASSWORD,
     )

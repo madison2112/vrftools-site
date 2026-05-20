@@ -28,13 +28,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web
 
 from lib.dat_utils import safe_filename, FAMILY_MAP
 
-SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_MAP = os.path.join(SCRIPT_DIR, "dsbx_dat_mapping.json")
 EMPTY_CONFIGS = {
     "AE-C400A": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-C400 Config Empty.dat"),
-    "AE-200":   os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
-    "EW-C50":   os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
-    "EW-50":    os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
+    "AE-200": os.path.join(SCRIPT_DIR, "Empty Configs", "AE-200 Config Empty.dat"),
+    "EW-C50": os.path.join(SCRIPT_DIR, "Empty Configs", "EW-C50 Config Empty.dat"),
+    "EW-50": os.path.join(SCRIPT_DIR, "Empty Configs", "EW-50 Config Empty.dat"),
 }
 
 # When --controller is a primary type (AE-C400A or AE-200), EW-type DSB blocks
@@ -46,6 +46,7 @@ PASSWORD = b"MELCO"
 # ZipCrypto writer
 # ---------------------------------------------------------------------------
 
+
 def _make_crc_table():
     table = []
     for i in range(256):
@@ -55,10 +56,13 @@ def _make_crc_table():
         table.append(c)
     return table
 
+
 _CRC_TABLE = _make_crc_table()
+
 
 def _crc32_byte(crc, byte):
     return _CRC_TABLE[(crc ^ byte) & 0xFF] ^ (crc >> 8)
+
 
 def _init_keys(password):
     k = [0x12345678, 0x23456789, 0x34567890]
@@ -66,15 +70,18 @@ def _init_keys(password):
         _update_keys(k, b)
     return k
 
+
 def _update_keys(k, byte):
     k[0] = _crc32_byte(k[0], byte)
     k[1] = (k[1] + (k[0] & 0xFF)) & 0xFFFFFFFF
     k[1] = (k[1] * 134775813 + 1) & 0xFFFFFFFF
     k[2] = _crc32_byte(k[2], (k[1] >> 24) & 0xFF)
 
+
 def _stream_byte(k):
     t = (k[2] | 2) & 0xFFFF
     return ((t * (t ^ 1)) >> 8) & 0xFF
+
 
 def _encrypt(data, password, crc32_val):
     keys = _init_keys(password)
@@ -89,24 +96,62 @@ def _encrypt(data, password, crc32_val):
         _update_keys(keys, b)
     return bytes(enc_header), bytes(enc_data)
 
+
 def _dos_time():
     import time
+
     t = time.localtime()
     return (
         (t.tm_sec // 2) | (t.tm_min << 5) | (t.tm_hour << 11),
         t.tm_mday | (t.tm_mon << 5) | ((t.tm_year - 1980) << 9),
     )
 
+
 def _lfh(name_b, comp, uncomp, crc, dt, dd, enc):
-    return struct.pack("<4s5H3I2H",
-        b"PK\x03\x04", 20, 0x0001 if enc else 0, 8, dt, dd,
-        crc & 0xFFFFFFFF, comp, uncomp, len(name_b), 0) + name_b
+    return (
+        struct.pack(
+            "<4s5H3I2H",
+            b"PK\x03\x04",
+            20,
+            0x0001 if enc else 0,
+            8,
+            dt,
+            dd,
+            crc & 0xFFFFFFFF,
+            comp,
+            uncomp,
+            len(name_b),
+            0,
+        )
+        + name_b
+    )
+
 
 def _cde(name_b, comp, uncomp, crc, dt, dd, offset, enc):
-    return struct.pack("<4s6H3I5HII",
-        b"PK\x01\x02", 20, 20, 0x0001 if enc else 0, 8, dt, dd,
-        crc & 0xFFFFFFFF, comp, uncomp,
-        len(name_b), 0, 0, 0, 0, 0, offset) + name_b
+    return (
+        struct.pack(
+            "<4s6H3I5HII",
+            b"PK\x01\x02",
+            20,
+            20,
+            0x0001 if enc else 0,
+            8,
+            dt,
+            dd,
+            crc & 0xFFFFFFFF,
+            comp,
+            uncomp,
+            len(name_b),
+            0,
+            0,
+            0,
+            0,
+            0,
+            offset,
+        )
+        + name_b
+    )
+
 
 def write_zipcrypto(output_path, entries, password):
     """entries: list of (name_str, data_bytes_or_None, encrypt_bool)"""
@@ -119,11 +164,32 @@ def write_zipcrypto(output_path, entries, password):
         off = buf.tell()
 
         if data is None:
-            buf.write(struct.pack("<4s5H3I2H",
-                b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb)
-            cds.append(struct.pack("<4s6H3I5HII",
-                b"PK\x01\x02", 20, 20, 0, 0, dt, dd, 0, 0, 0,
-                len(nb), 0, 0, 0, 0, 0x10, off) + nb)
+            buf.write(
+                struct.pack("<4s5H3I2H", b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb
+            )
+            cds.append(
+                struct.pack(
+                    "<4s6H3I5HII",
+                    b"PK\x01\x02",
+                    20,
+                    20,
+                    0,
+                    0,
+                    dt,
+                    dd,
+                    0,
+                    0,
+                    0,
+                    len(nb),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0x10,
+                    off,
+                )
+                + nb
+            )
             continue
 
         compressed = zlib.compress(data, 9)[2:-4]
@@ -141,8 +207,7 @@ def write_zipcrypto(output_path, entries, password):
     cd_off = buf.tell()
     cd = b"".join(cds)
     buf.write(cd)
-    buf.write(struct.pack("<4s4H2IH",
-        b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
+    buf.write(struct.pack("<4s4H2IH", b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
 
     with open(output_path, "wb") as f:
         f.write(buf.getvalue())
@@ -152,14 +217,17 @@ def write_zipcrypto(output_path, entries, password):
 # Icon lookup
 # ---------------------------------------------------------------------------
 
+
 def lookup_icon(model_number, rules, default_icon):
     for rule in rules:
         pattern = rule["pattern"]
         case_sensitive = rule.get("case_sensitive", True)
         target = model_number if case_sensitive else model_number.upper()
-        pat    = pattern     if case_sensitive else pattern.upper()
-        if rule["match"] == "contains"   and pat in target:       return rule["icon"]
-        if rule["match"] == "startswith" and target.startswith(pat): return rule["icon"]
+        pat = pattern if case_sensitive else pattern.upper()
+        if rule["match"] == "contains" and pat in target:
+            return rule["icon"]
+        if rule["match"] == "startswith" and target.startswith(pat):
+            return rule["icon"]
     return default_icon
 
 
@@ -167,13 +235,16 @@ def lookup_icon(model_number, rules, default_icon):
 # DSB parsing helpers
 # ---------------------------------------------------------------------------
 
+
 def parse_dsbx(path):
     with zipfile.ZipFile(path) as z:
         return ET.fromstring(z.read("xml").decode("utf-8-sig"))
 
+
 def _text(elem, tag, default=""):
     c = elem.find(tag) if elem is not None else None
     return c.text if c is not None and c.text else default
+
 
 def _valid_mnet(addr):
     if not addr or addr.strip().upper() in ("N/A", "NA", ""):
@@ -192,7 +263,7 @@ def _build_indices(groupof50):
       lossnay_index  : {LossnayGroupId -> Lossnay element}
       group_to_system: {IndoorUnitGroup.TableId -> System element}
     """
-    assoc_to_idus   = {}
+    assoc_to_idus = {}
     group_to_system = {}
 
     for system in groupof50.findall("System"):
@@ -212,13 +283,15 @@ def _build_indices(groupof50):
             assoc = _text(idu, "AssociatedIndoorUnitGroup")
             if not assoc:
                 continue
-            assoc_to_idus.setdefault(assoc, []).append({
-                "mnet":     mnet,
-                "model":    _text(idu, "ModelNumber"),
-                "ref_tag":  _text(idu, "ReferenceTag"),
-                "odu_mnet": odu_mnet,
-                "system":   system,
-            })
+            assoc_to_idus.setdefault(assoc, []).append(
+                {
+                    "mnet": mnet,
+                    "model": _text(idu, "ModelNumber"),
+                    "ref_tag": _text(idu, "ReferenceTag"),
+                    "odu_mnet": odu_mnet,
+                    "system": system,
+                }
+            )
             group_to_system[assoc] = system
 
     lossnay_index = {}
@@ -234,8 +307,9 @@ def _build_indices(groupof50):
 # ControlGroup builder
 # ---------------------------------------------------------------------------
 
+
 def build_control_group(groupof50, mapping):
-    icon_rules   = mapping["icon_rules"]
+    icon_rules = mapping["icon_rules"]
     default_icon = mapping["default_icon"]
 
     assoc_to_idus, lossnay_index, group_to_system = _build_indices(groupof50)
@@ -245,9 +319,9 @@ def build_control_group(groupof50, mapping):
     all_iugs = groupof50.findall("IndoorUnitGroup")
     groups = []
     for iug in all_iugs:
-        tid   = _text(iug, "TableId")
+        tid = _text(iug, "TableId")
         gtype = _text(iug, "GroupType")
-        gnum  = _text(iug, "GroupNumber")
+        gnum = _text(iug, "GroupNumber")
         if gtype == "IU" and not assoc_to_idus.get(tid):
             continue  # no valid IDUs — skip (e.g. non-M-Net mini-split groups)
         if gtype == "Lossnay" and lossnay_index.get(tid) is None:
@@ -256,8 +330,11 @@ def build_control_group(groupof50, mapping):
     groups.sort(key=lambda x: x[0])
 
     # Area mapping: only systems with valid ODU M-Net addresses
-    valid_systems = [s for s in groupof50.findall("System")
-                     if _valid_mnet(_text(s.find("OutdoorUnit"), "MNetAddress"))]
+    valid_systems = [
+        s
+        for s in groupof50.findall("System")
+        if _valid_mnet(_text(s.find("OutdoorUnit"), "MNetAddress"))
+    ]
     system_area = {id(s): i for i, s in enumerate(valid_systems, start=1)}
 
     group_area = {}
@@ -280,16 +357,34 @@ def build_control_group(groupof50, mapping):
         if gtype == "IU":
             for rec in assoc_to_idus.get(tid, []):
                 model = "AIC" if rec["mnet"] == rec["odu_mnet"] else "IC"
-                ET.SubElement(mgl, "MnetGroupRecord",
-                    Group=gstr, Address=rec["mnet"], Model=model, SubModel="")
+                ET.SubElement(
+                    mgl,
+                    "MnetGroupRecord",
+                    Group=gstr,
+                    Address=rec["mnet"],
+                    Model=model,
+                    SubModel="",
+                )
             rc = iug.find("LocalRemoteController")
             if rc is not None and rc.find("MNetAddress") is not None:
-                ET.SubElement(mgl, "MnetGroupRecord",
-                    Group=gstr, Address=_text(rc, "MNetAddress"), Model="RC", SubModel="")
+                ET.SubElement(
+                    mgl,
+                    "MnetGroupRecord",
+                    Group=gstr,
+                    Address=_text(rc, "MNetAddress"),
+                    Model="RC",
+                    SubModel="",
+                )
         elif gtype == "Lossnay":
             lossnay = lossnay_index[tid]
-            ET.SubElement(mgl, "MnetGroupRecord",
-                Group=gstr, Address=_text(lossnay, "MNetAddress"), Model="LC", SubModel="")
+            ET.SubElement(
+                mgl,
+                "MnetGroupRecord",
+                Group=gstr,
+                Address=_text(lossnay, "MNetAddress"),
+                Model="LC",
+                SubModel="",
+            )
 
     ET.SubElement(cg, "DdcInfoList")
 
@@ -322,16 +417,15 @@ def build_control_group(groupof50, mapping):
     for area_num in range(1, max_area + 1):
         for gnum, gtype, tid, iug in groups:
             if group_area.get(gnum) == area_num:
-                ET.SubElement(agl, "AreaGroupRecord",
-                    Area=str(area_num), Group=str(gnum), ModelID="MNET")
+                ET.SubElement(
+                    agl, "AreaGroupRecord", Area=str(area_num), Group=str(gnum), ModelID="MNET"
+                )
 
     al = ET.SubElement(cg, "AreaList")
     for i, sys_elem in enumerate(valid_systems, start=1):
-        ET.SubElement(al, "AreaRecord",
-            Area=str(i), AreaName=_text(sys_elem, "SystemName"))
+        ET.SubElement(al, "AreaRecord", Area=str(i), AreaName=_text(sys_elem, "SystemName"))
     if any(gt == "Lossnay" for _, gt, _, _ in groups):
-        ET.SubElement(al, "AreaRecord",
-            Area=str(len(valid_systems) + 1), AreaName="ERVs")
+        ET.SubElement(al, "AreaRecord", Area=str(len(valid_systems) + 1), AreaName="ERVs")
 
     for tag in ("OcNameList", "McNameList", "ModbusList"):
         ET.SubElement(cg, tag)
@@ -343,25 +437,35 @@ def build_control_group(groupof50, mapping):
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="Convert .dsbx to AE-C400 .dat")
-    parser.add_argument("dsbx",    help="Input .dsbx file")
-    parser.add_argument("output_dir", nargs="?", default=None,
-                        help="Output folder (default: current directory). One .dat per Groupof50 block.")
-    parser.add_argument("--controller", default="AE-C400A",
-                        help="Controller type (default: AE-C400A). Must match a file in templates/")
+    parser.add_argument("dsbx", help="Input .dsbx file")
+    parser.add_argument(
+        "output_dir",
+        nargs="?",
+        default=None,
+        help="Output folder (default: current directory). One .dat per Groupof50 block.",
+    )
+    parser.add_argument(
+        "--controller",
+        default="AE-C400A",
+        help="Controller type (default: AE-C400A). Must match a file in templates/",
+    )
     parser.add_argument("--mapping", default=DEFAULT_MAP, help="Path to mapping JSON")
     args = parser.parse_args()
 
     if args.controller not in EMPTY_CONFIGS:
-        print(f"ERROR: unknown controller '{args.controller}'. Choose from: {', '.join(EMPTY_CONFIGS)}")
+        print(
+            f"ERROR: unknown controller '{args.controller}'. Choose from: {', '.join(EMPTY_CONFIGS)}"
+        )
         sys.exit(1)
 
     with open(args.mapping, encoding="utf-8") as f:
         mapping = json.load(f)
 
     dsb_root = parse_dsbx(args.dsbx)
-    project  = dsb_root.find("Project")
+    project = dsb_root.find("Project")
     g50_list = project.findall("Groupof50")
 
     out_dir = args.output_dir or "."
@@ -383,7 +487,11 @@ def main():
         empty_dat = EMPTY_CONFIGS[block_controller]
         with pyzipper.AESZipFile(empty_dat) as z:
             available = z.namelist()
-            net_xml   = z.read("NetworkSetting.xml", pwd=PASSWORD) if "NetworkSetting.xml" in available else None
+            net_xml = (
+                z.read("NetworkSetting.xml", pwd=PASSWORD)
+                if "NetworkSetting.xml" in available
+                else None
+            )
         has_img = any(n.endswith("/") for n in available)
 
         # Load a fresh copy of the template for each block
@@ -393,8 +501,8 @@ def main():
         sd = tmpl_root.find(".//SystemData")
         sd.set("Name", _text(groupof50, "Name"))
 
-        db       = tmpl_root.find(".//DatabaseManager")
-        old_cg   = db.find("ControlGroup")
+        db = tmpl_root.find(".//DatabaseManager")
+        old_cg = db.find("ControlGroup")
         cg_index = list(db).index(old_cg)
         db.remove(old_cg)
         db.insert(cg_index, build_control_group(groupof50, mapping))
@@ -414,7 +522,9 @@ def main():
 
         write_zipcrypto(out_path, entries, PASSWORD)
         groups = len(tmpl_root.findall(".//MnetRecord"))
-        print(f"  [{block_controller}] '{_text(groupof50, 'Name')}' ({groups} groups) -> {os.path.basename(out_path)}")
+        print(
+            f"  [{block_controller}] '{_text(groupof50, 'Name')}' ({groups} groups) -> {os.path.basename(out_path)}"
+        )
 
 
 if __name__ == "__main__":

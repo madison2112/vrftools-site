@@ -2,6 +2,7 @@
 DSBX parsing and DAT XML generation.
 Ported from dsbx_to_dat.py with bytes-in / ET.Element-out interface.
 """
+
 import io
 import json
 import os
@@ -11,9 +12,9 @@ import xml.etree.ElementTree as ET
 from .dat_utils import safe_filename, FAMILY_MAP, NEEDS_IMG, NEEDS_NETWORK
 from .zipcrypto import build_dat_bytes
 
-REPO_ROOT    = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 TEMPLATES_DIR = os.path.join(REPO_ROOT, "templates")
-DEFAULT_MAP  = os.path.join(REPO_ROOT, "dsbx_dat_mapping.json")
+DEFAULT_MAP = os.path.join(REPO_ROOT, "dsbx_dat_mapping.json")
 
 
 def load_mapping():
@@ -24,6 +25,7 @@ def load_mapping():
 # ---------------------------------------------------------------------------
 # Helpers (same logic as dsbx_to_dat.py)
 # ---------------------------------------------------------------------------
+
 
 def _text(elem, tag, default=""):
     c = elem.find(tag) if elem is not None else None
@@ -41,7 +43,7 @@ def _valid_mnet(addr):
 
 
 def _build_indices(groupof50):
-    assoc_to_idus   = {}
+    assoc_to_idus = {}
     group_to_system = {}
 
     for system in groupof50.findall("System"):
@@ -63,14 +65,16 @@ def _build_indices(groupof50):
             assoc = _text(idu, "AssociatedIndoorUnitGroup")
             if not assoc:
                 continue
-            assoc_to_idus.setdefault(assoc, []).append({
-                "mnet":        mnet,
-                "model":       _text(idu, "ModelNumber"),
-                "ref_tag":     _text(idu, "ReferenceTag"),
-                "odu_mnet":    odu_mnet,
-                "system_type": system_type,
-                "system":      system,
-            })
+            assoc_to_idus.setdefault(assoc, []).append(
+                {
+                    "mnet": mnet,
+                    "model": _text(idu, "ModelNumber"),
+                    "ref_tag": _text(idu, "ReferenceTag"),
+                    "odu_mnet": odu_mnet,
+                    "system_type": system_type,
+                    "system": system,
+                }
+            )
             group_to_system[assoc] = system
 
     lossnay_index = {}
@@ -84,18 +88,21 @@ def _build_indices(groupof50):
 
 def lookup_icon(model_number, rules, default_icon):
     for rule in rules:
-        pattern        = rule["pattern"]
+        pattern = rule["pattern"]
         case_sensitive = rule.get("case_sensitive", True)
         target = model_number if case_sensitive else model_number.upper()
-        pat    = pattern      if case_sensitive else pattern.upper()
-        if rule["match"] == "contains"   and pat in target:          return rule["icon"]
-        if rule["match"] == "startswith" and target.startswith(pat): return rule["icon"]
+        pat = pattern if case_sensitive else pattern.upper()
+        if rule["match"] == "contains" and pat in target:
+            return rule["icon"]
+        if rule["match"] == "startswith" and target.startswith(pat):
+            return rule["icon"]
     return default_icon
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def parse_dsbx_bytes(data: bytes) -> ET.Element:
     """Unzip a .dsbx and return the root XML element."""
@@ -112,7 +119,7 @@ def get_groupof50_list(dsb_root: ET.Element):
 
 def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
     """Build the <ControlGroup> XML element from a Groupof50 DSB block."""
-    icon_rules   = mapping["icon_rules"]
+    icon_rules = mapping["icon_rules"]
     default_icon = mapping["default_icon"]
 
     assoc_to_idus, lossnay_index, group_to_system = _build_indices(groupof50)
@@ -120,17 +127,22 @@ def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
     all_iugs = groupof50.findall("IndoorUnitGroup")
     groups = []
     for iug in all_iugs:
-        tid   = _text(iug, "TableId")
+        tid = _text(iug, "TableId")
         gtype = _text(iug, "GroupType")
-        gnum  = _text(iug, "GroupNumber")
-        if gtype == "IU"      and not assoc_to_idus.get(tid):       continue
-        if gtype == "Lossnay" and lossnay_index.get(tid) is None:   continue
+        gnum = _text(iug, "GroupNumber")
+        if gtype == "IU" and not assoc_to_idus.get(tid):
+            continue
+        if gtype == "Lossnay" and lossnay_index.get(tid) is None:
+            continue
         groups.append((int(gnum), gtype, tid, iug))
     groups.sort(key=lambda x: x[0])
 
-    valid_systems = [s for s in groupof50.findall("System")
-                     if _text(s, "SystemType") == "MandS"
-                     or _valid_mnet(_text(s.find("OutdoorUnit"), "MNetAddress"))]
+    valid_systems = [
+        s
+        for s in groupof50.findall("System")
+        if _text(s, "SystemType") == "MandS"
+        or _valid_mnet(_text(s.find("OutdoorUnit"), "MNetAddress"))
+    ]
     system_area = {id(s): i for i, s in enumerate(valid_systems, start=1)}
 
     group_area = {}
@@ -150,17 +162,39 @@ def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
         gstr = str(gnum)
         if gtype == "IU":
             for rec in assoc_to_idus.get(tid, []):
-                model = "AIC" if (rec["mnet"] == rec["odu_mnet"] or rec["system_type"] == "MandS") else "IC"
-                ET.SubElement(mgl, "MnetGroupRecord",
-                    Group=gstr, Address=rec["mnet"], Model=model, SubModel="")
+                model = (
+                    "AIC"
+                    if (rec["mnet"] == rec["odu_mnet"] or rec["system_type"] == "MandS")
+                    else "IC"
+                )
+                ET.SubElement(
+                    mgl,
+                    "MnetGroupRecord",
+                    Group=gstr,
+                    Address=rec["mnet"],
+                    Model=model,
+                    SubModel="",
+                )
             rc = iug.find("LocalRemoteController")
             if rc is not None and rc.find("MNetAddress") is not None:
-                ET.SubElement(mgl, "MnetGroupRecord",
-                    Group=gstr, Address=_text(rc, "MNetAddress"), Model="RC", SubModel="")
+                ET.SubElement(
+                    mgl,
+                    "MnetGroupRecord",
+                    Group=gstr,
+                    Address=_text(rc, "MNetAddress"),
+                    Model="RC",
+                    SubModel="",
+                )
         elif gtype == "Lossnay":
             lossnay = lossnay_index[tid]
-            ET.SubElement(mgl, "MnetGroupRecord",
-                Group=gstr, Address=_text(lossnay, "MNetAddress"), Model="LC", SubModel="")
+            ET.SubElement(
+                mgl,
+                "MnetGroupRecord",
+                Group=gstr,
+                Address=_text(lossnay, "MNetAddress"),
+                Model="LC",
+                SubModel="",
+            )
 
     ET.SubElement(cg, "DdcInfoList")
 
@@ -190,16 +224,15 @@ def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
     for area_num in range(1, max_area + 1):
         for gnum, gtype, tid, iug in groups:
             if group_area.get(gnum) == area_num:
-                ET.SubElement(agl, "AreaGroupRecord",
-                    Area=str(area_num), Group=str(gnum), ModelID="MNET")
+                ET.SubElement(
+                    agl, "AreaGroupRecord", Area=str(area_num), Group=str(gnum), ModelID="MNET"
+                )
 
     al = ET.SubElement(cg, "AreaList")
     for i, sys_elem in enumerate(valid_systems, start=1):
-        ET.SubElement(al, "AreaRecord",
-            Area=str(i), AreaName=_text(sys_elem, "SystemName"))
+        ET.SubElement(al, "AreaRecord", Area=str(i), AreaName=_text(sys_elem, "SystemName"))
     if any(gt == "Lossnay" for _, gt, _, _ in groups):
-        ET.SubElement(al, "AreaRecord",
-            Area=str(len(valid_systems) + 1), AreaName="ERVs")
+        ET.SubElement(al, "AreaRecord", Area=str(len(valid_systems) + 1), AreaName="ERVs")
 
     for tag in ("OcNameList", "McNameList", "ModbusList"):
         ET.SubElement(cg, tag)
@@ -212,24 +245,27 @@ def extract_group_cards(groupof50: ET.Element, mapping: dict) -> list:
     Return a list of group card dicts for the frontend rearrangement UI.
     [{"slot": 1, "tag": "Floor-01", "mnet_addresses": ["50"], "unit_types": ["IC"], "icon": 10}, ...]
     """
-    icon_rules   = mapping["icon_rules"]
+    icon_rules = mapping["icon_rules"]
     default_icon = mapping["default_icon"]
     assoc_to_idus, lossnay_index, _ = _build_indices(groupof50)
 
     cards = []
     for iug in groupof50.findall("IndoorUnitGroup"):
-        tid   = _text(iug, "TableId")
+        tid = _text(iug, "TableId")
         gtype = _text(iug, "GroupType")
-        gnum  = _text(iug, "GroupNumber")
+        gnum = _text(iug, "GroupNumber")
 
         if gtype == "IU":
             idus = assoc_to_idus.get(tid, [])
             if not idus:
                 continue
-            mnets      = [r["mnet"] for r in idus]
-            unit_types = ["AIC" if (r["mnet"] == r["odu_mnet"] or r["system_type"] == "MandS") else "IC" for r in idus]
-            tag        = idus[0]["ref_tag"]
-            icon       = lookup_icon(idus[0]["model"], icon_rules, default_icon)
+            mnets = [r["mnet"] for r in idus]
+            unit_types = [
+                "AIC" if (r["mnet"] == r["odu_mnet"] or r["system_type"] == "MandS") else "IC"
+                for r in idus
+            ]
+            tag = idus[0]["ref_tag"]
+            icon = lookup_icon(idus[0]["model"], icon_rules, default_icon)
             rc = iug.find("LocalRemoteController")
             if rc is not None and rc.find("MNetAddress") is not None:
                 mnets.append(_text(rc, "MNetAddress"))
@@ -238,20 +274,22 @@ def extract_group_cards(groupof50: ET.Element, mapping: dict) -> list:
             lossnay = lossnay_index.get(tid)
             if lossnay is None:
                 continue
-            mnets      = [_text(lossnay, "MNetAddress")]
+            mnets = [_text(lossnay, "MNetAddress")]
             unit_types = ["LC"]
-            tag        = _text(lossnay, "ReferenceTag")
-            icon       = 0
+            tag = _text(lossnay, "ReferenceTag")
+            icon = 0
         else:
             continue
 
-        cards.append({
-            "slot":          int(gnum),
-            "tag":           tag,
-            "mnet_addresses": mnets,
-            "unit_types":    unit_types,
-            "icon":          icon,
-        })
+        cards.append(
+            {
+                "slot": int(gnum),
+                "tag": tag,
+                "mnet_addresses": mnets,
+                "unit_types": unit_types,
+                "icon": icon,
+            }
+        )
 
     cards.sort(key=lambda c: c["slot"])
     return cards
@@ -264,10 +302,10 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
 
     Returns list of {"name": str, "controller": str, "data": bytes}
     """
-    mapping   = load_mapping()
-    dsb_root  = parse_dsbx_bytes(dsbx_data)
-    g50_list  = get_groupof50_list(dsb_root)
-    family    = FAMILY_MAP.get(target_family, FAMILY_MAP["AE-C400A"])
+    mapping = load_mapping()
+    dsb_root = parse_dsbx_bytes(dsbx_data)
+    g50_list = get_groupof50_list(dsb_root)
+    family = FAMILY_MAP.get(target_family, FAMILY_MAP["AE-C400A"])
 
     results = []
     for groupof50 in g50_list:
@@ -285,9 +323,9 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
         if sd is not None:
             sd.set("Name", _text(groupof50, "Name"))
 
-        db     = tmpl_root.find(".//DatabaseManager")
+        db = tmpl_root.find(".//DatabaseManager")
         old_cg = db.find("ControlGroup")
-        idx    = list(db).index(old_cg)
+        idx = list(db).index(old_cg)
         db.remove(old_cg)
         db.insert(idx, build_control_group(groupof50, mapping))
 
@@ -305,10 +343,12 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
 
         safe_name = safe_filename(_text(groupof50, "Name"))
 
-        results.append({
-            "name":       f"{safe_name} {controller}",
-            "controller": controller,
-            "data":       build_dat_bytes(entries),
-        })
+        results.append(
+            {
+                "name": f"{safe_name} {controller}",
+                "controller": controller,
+                "data": build_dat_bytes(entries),
+            }
+        )
 
     return results

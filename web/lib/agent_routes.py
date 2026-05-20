@@ -5,6 +5,7 @@ All write endpoints require an X-Agent-Key header matching the AGENT_API_KEY
 environment variable. Read-only endpoints (like /status) are unauthenticated
 so the agent can check liveness without credentials.
 """
+
 import functools
 import os
 
@@ -23,6 +24,7 @@ def require_agent_key(f):
         if request.headers.get("X-Agent-Key") != _AGENT_KEY:
             return jsonify({"error": "Unauthorized"}), 401
         return f(*args, **kwargs)
+
     return wrapper
 
 
