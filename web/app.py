@@ -435,7 +435,8 @@ def api_upload_lev_kit():
     try:
         parsed = lev_kit_utils.parse_dsbx(data)
     except ValueError as exc:
-        abort(400, f"Could not read .dsbx file: {exc}")
+        logger.warning("Could not read .dsbx file", exc_info=True)
+        abort(400, "Could not read the .dsbx file. Please verify it is a valid DSBX export.")
 
     if not parsed["units"]:
         abort(400, "No LEV Kits (PAC-AH001 or PAC-AH002) found in this project.")
@@ -568,7 +569,8 @@ def api_download_lev_kit(sid):
             refrigerant_selection=s.get("refrigerant_selection", "ah002"),
         )
     except Exception as exc:
-        abort(500, f"PDF generation failed: {exc}")
+        logger.error("PDF generation failed", exc_info=True)
+        abort(500, "PDF generation failed. Please try again or contact support.")
 
     return _send_pdf(pdf_bytes, _lev_kit_filename(s["project_name"]))
 
@@ -718,7 +720,8 @@ def api_upload_dsbx():
         dsb_root  = parse_dsbx_bytes(data)
         g50_list  = get_groupof50_list(dsb_root)
     except Exception as e:
-        abort(400, f"Could not parse .dsbx file: {e}")
+        logger.warning("Could not parse .dsbx file", exc_info=True)
+        abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
 
     blocks = []
     for g50 in g50_list:
@@ -793,7 +796,8 @@ def api_download_dsbx_to_dat(sid):
     try:
         results = dsbx_to_dat_bytes(s["dsbx_data"], version)
     except Exception as e:
-        abort(500, f"Conversion failed: {e}")
+        logger.error("Conversion failed", exc_info=True)
+        abort(500, "Conversion failed. Please try again or contact support.")
 
     # Apply user edits in correct order: names FIRST, then rearrangement.
     # Names must be written to the original Group numbers before
@@ -861,7 +865,8 @@ def api_upload_dat():
     try:
         controllers = parse_dat_controllers(data)
     except Exception as e:
-        abort(400, f"Could not parse .dat file: {e}")
+        logger.warning("Could not parse .dat file", exc_info=True)
+        abort(400, "Could not parse the .dat file. Please verify it is a valid configuration export.")
 
     if not controllers:
         abort(400, "No controller data found in this .dat file.")
@@ -921,7 +926,8 @@ def api_upload_config_hub():
                 dsb_root = parse_dsbx_bytes(source_bytes)
                 g50_list = get_groupof50_list(dsb_root)
             except Exception as e:
-                abort(400, f"Could not restore session: {e}")
+                logger.warning("Could not restore DSBX session", exc_info=True)
+                abort(400, "Could not restore the session from the stored source. Please try re-uploading the file.")
 
             blocks = []
             for g50 in g50_list:
@@ -938,7 +944,8 @@ def api_upload_config_hub():
             try:
                 controllers = parse_dat_controllers(source_bytes)
             except Exception as e:
-                abort(400, f"Could not restore session: {e}")
+                logger.warning("Could not restore DAT session", exc_info=True)
+                abort(400, "Could not restore the session from the stored source. Please try re-uploading the file.")
 
             if not controllers:
                 abort(400, "No controller data found in stored source.")
@@ -1004,7 +1011,8 @@ def api_upload_config_hub():
             dsb_root = parse_dsbx_bytes(data)
             g50_list = get_groupof50_list(dsb_root)
         except Exception as e:
-            abort(400, f"Could not parse .dsbx file: {e}")
+            logger.warning("Could not parse .dsbx file (config hub)", exc_info=True)
+            abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
 
         blocks = []
         for g50 in g50_list:
@@ -1032,7 +1040,8 @@ def api_upload_config_hub():
     try:
         controllers = parse_dat_controllers(data)
     except Exception as e:
-        abort(400, f"Could not parse .dat file: {e}")
+        logger.warning("Could not parse .dat file (config hub)", exc_info=True)
+        abort(400, "Could not parse the .dat file. Please verify it is a valid configuration export.")
     if not controllers:
         abort(400, "No controller data found in this .dat file.")
 
@@ -1094,7 +1103,8 @@ def api_download_rearrange(sid):
             return _send_dat(result, fname)
 
     except Exception as e:
-        abort(500, f"Export failed: {e}")
+        logger.error("DAT export failed", exc_info=True)
+        abort(500, "Export failed. Please try again or contact support.")
 
 
 # ---------------------------------------------------------------------------
@@ -1113,7 +1123,8 @@ def api_download_convert(sid):
     try:
         results = convert_dat_bytes(dat_data)
     except Exception as e:
-        abort(500, f"Conversion failed: {e}")
+        logger.error("DAT conversion failed", exc_info=True)
+        abort(500, "Conversion failed. Please try again or contact support.")
 
     if len(results) == 1:
         r = results[0]
@@ -1140,7 +1151,8 @@ def api_download_split(sid):
     except ValueError as e:
         abort(400, str(e))
     except Exception as e:
-        abort(500, f"Split failed: {e}")
+        logger.error("DAT split failed", exc_info=True)
+        abort(500, "Split failed. Please try again or contact support.")
 
     return _send_zip(_zip_results(results), "split_controllers.zip")
 
@@ -1280,7 +1292,8 @@ def api_export_json():
     try:
         json_bytes = export_session_json(export_blocks, s, tool, secret)
     except Exception as e:
-        abort(500, f"Export failed: {e}")
+        logger.error("JSON export failed", exc_info=True)
+        abort(500, "Export failed. Please try again or contact support.")
 
     return send_file(
         io.BytesIO(json_bytes),
