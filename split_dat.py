@@ -25,6 +25,10 @@ import zlib
 
 import pyzipper
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"))
+
+from lib.dat_utils import safe_filename
+
 PASSWORD = b"MELCO"
 
 
@@ -195,13 +199,6 @@ def write_zipcrypto(output_path, entries, password):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-
-
-def safe_filename(name):
-    """Strip characters that are invalid in Windows filenames."""
-    for ch in r'\/:*?"<>|':
-        name = name.replace(ch, "_")
-    return name.strip() or "unnamed"
 
 
 def main():

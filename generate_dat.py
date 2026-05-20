@@ -25,6 +25,8 @@ import xml.etree.ElementTree as ET
 
 import pyzipper
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"))
+
 TEMPLATE = os.path.join(os.path.dirname(__file__), "AE-C400 Config Empty.dat")
 PASSWORD = b"MELCO"
 

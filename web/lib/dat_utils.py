@@ -16,18 +16,49 @@ TEMPLATES_DIR = os.path.join(REPO_ROOT, "templates")
 
 DATA_LISTS = {"MnetGroupList", "ViewInfoList", "MnetList", "AreaGroupList", "AreaList"}
 
-NEEDS_IMG = {"AE-C400A", "EW-C50", "EW-50"}
-NEEDS_NETWORK = {"AE-C400A", "EW-C50"}
+CONTROLLER_REGISTRY = {
+    "AE-200": {
+        "opposite": "AE-C400A",
+        "family_ae": "AE-200",
+        "family_ew": "EW-50",
+        "needs_img": False,
+        "needs_network": False,
+    },
+    "AE-C400A": {
+        "opposite": "AE-200",
+        "family_ae": "AE-C400A",
+        "family_ew": "EW-C50",
+        "needs_img": True,
+        "needs_network": True,
+    },
+    "EW-50": {
+        "opposite": "EW-C50",
+        "family_ae": "AE-200",
+        "family_ew": "EW-50",
+        "needs_img": True,
+        "needs_network": False,
+    },
+    "EW-C50": {
+        "opposite": "EW-50",
+        "family_ae": "AE-C400A",
+        "family_ew": "EW-C50",
+        "needs_img": True,
+        "needs_network": True,
+    },
+}
 
-OPPOSITE = {
-    "AE-200": "AE-C400A",
-    "AE-C400A": "AE-200",
-    "EW-50": "EW-C50",
-    "EW-C50": "EW-50",
+# Derived convenience aliases for backward compatibility
+OPPOSITE = {k: v["opposite"] for k, v in CONTROLLER_REGISTRY.items()}
+NEEDS_IMG = {k for k, v in CONTROLLER_REGISTRY.items() if v["needs_img"]}
+NEEDS_NETWORK = {k for k, v in CONTROLLER_REGISTRY.items() if v["needs_network"]}
+FAMILY_MAP = {
+    k: {"AE": v["family_ae"], "EW": v["family_ew"]}
+    for k, v in CONTROLLER_REGISTRY.items()
+    if k in ("AE-C400A", "AE-200")
 }
 
 
-def _safe_filename(name: str) -> str:
+def safe_filename(name: str) -> str:
     for ch in r'\/:*?"<>|':
         name = name.replace(ch, "_")
     return name.strip() or "unnamed"
@@ -213,7 +244,7 @@ def convert_dat_bytes(dat_bytes: bytes) -> list:
 
         results.append(
             {
-                "name": f"{_safe_filename(sys_name)} {tgt_type}",
+                "name": f"{safe_filename(sys_name)} {tgt_type}",
                 "controller": tgt_type,
                 "data": generate_dat_bytes(out_buf.getvalue(), tgt_type),
             }
@@ -235,7 +266,7 @@ def split_dat_bytes(dat_bytes: bytes) -> list:
     for ctrl in controllers:
         results.append(
             {
-                "name": _safe_filename(ctrl["name"]),
+                "name": safe_filename(ctrl["name"]),
                 "controller": ctrl["controller_type"],
                 "data": generate_dat_bytes(ctrl["xml_bytes"], ctrl["controller_type"]),
             }
@@ -342,7 +373,7 @@ def rearrange_and_split_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
         xml = apply_rearrangement(ctrl["xml_bytes"], order) if order else ctrl["xml_bytes"]
         results.append(
             {
-                "name": _safe_filename(ctrl["name"]),
+                "name": safe_filename(ctrl["name"]),
                 "controller": ctrl["controller_type"],
                 "data": generate_dat_bytes(xml, ctrl["controller_type"]),
             }
@@ -391,7 +422,7 @@ def rearrange_and_convert_dat_bytes(dat_bytes: bytes, orders: dict) -> list:
         tmpl_tree.write(out_buf, encoding="utf-8", xml_declaration=True)
         results.append(
             {
-                "name": f"{_safe_filename(sys_name)} {tgt_type}",
+                "name": f"{safe_filename(sys_name)} {tgt_type}",
                 "controller": tgt_type,
                 "data": generate_dat_bytes(out_buf.getvalue(), tgt_type),
             }
