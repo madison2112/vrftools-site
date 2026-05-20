@@ -48,19 +48,19 @@
 <section class="card lks-step lks-hidden" id="lks-step-2" aria-label="Step 2 of 4">
   <div class="card-title">Step 2 of 4 &mdash; System Type &amp; Control Mode</div>
   <p class="lks-group-label">System Type</p>
-  <div class="lks-btn-group" id="lks-heat-pump-group">
+  <div class="lks-btn-group" id="lks-heat-pump-group" role="radiogroup" aria-label="System type">
     <button type="button" class="lks-choice lks-active" data-field="heatPump" data-value="true">Heat Pump</button>
     <button type="button" class="lks-choice" data-field="heatPump" data-value="false">Cooling Only</button>
   </div>
   <p class="lks-group-label">Control Mode</p>
-  <div class="lks-btn-group" id="lks-mode-group">
+  <div class="lks-btn-group" id="lks-mode-group" role="radiogroup" aria-label="Control mode">
     <button type="button" class="lks-choice lks-active" data-field="controlMode" data-value="discharge">Discharge Air Temperature (DAT)</button>
     <button type="button" class="lks-choice" data-field="controlMode" data-value="return">Return Air Temperature (RAT)</button>
   </div>
   <!-- AH001-only: Fan Controlled By gates the AH001 extras in later steps -->
   <div class="lks-ah001-only lks-hidden" data-controller-only="PAC-AH001">
     <p class="lks-group-label">AHU/FCU Fan Controlled By</p>
-    <div class="lks-btn-group" id="lks-fan-group">
+    <div class="lks-btn-group" id="lks-fan-group" role="radiogroup" aria-label="AHU/FCU fan controlled by">
       <button type="button" class="lks-choice" data-field="fanControlledBy" data-value="lev">LEV Kit</button>
       <button type="button" class="lks-choice lks-active" data-field="fanControlledBy" data-value="bas">BAS</button>
     </div>
@@ -75,12 +75,12 @@
 <section class="card lks-step lks-hidden" id="lks-step-3-dat" aria-label="Step 3 of 4 - DAT">
   <div class="card-title">Step 3 of 4 &mdash; DAT Settings</div>
   <p class="lks-group-label">Enable Method</p>
-  <div class="lks-btn-group" id="lks-discharge-enable-group">
+  <div class="lks-btn-group" id="lks-discharge-enable-group" role="radiogroup" aria-label="Discharge enable method">
     <button type="button" class="lks-choice lks-active" data-field="dischargeEnableType" data-value="bas">BAS (Dry Contact)</button>
     <button type="button" class="lks-choice" data-field="dischargeEnableType" data-value="central">Mitsubishi Controls</button>
   </div>
   <p class="lks-group-label">Setpoint Source</p>
-  <div class="lks-btn-group" id="lks-discharge-setpoint-group">
+  <div class="lks-btn-group" id="lks-discharge-setpoint-group" role="radiogroup" aria-label="Discharge setpoint source">
     <button type="button" class="lks-choice lks-active" data-field="dischargeSetpointType" data-value="bas">BAS (0-10V Signal)</button>
     <button type="button" class="lks-choice" data-field="dischargeSetpointType" data-value="central">Mitsubishi Controls</button>
   </div>
@@ -90,7 +90,7 @@
   <!-- AH001-only: Run Fan During Defrost (only meaningful when fan is LEV-controlled) -->
   <div class="lks-ah001-only lks-hidden" data-controller-only="PAC-AH001" data-fan-gated="true">
     <p class="lks-group-label">Run Fan During Defrost</p>
-    <div class="lks-btn-group" id="lks-run-fan-defrost-group">
+    <div class="lks-btn-group" id="lks-run-fan-defrost-group" role="radiogroup" aria-label="Run fan during defrost">
       <button type="button" class="lks-choice lks-active" data-field="runFanDefrost" data-value="false">No</button>
       <button type="button" class="lks-choice" data-field="runFanDefrost" data-value="true">Yes</button>
     </div>
@@ -105,37 +105,37 @@
 <section class="card lks-step lks-hidden" id="lks-step-3-rat" aria-label="Step 3 of 4 - RAT">
   <div class="card-title">Step 3 of 4 &mdash; RAT Settings</div>
   <p class="lks-group-label">Temperature Sensor</p>
-  <div class="lks-btn-group" id="lks-return-control-group">
+  <div class="lks-btn-group" id="lks-return-control-group" role="radiogroup" aria-label="Return air temperature sensor">
     <button type="button" class="lks-choice lks-active" data-field="returnControl" data-value="rat">Return Air Sensor</button>
     <button type="button" class="lks-choice" data-field="returnControl" data-value="room">Room Temp Sensor</button>
   </div>
   <p class="lks-group-label">Enable Method</p>
-  <div class="lks-btn-group" id="lks-return-enable-group">
+  <div class="lks-btn-group" id="lks-return-enable-group" role="radiogroup" aria-label="Return enable method">
     <button type="button" class="lks-choice lks-active" data-field="returnEnableMethod" data-value="central">Mitsubishi Controls</button>
     <button type="button" class="lks-choice" data-field="returnEnableMethod" data-value="bas">BAS (Dry Contact)</button>
   </div>
   <!-- AH001-only RAT extras (gated by fan=LEV) -->
   <div class="lks-ah001-only lks-hidden" data-controller-only="PAC-AH001" data-fan-gated="true">
     <p class="lks-group-label">Electric Heat Installed</p>
-    <div class="lks-btn-group" id="lks-electric-heat-group">
+    <div class="lks-btn-group" id="lks-electric-heat-group" role="radiogroup" aria-label="Electric heat installed">
       <button type="button" class="lks-choice lks-active" data-field="electricHeat" data-value="false">No</button>
       <button type="button" class="lks-choice" data-field="electricHeat" data-value="true">Yes</button>
     </div>
     <div class="lks-ah001-subgroup lks-hidden" id="lks-use-defrost-error-wrap">
       <p class="lks-group-label">Use During Defrost &amp; Error</p>
-      <div class="lks-btn-group" id="lks-use-defrost-error-group">
+      <div class="lks-btn-group" id="lks-use-defrost-error-group" role="radiogroup" aria-label="Use during defrost and error">
         <button type="button" class="lks-choice lks-active" data-field="useDefrostError" data-value="false">No</button>
         <button type="button" class="lks-choice" data-field="useDefrostError" data-value="true">Yes</button>
       </div>
     </div>
     <p class="lks-group-label">Humidifier Installed</p>
-    <div class="lks-btn-group" id="lks-humidifier-installed-group">
+    <div class="lks-btn-group" id="lks-humidifier-installed-group" role="radiogroup" aria-label="Humidifier installed">
       <button type="button" class="lks-choice lks-active" data-field="humidifierInstalled" data-value="false">No</button>
       <button type="button" class="lks-choice" data-field="humidifierInstalled" data-value="true">Yes</button>
     </div>
     <div class="lks-ah001-subgroup lks-hidden" id="lks-run-humidifier-wrap">
       <p class="lks-group-label">Run Humidifier in Heating Thermo-OFF</p>
-      <div class="lks-btn-group" id="lks-run-humidifier-group">
+      <div class="lks-btn-group" id="lks-run-humidifier-group" role="radiogroup" aria-label="Run humidifier in heating thermo-off">
         <button type="button" class="lks-choice lks-active" data-field="runHumidifier" data-value="false">No</button>
         <button type="button" class="lks-choice" data-field="runHumidifier" data-value="true">Yes</button>
       </div>
@@ -151,9 +151,9 @@
 <section class="card lks-step lks-hidden" id="lks-step-4-dat" aria-label="Step 4 of 4 - DAT">
   <div class="card-title">Step 4 of 4 &mdash; DAT Heating Options</div>
   <p class="lks-group-label">Thermo-Off Temperature</p>
-  <div class="lks-btn-group lks-btn-group-col" id="lks-thermo-group"></div>
+  <div class="lks-btn-group lks-btn-group-col" id="lks-thermo-group" role="radiogroup" aria-label="Thermo-off temperature"></div>
   <p class="lks-group-label">Heating Setpoint Upper Limit</p>
-  <div class="lks-btn-group lks-btn-group-col" id="lks-setpoint-group"></div>
+  <div class="lks-btn-group lks-btn-group-col" id="lks-setpoint-group" role="radiogroup" aria-label="Heating setpoint upper limit"></div>
   <div class="lks-nav">
     <button id="lks-back-4dat" class="btn btn-outline">Back</button>
     <button id="lks-next-4dat" class="btn btn-primary">Generate</button>
@@ -164,7 +164,7 @@
 <section class="card lks-step lks-hidden" id="lks-step-4-rat" aria-label="Step 4 of 4 - RAT">
   <div class="card-title">Step 4 of 4 &mdash; RAT Stratification</div>
   <p class="lks-group-label">Temperature Stratification Offset</p>
-  <div class="lks-btn-group" id="lks-temp-adjust-group">
+  <div class="lks-btn-group" id="lks-temp-adjust-group" role="radiogroup" aria-label="Temperature stratification offset">
     <button type="button" class="lks-choice lks-active" data-field="tempAdjustment" data-value="false">No offset</button>
     <button type="button" class="lks-choice" data-field="tempAdjustment" data-value="true">Yes &mdash; 7&deg;F below return</button>
   </div>
