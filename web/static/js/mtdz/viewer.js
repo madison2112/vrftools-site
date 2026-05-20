@@ -1,5 +1,3 @@
-const API = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
-
 // ── Session state ──────────────────────────────────────────────────────────────
 const sessionId = localStorage.getItem('session_id');
 const days      = JSON.parse(localStorage.getItem('days') || '[]');
@@ -74,8 +72,7 @@ async function loadDay(day) {
     const resp = await fetch(`${API}/api/data/${sessionId}/${day}`);
     if (!resp.ok) {
       if (resp.status === 404) {
-        clearLocalStorage();
-        window.location.href = _PAGE_INDEX + '?expired=1';
+        handleExpired();
         return;
       }
       throw new Error((await resp.json().catch(() => ({}))).detail || resp.statusText);
@@ -160,9 +157,4 @@ function showSkeletons(show) {
   iduSkeleton.style.display = show ? '' : 'none';
   oduGraphs.style.display   = show ? 'none' : '';
   iduGraphs.style.display   = show ? 'none' : '';
-}
-
-function clearLocalStorage() {
-  ['session_id','file_type','days','systems','sensor_catalog','topology','filename']
-    .forEach(k => localStorage.removeItem(k));
 }

@@ -22,7 +22,7 @@
   #sysinfo-banner.info-banner {
     background: #fff3f3;
     border: 1px solid #ffb3b3;
-    border-left: 4px solid var(--red);
+    border-left: 4px solid var(--danger);
     color: var(--dark);
     font-size: 0.9rem;
     padding: 12px 16px;
@@ -49,7 +49,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="info-banner" id="sysinfo-banner" style="display:none">
+<div class="info-banner" id="sysinfo-banner" style="display:none" role="alert">
   <strong>System Information file</strong>
   This file contains system configuration data only — no trend or monitoring data is included.
 </div>
@@ -59,7 +59,7 @@
   <div class="topo-scroll">
     <svg id="topo-svg" style="display:block;"></svg>
   </div>
-  <p class="no-systems" id="no-systems-msg" style="display:none">No system topology data found in this file.</p>
+  <p class="no-systems" id="no-systems-msg" style="display:none" role="alert">No system topology data found in this file.</p>
 </div>
 {% endblock %}
 
@@ -72,5 +72,6 @@
     sysconfig: '/mtdz/sysinfo',
   };
 </script>
+<script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mtdz/sysinfo.js') }}"></script>
 {% endblock %}

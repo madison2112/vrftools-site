@@ -1,4 +1,3 @@
-const API = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
 
 const sessionId = localStorage.getItem('session_id');
 const days      = JSON.parse(localStorage.getItem('days') || '[]');
@@ -117,9 +116,9 @@ function buildEquipmentTable(topology) {
     tr.innerHTML = `
       <td>${type}</td>
       <td>${addr}</td>
-      <td><input type="text" data-mnet="${mnet}" data-field="tag" placeholder="${escapeAttr(tagPlaceholder)}"></td>
-      <td><input type="text" data-mnet="${mnet}" data-field="model" placeholder="${escapeAttr(model)}"></td>
-      <td><input type="text" data-mnet="${mnet}" data-field="serial" placeholder="${escapeAttr(serial) || 'Serial'}"></td>
+      <td><input type="text" data-mnet="${mnet}" data-field="tag" placeholder="${escHtml(tagPlaceholder)}"></td>
+      <td><input type="text" data-mnet="${mnet}" data-field="model" placeholder="${escHtml(model)}"></td>
+      <td><input type="text" data-mnet="${mnet}" data-field="serial" placeholder="${escHtml(serial) || 'Serial'}"></td>
     `;
     tbody.appendChild(tr);
   }
@@ -211,10 +210,6 @@ function restoreEquipmentFromStorage() {
       });
     }
   } catch (_) {}
-}
-
-function escapeAttr(str) {
-  return (str || '').replace(/"/g, '&quot;');
 }
 
 function collectEquipmentData() {
@@ -450,8 +445,7 @@ form.addEventListener('submit', async e => {
 
     if (!resp.ok) {
       if (resp.status === 404) {
-        clearLocalStorage();
-        window.location.href = _PAGE_INDEX + '?expired=1';
+        handleExpired();
         return;
       }
       const err = await resp.json().catch(() => ({}));
@@ -515,8 +509,7 @@ btnExport.addEventListener('click', async () => {
 
     if (!resp.ok) {
       if (resp.status === 404) {
-        clearLocalStorage();
-        window.location.href = _PAGE_INDEX + '?expired=1';
+        handleExpired();
         return;
       }
       const err = await resp.json().catch(() => ({}));
@@ -557,11 +550,3 @@ btnExport.addEventListener('click', async () => {
     // Malformed data — silently skip
   }
 })();
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-
-function clearLocalStorage() {
-  ['session_id','file_type','days','systems','sensor_catalog','topology','filename']
-    .forEach(k => localStorage.removeItem(k));
-  if (sessionId) localStorage.removeItem(`equip_${sessionId}`);
-}
