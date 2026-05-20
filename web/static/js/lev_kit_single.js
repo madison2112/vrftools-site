@@ -49,7 +49,9 @@
   // ─── CHOICE BUTTONS ────────────────────────────────────────────────────────
   function setChoice(groupId, rawValue) {
     document.getElementById(groupId).querySelectorAll('.lks-choice').forEach(btn => {
-      btn.classList.toggle('lks-active', btn.dataset.value === String(rawValue));
+      const pressed = btn.dataset.value === String(rawValue);
+      btn.classList.toggle('lks-active', pressed);
+      btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
     });
   }
 
@@ -67,7 +69,11 @@
   }
 
   function bindChoiceGroup(groupId, field, afterChange) {
-    document.getElementById(groupId).addEventListener('click', e => {
+    const groupEl = document.getElementById(groupId);
+    if (groupEl) {
+      groupEl.querySelectorAll('.lks-choice').forEach(btn => btn.setAttribute('role', 'radio'));
+    }
+    groupEl.addEventListener('click', e => {
       const btn = e.target.closest('.lks-choice');
       if (!btn || btn.disabled) return;
       state[field] = parseValue(field, btn.dataset.value);

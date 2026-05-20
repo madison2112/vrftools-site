@@ -4,6 +4,7 @@ Central Controller Config Tools — Flask web application.
 
 import base64
 import io
+import logging
 import os
 import xml.etree.ElementTree as ET
 import zipfile
@@ -36,19 +37,27 @@ from lib.dsbx_utils import (
     parse_dsbx_bytes,
 )
 from lib.json_utils import export_session_json, import_session_json
+from lib.session_utils import apply_order_to_groups
 from lib.agent_routes import agent_bp
 
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-fallback-key-change-in-prod")
+
+# Deployment environment label — "prod" or "test". Read by /status and exposed
+# to templates so the frontend banner script knows which container it's in.
+# Must be read BEFORE SECRET_KEY so the fail-fast check can gate on it.
+APP_ENV = os.environ.get("APP_ENV", "test")
+
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key and APP_ENV == "prod":
+    raise RuntimeError("SECRET_KEY must be set in production")
+app.secret_key = _secret_key or "dev-only-insecure-key"
 app.register_blueprint(agent_bp)
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXT = {".dsbx", ".dat"}
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
-
-# Deployment environment label — "prod" or "test". Read by /status and exposed
-# to templates so the frontend banner script knows which container it's in.
-APP_ENV = os.environ.get("APP_ENV", "test")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
 
 
@@ -92,7 +101,7 @@ def _validate_upload(file, allowed=None):
         abort(400, "No file provided.")
     data = file.read()
     if len(data) > MAX_UPLOAD_BYTES:
-        abort(400, "File exceeds 5 MB limit.")
+        abort(413, "File exceeds 5 MB limit.")
     ext = os.path.splitext(file.filename)[1].lower()
     if allowed and ext not in allowed:
         abort(400, f"Expected {' or '.join(sorted(allowed))} file, got {ext!r}.")
@@ -154,14 +163,7 @@ def _gather_export_state(s: dict) -> list:
         for i, b in enumerate(blocks):
             groups = [dict(g) for g in b.get("groups", [])]
             # Apply rearrangement by remapping slot numbers
-            order = s.get(f"order_{i}")
-            if isinstance(order, list) and order:
-                old_to_new = {
-                    old_slot: pos + 1 for pos, old_slot in enumerate(order) if old_slot > 0
-                }
-                for g in groups:
-                    if g["slot"] in old_to_new:
-                        g["slot"] = old_to_new[g["slot"]]
+            apply_order_to_groups(groups, s.get(f"order_{i}"))
             result.append(
                 {
                     "name": controller_names.get(str(i)) or b.get("name", ""),
@@ -197,7 +199,7 @@ def _gather_export_state(s: dict) -> list:
                 ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
                 xml = buf.getvalue()
             except ET.ParseError:
-                pass
+                logger.warning("XML parse error applying controller name for block %d", i)
 
         # 2. Apply group tag names
         tag_map = group_names.get(str(i), {})
@@ -211,7 +213,7 @@ def _gather_export_state(s: dict) -> list:
             try:
                 xml = apply_rearrangement(xml, order)
             except Exception:
-                pass
+                logger.warning("Rearrangement failed for block %d", i, exc_info=True)
 
         # 4. Re-extract groups with final slot positions
         groups = extract_groups_from_xml(xml)
@@ -473,7 +475,8 @@ def api_upload_lev_kit():
     try:
         parsed = lev_kit_utils.parse_dsbx(data)
     except ValueError as exc:
-        abort(400, f"Could not read .dsbx file: {exc}")
+        logger.warning("Could not read .dsbx file", exc_info=True)
+        abort(400, "Could not read the .dsbx file. Please verify it is a valid DSBX export.")
 
     if not parsed["units"]:
         abort(400, "No LEV Kits (PAC-AH001 or PAC-AH002) found in this project.")
@@ -613,7 +616,8 @@ def api_download_lev_kit(sid):
             refrigerant_selection=s.get("refrigerant_selection", "ah002"),
         )
     except Exception as exc:
-        abort(500, f"PDF generation failed: {exc}")
+        logger.error("PDF generation failed", exc_info=True)
+        abort(500, "PDF generation failed. Please try again or contact support.")
 
     return _send_pdf(pdf_bytes, _lev_kit_filename(s["project_name"]))
 
@@ -767,7 +771,8 @@ def api_upload_dsbx():
         dsb_root = parse_dsbx_bytes(data)
         g50_list = get_groupof50_list(dsb_root)
     except Exception as e:
-        abort(400, f"Could not parse .dsbx file: {e}")
+        logger.warning("Could not parse .dsbx file", exc_info=True)
+        abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
 
     blocks = []
     for g50 in g50_list:
@@ -804,13 +809,8 @@ def api_get_groups(sid):
     # original extraction order.
     result = []
     for i, block in enumerate(blocks):
-        order = s.get(f"order_{i}")
         groups = [dict(g) for g in block.get("groups", [])]
-        if isinstance(order, list):
-            old_to_new = {old_slot: pos + 1 for pos, old_slot in enumerate(order) if old_slot > 0}
-            for g in groups:
-                if g["slot"] in old_to_new:
-                    g["slot"] = old_to_new[g["slot"]]
+        apply_order_to_groups(groups, s.get(f"order_{i}"))
         result.append({**block, "groups": groups})
 
     return jsonify({"blocks": result})
@@ -852,7 +852,8 @@ def api_download_dsbx_to_dat(sid):
     try:
         results = dsbx_to_dat_bytes(s["dsbx_data"], version)
     except Exception as e:
-        abort(500, f"Conversion failed: {e}")
+        logger.error("Conversion failed", exc_info=True)
+        abort(500, "Conversion failed. Please try again or contact support.")
 
     # Apply user edits in correct order: names FIRST, then rearrangement.
     # Names must be written to the original Group numbers before
@@ -896,7 +897,7 @@ def api_download_dsbx_to_dat(sid):
                 if name:
                     r["name"] = f"{name} {r['controller']}"
         except Exception:
-            pass  # non-fatal
+            logger.warning("DSBX→DAT export edit failed for block %d", i, exc_info=True)
 
     if len(results) == 1:
         r = results[0]
@@ -920,7 +921,10 @@ def api_upload_dat():
     try:
         controllers = parse_dat_controllers(data)
     except Exception as e:
-        abort(400, f"Could not parse .dat file: {e}")
+        logger.warning("Could not parse .dat file", exc_info=True)
+        abort(
+            400, "Could not parse the .dat file. Please verify it is a valid configuration export."
+        )
 
     if not controllers:
         abort(400, "No controller data found in this .dat file.")
@@ -987,7 +991,11 @@ def api_upload_config_hub():
                 dsb_root = parse_dsbx_bytes(source_bytes)
                 g50_list = get_groupof50_list(dsb_root)
             except Exception as e:
-                abort(400, f"Could not restore session: {e}")
+                logger.warning("Could not restore DSBX session", exc_info=True)
+                abort(
+                    400,
+                    "Could not restore the session from the stored source. Please try re-uploading the file.",
+                )
 
             blocks = []
             for g50 in g50_list:
@@ -1006,7 +1014,11 @@ def api_upload_config_hub():
             try:
                 controllers = parse_dat_controllers(source_bytes)
             except Exception as e:
-                abort(400, f"Could not restore session: {e}")
+                logger.warning("Could not restore DAT session", exc_info=True)
+                abort(
+                    400,
+                    "Could not restore the session from the stored source. Please try re-uploading the file.",
+                )
 
             if not controllers:
                 abort(400, "No controller data found in stored source.")
@@ -1076,7 +1088,8 @@ def api_upload_config_hub():
             dsb_root = parse_dsbx_bytes(data)
             g50_list = get_groupof50_list(dsb_root)
         except Exception as e:
-            abort(400, f"Could not parse .dsbx file: {e}")
+            logger.warning("Could not parse .dsbx file (config hub)", exc_info=True)
+            abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
 
         blocks = []
         for g50 in g50_list:
@@ -1110,7 +1123,10 @@ def api_upload_config_hub():
     try:
         controllers = parse_dat_controllers(data)
     except Exception as e:
-        abort(400, f"Could not parse .dat file: {e}")
+        logger.warning("Could not parse .dat file (config hub)", exc_info=True)
+        abort(
+            400, "Could not parse the .dat file. Please verify it is a valid configuration export."
+        )
     if not controllers:
         abort(400, "No controller data found in this .dat file.")
 
@@ -1179,7 +1195,8 @@ def api_download_rearrange(sid):
             return _send_dat(result, fname)
 
     except Exception as e:
-        abort(500, f"Export failed: {e}")
+        logger.error("DAT export failed", exc_info=True)
+        abort(500, "Export failed. Please try again or contact support.")
 
 
 # ---------------------------------------------------------------------------
@@ -1199,7 +1216,8 @@ def api_download_convert(sid):
     try:
         results = convert_dat_bytes(dat_data)
     except Exception as e:
-        abort(500, f"Conversion failed: {e}")
+        logger.error("DAT conversion failed", exc_info=True)
+        abort(500, "Conversion failed. Please try again or contact support.")
 
     if len(results) == 1:
         r = results[0]
@@ -1227,7 +1245,8 @@ def api_download_split(sid):
     except ValueError as e:
         abort(400, str(e))
     except Exception as e:
-        abort(500, f"Split failed: {e}")
+        logger.error("DAT split failed", exc_info=True)
+        abort(500, "Split failed. Please try again or contact support.")
 
     return _send_zip(_zip_results(results), "split_controllers.zip")
 
@@ -1275,11 +1294,10 @@ def api_update_controller_name(sid):
         abort(400, "Invalid block index.")
 
     blocks[block_idx]["name"] = new_name
-    sessions.update(sid, {"blocks": blocks})
 
     names = s.get("controller_names", {})
     names[str(block_idx)] = new_name
-    sessions.update(sid, {"controller_names": names})
+    sessions.update(sid, {"blocks": blocks, "controller_names": names})
 
     return jsonify({"ok": True, "name": new_name})
 
@@ -1315,11 +1333,9 @@ def api_update_group_name(sid):
     if not updated:
         abort(400, f"Slot {slot} not found in block {block_idx}.")
 
-    sessions.update(sid, {"blocks": blocks})
-
     group_names = s.get("group_names", {})
     group_names.setdefault(str(block_idx), {})[str(slot)] = new_tag
-    sessions.update(sid, {"group_names": group_names})
+    sessions.update(sid, {"blocks": blocks, "group_names": group_names})
 
     return jsonify({"ok": True, "tag": new_tag})
 
@@ -1371,7 +1387,8 @@ def api_export_json():
     try:
         json_bytes = export_session_json(export_blocks, s, tool, secret)
     except Exception as e:
-        abort(500, f"Export failed: {e}")
+        logger.error("JSON export failed", exc_info=True)
+        abort(500, "Export failed. Please try again or contact support.")
 
     return send_file(
         io.BytesIO(json_bytes),
@@ -1430,6 +1447,8 @@ def proxy_mtdz(path):
 
 @app.errorhandler(400)
 @app.errorhandler(404)
+@app.errorhandler(405)
+@app.errorhandler(413)
 @app.errorhandler(500)
 def handle_error(e):
     if request.path.startswith("/api/"):

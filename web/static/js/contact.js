@@ -1,4 +1,4 @@
-const API = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
+const API = '';
 
 const form             = document.getElementById('contact-form');
 const categorySelector    = document.getElementById('category-selector');

@@ -533,6 +533,9 @@
     updateModeSectionVisibility();
     _markEmptyTags();
 
+    // Set voltage to 208V default; session restore below may override it.
+    els.editor.voltage.value = '208';
+
     // Restore saved overrides from the server session (e.g. on page reload).
     const sid = currentSession && currentSession.session_id;
     if (sid) {
@@ -553,7 +556,6 @@
     }
 
     renderWarnings(data.warnings);
-    els.editor.voltage.value = '208';
     clearInlineError(els.editor.generateError);
     els.upload.step.style.display = 'none';
     els.editor.step.style.display = '';
