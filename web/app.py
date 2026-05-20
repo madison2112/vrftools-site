@@ -3,6 +3,7 @@ Central Controller Config Tools — Flask web application.
 """
 import base64
 import io
+import logging
 import os
 import xml.etree.ElementTree as ET
 import zipfile
@@ -26,6 +27,8 @@ from lib.dsbx_utils import (
 )
 from lib.json_utils import export_session_json, import_session_json
 from lib.agent_routes import agent_bp
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -186,7 +189,9 @@ def _gather_export_state(s: dict) -> list:
                 ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
                 xml = buf.getvalue()
             except ET.ParseError:
-                pass
+                logger.warning(
+                    "XML parse error applying controller name for block %d", i
+                )
 
         # 2. Apply group tag names
         tag_map = group_names.get(str(i), {})
@@ -200,7 +205,9 @@ def _gather_export_state(s: dict) -> list:
             try:
                 xml = apply_rearrangement(xml, order)
             except Exception:
-                pass
+                logger.warning(
+                    "Rearrangement failed for block %d", i, exc_info=True
+                )
 
         # 4. Re-extract groups with final slot positions
         groups = extract_groups_from_xml(xml)
@@ -846,7 +853,9 @@ def api_download_dsbx_to_dat(sid):
                 if name:
                     r["name"] = f"{name} {r['controller']}"
         except Exception:
-            pass  # non-fatal
+            logger.warning(
+                "DSBX→DAT export edit failed for block %d", i, exc_info=True
+            )
 
     if len(results) == 1:
         r = results[0]
