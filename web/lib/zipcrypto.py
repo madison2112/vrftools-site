@@ -3,6 +3,7 @@ ZipCrypto (PKWARE traditional encryption) writer.
 Produces byte-compatible output with the ISToolAEC .dat format.
 Password for all DAT files: b"MELCO"
 """
+
 import io
 import os
 import struct
@@ -15,6 +16,7 @@ PASSWORD = b"MELCO"
 # CRC / key stream
 # ---------------------------------------------------------------------------
 
+
 def _make_crc_table():
     table = []
     for i in range(256):
@@ -23,6 +25,7 @@ def _make_crc_table():
             c = 0xEDB88320 ^ (c >> 1) if c & 1 else c >> 1
         table.append(c)
     return table
+
 
 _CRC_TABLE = _make_crc_table()
 
@@ -73,21 +76,55 @@ def _dos_time():
 
 
 def _lfh(name_b, comp, uncomp, crc, dt, dd, enc):
-    return struct.pack("<4s5H3I2H",
-        b"PK\x03\x04", 20, 0x0001 if enc else 0, 8, dt, dd,
-        crc & 0xFFFFFFFF, comp, uncomp, len(name_b), 0) + name_b
+    return (
+        struct.pack(
+            "<4s5H3I2H",
+            b"PK\x03\x04",
+            20,
+            0x0001 if enc else 0,
+            8,
+            dt,
+            dd,
+            crc & 0xFFFFFFFF,
+            comp,
+            uncomp,
+            len(name_b),
+            0,
+        )
+        + name_b
+    )
 
 
 def _cde(name_b, comp, uncomp, crc, dt, dd, offset, enc):
-    return struct.pack("<4s6H3I5HII",
-        b"PK\x01\x02", 20, 20, 0x0001 if enc else 0, 8, dt, dd,
-        crc & 0xFFFFFFFF, comp, uncomp,
-        len(name_b), 0, 0, 0, 0, 0, offset) + name_b
+    return (
+        struct.pack(
+            "<4s6H3I5HII",
+            b"PK\x01\x02",
+            20,
+            20,
+            0x0001 if enc else 0,
+            8,
+            dt,
+            dd,
+            crc & 0xFFFFFFFF,
+            comp,
+            uncomp,
+            len(name_b),
+            0,
+            0,
+            0,
+            0,
+            0,
+            offset,
+        )
+        + name_b
+    )
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def build_dat_bytes(entries):
     """
@@ -106,11 +143,32 @@ def build_dat_bytes(entries):
         off = buf.tell()
 
         if data is None:
-            buf.write(struct.pack("<4s5H3I2H",
-                b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb)
-            cds.append(struct.pack("<4s6H3I5HII",
-                b"PK\x01\x02", 20, 20, 0, 0, dt, dd, 0, 0, 0,
-                len(nb), 0, 0, 0, 0, 0x10, off) + nb)
+            buf.write(
+                struct.pack("<4s5H3I2H", b"PK\x03\x04", 20, 0, 0, dt, dd, 0, 0, 0, len(nb), 0) + nb
+            )
+            cds.append(
+                struct.pack(
+                    "<4s6H3I5HII",
+                    b"PK\x01\x02",
+                    20,
+                    20,
+                    0,
+                    0,
+                    dt,
+                    dd,
+                    0,
+                    0,
+                    0,
+                    len(nb),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0x10,
+                    off,
+                )
+                + nb
+            )
             continue
 
         compressed = zlib.compress(data, 9)[2:-4]
@@ -128,7 +186,6 @@ def build_dat_bytes(entries):
     cd_off = buf.tell()
     cd = b"".join(cds)
     buf.write(cd)
-    buf.write(struct.pack("<4s4H2IH",
-        b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
+    buf.write(struct.pack("<4s4H2IH", b"PK\x05\x06", 0, 0, len(cds), len(cds), len(cd), cd_off, 0))
 
     return buf.getvalue()

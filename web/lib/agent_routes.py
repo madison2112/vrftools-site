@@ -4,6 +4,7 @@ All write endpoints require an X-Agent-Key header matching the AGENT_API_KEY
 environment variable. Read-only endpoints (like /status) are unauthenticated
 so the agent can check liveness without credentials.
 """
+
 import functools
 import hmac
 import os
@@ -20,11 +21,10 @@ def require_agent_key(f):
     def wrapper(*args, **kwargs):
         if not _AGENT_KEY:
             return jsonify({"error": "Agent API not configured — set AGENT_API_KEY"}), 503
-        if not hmac.compare_digest(
-            request.headers.get("X-Agent-Key", ""), _AGENT_KEY
-        ):
+        if not hmac.compare_digest(request.headers.get("X-Agent-Key", ""), _AGENT_KEY):
             return jsonify({"error": "Unauthorized"}), 401
         return f(*args, **kwargs)
+
     return wrapper
 
 

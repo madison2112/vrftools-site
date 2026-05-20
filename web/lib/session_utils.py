@@ -3,9 +3,7 @@ Session utility helpers shared across routes and blueprints.
 """
 
 
-def apply_order_to_groups(
-    groups: list[dict], order: list[int] | None
-) -> list[dict]:
+def apply_order_to_groups(groups: list[dict], order: list[int] | None) -> list[dict]:
     """Remap group slot numbers according to a rearrangement order.
 
     ``order`` is a list of old slot numbers in their desired new positions
@@ -18,11 +16,7 @@ def apply_order_to_groups(
     if not isinstance(order, list) or not order:
         return groups
 
-    old_to_new = {
-        old_slot: pos + 1
-        for pos, old_slot in enumerate(order)
-        if old_slot > 0
-    }
+    old_to_new = {old_slot: pos + 1 for pos, old_slot in enumerate(order) if old_slot > 0}
 
     for g in groups:
         if g["slot"] in old_to_new:
