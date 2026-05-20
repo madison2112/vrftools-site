@@ -83,7 +83,7 @@ def _validate_upload(file, allowed=None):
         abort(400, "No file provided.")
     data = file.read()
     if len(data) > MAX_UPLOAD_BYTES:
-        abort(400, "File exceeds 5 MB limit.")
+        abort(413, "File exceeds 5 MB limit.")
     ext = os.path.splitext(file.filename)[1].lower()
     if allowed and ext not in allowed:
         abort(400, f"Expected {' or '.join(sorted(allowed))} file, got {ext!r}.")
@@ -1349,6 +1349,8 @@ def proxy_mtdz(path):
 
 @app.errorhandler(400)
 @app.errorhandler(404)
+@app.errorhandler(405)
+@app.errorhandler(413)
 @app.errorhandler(500)
 def handle_error(e):
     if request.path.startswith("/api/"):
