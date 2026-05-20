@@ -212,38 +212,50 @@
     }, 2500);
   }
 
-  // ── Card click navigation ────────────────────────────────────────────
+  // ── Card activation (click + keyboard) ────────────────────────────────
+  function activateCard(card) {
+    var tool = card.dataset.tool;
+    var href = card.dataset.href;
+
+    // Raw data download — special case (doesn't navigate)
+    if (tool === 'rawdata') {
+      if (!state.sessionId) {
+        flashCardWarning(card, 'Upload a file before downloading raw data.');
+        return;
+      }
+      downloadRawData();
+      return;
+    }
+
+    // Session exists — navigate with session ID
+    if (state.sessionId) {
+      // Mobile block for viewer and sysconfig
+      if ((tool === 'viewer' || tool === 'sysconfig') && isMobile()) {
+        flashCardWarning(card, 'This tool is not available on mobile — please use a desktop browser.');
+        return;
+      }
+      window.location.href = href + '?session=' + state.sessionId;
+      return;
+    }
+
+    // No session — flash red with file-type specific message
+    var ext = TOOL_FILE_TYPE[tool] || '.MTDZ';
+    flashCardWarning(card, 'Upload a <strong>' + ext + '</strong> file before accessing this tool.');
+  }
+
   document.querySelectorAll('.tool-card-square').forEach(function (card) {
+    // Click handler
     card.addEventListener('click', function (e) {
       if (e.target.closest('.info-btn')) return;
+      activateCard(card);
+    });
 
-      var tool = card.dataset.tool;
-      var href = card.dataset.href;
-
-      // Raw data download — special case (doesn't navigate)
-      if (tool === 'rawdata') {
-        if (!state.sessionId) {
-          flashCardWarning(card, 'Upload a file before downloading raw data.');
-          return;
-        }
-        downloadRawData();
-        return;
+    // Keyboard handler (Enter / Space)
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();  // prevent Space from scrolling the page
+        activateCard(card);
       }
-
-      // Session exists — navigate with session ID
-      if (state.sessionId) {
-        // Mobile block for viewer and sysconfig
-        if ((tool === 'viewer' || tool === 'sysconfig') && isMobile()) {
-          flashCardWarning(card, 'This tool is not available on mobile — please use a desktop browser.');
-          return;
-        }
-        window.location.href = href + '?session=' + state.sessionId;
-        return;
-      }
-
-      // No session — flash red with file-type specific message
-      var ext = TOOL_FILE_TYPE[tool] || '.MTDZ';
-      flashCardWarning(card, 'Upload a <strong>' + ext + '</strong> file before accessing this tool.');
     });
   });
 

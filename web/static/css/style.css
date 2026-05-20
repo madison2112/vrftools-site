@@ -449,6 +449,10 @@ footer a:hover { text-decoration: underline; }
   box-shadow: 0 3px 12px rgba(0,0,0,0.1);
   transform: translateY(-2px);
 }
+.tool-card-square:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--red);
+}
 .tool-card-square.highlighted {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(46,125,50,0.15);
