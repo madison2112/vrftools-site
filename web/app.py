@@ -28,16 +28,21 @@ from lib.json_utils import export_session_json, import_session_json
 from lib.agent_routes import agent_bp
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-fallback-key-change-in-prod")
+
+# Deployment environment label — "prod" or "test". Read by /status and exposed
+# to templates so the frontend banner script knows which container it's in.
+# Must be read BEFORE SECRET_KEY so the fail-fast check can gate on it.
+APP_ENV = os.environ.get("APP_ENV", "test")
+
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key and APP_ENV == "prod":
+    raise RuntimeError("SECRET_KEY must be set in production")
+app.secret_key = _secret_key or "dev-only-insecure-key"
 app.register_blueprint(agent_bp)
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_EXT = {".dsbx", ".dat"}
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
-
-# Deployment environment label — "prod" or "test". Read by /status and exposed
-# to templates so the frontend banner script knows which container it's in.
-APP_ENV = os.environ.get("APP_ENV", "test")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
 
 @app.context_processor
