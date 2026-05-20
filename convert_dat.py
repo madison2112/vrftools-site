@@ -22,6 +22,8 @@ import zlib
 import pyzipper
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "lib"))
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PASSWORD   = b"MELCO"
 

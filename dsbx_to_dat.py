@@ -24,6 +24,8 @@ import xml.etree.ElementTree as ET
 
 import pyzipper
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "lib"))
+
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_MAP = os.path.join(SCRIPT_DIR, "dsbx_dat_mapping.json")
 EMPTY_CONFIGS = {
