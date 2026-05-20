@@ -26,6 +26,7 @@ from lib.dsbx_utils import (
     load_mapping, parse_dsbx_bytes,
 )
 from lib.json_utils import export_session_json, import_session_json
+from lib.session_utils import apply_order_to_groups
 from lib.agent_routes import agent_bp
 
 logger = logging.getLogger(__name__)
@@ -148,16 +149,7 @@ def _gather_export_state(s: dict) -> list:
         for i, b in enumerate(blocks):
             groups = [dict(g) for g in b.get("groups", [])]
             # Apply rearrangement by remapping slot numbers
-            order = s.get(f"order_{i}")
-            if isinstance(order, list) and order:
-                old_to_new = {
-                    old_slot: pos + 1
-                    for pos, old_slot in enumerate(order)
-                    if old_slot > 0
-                }
-                for g in groups:
-                    if g["slot"] in old_to_new:
-                        g["slot"] = old_to_new[g["slot"]]
+            apply_order_to_groups(groups, s.get(f"order_{i}"))
             result.append({
                 "name":            controller_names.get(str(i)) or b.get("name", ""),
                 "controller_type": b.get("controller_type", ""),
@@ -759,17 +751,8 @@ def api_get_groups(sid):
     # original extraction order.
     result = []
     for i, block in enumerate(blocks):
-        order = s.get(f"order_{i}")
         groups = [dict(g) for g in block.get("groups", [])]
-        if isinstance(order, list):
-            old_to_new = {
-                old_slot: pos + 1
-                for pos, old_slot in enumerate(order)
-                if old_slot > 0
-            }
-            for g in groups:
-                if g["slot"] in old_to_new:
-                    g["slot"] = old_to_new[g["slot"]]
+        apply_order_to_groups(groups, s.get(f"order_{i}"))
         result.append({**block, "groups": groups})
 
     return jsonify({"blocks": result})
