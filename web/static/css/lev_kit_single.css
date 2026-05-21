@@ -332,3 +332,21 @@
   flex-direction: column;
   gap: 16px;
 }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .lks-choice { padding: 8px 12px; font-size: 0.88rem; }
+  .lks-btn-group { gap: 6px; }
+  .lks-fieldset { padding: 10px 12px; }
+  #lks-banks-container { gap: 16px; }
+  .lks-controller-cards { grid-template-columns: 1fr; }
+  .lks-select { min-width: auto; width: 100%; }
+  .lks-nav { gap: 6px; }
+}
+
+@media (max-width: 400px) {
+  .lks-choice { padding: 7px 10px; font-size: 0.82rem; }
+  .lks-summary-wrap { overflow-x: auto; }
+  .lks-field { margin-bottom: 14px; }
+}
