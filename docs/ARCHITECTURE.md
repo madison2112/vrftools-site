@@ -204,10 +204,16 @@ def apply_group_names(
     """Apply edited group tag names to ControlGroup XML. tag_map: {slot: new_name}"""
 ```
 
-Private (do not import): `_safe_filename`, `_open_dat`, `_check_warnings`.
+Public utility: `safe_filename` (imported by `app.py` and `web/lib/dat_routes.py`).
 
-Note: `app.py` currently imports `_check_warnings` and `_safe_filename` directly
-(line 21). This is a violation fixed as part of B-09 (Blueprint extraction).
+Private (do not import): `_open_dat`, `_check_warnings`.
+
+Note: `_check_warnings` is used by DAT, DSBX, and Config Hub route handlers
+(in `dat_routes.py` and `app.py`). Because it is genuinely shared across
+multiple Blueprints, it remains in `dat_utils.py` until B-10 (DSBX Blueprint),
+at which point it should be promoted to a public name and a shared location
+(`route_helpers.py` or a new `warnings.py`). Originally scoped to B-09 but
+deferred — see PR #12 review notes.
 
 ---
 
@@ -988,7 +994,8 @@ vrf-tools/
       json_utils.py         HMAC-signed JSON export/import
       sessions.py           File-based session store (-> Redis in B-21)
       agent_routes.py       Hermes agent Blueprint (already a Blueprint)
-      dat_routes.py         (future — B-09)
+      dat_routes.py         DAT tool Blueprint (B-09, landed at 3f6424a)
+      route_helpers.py      Shared HTTP-context wrappers (B-09, landed at 3f6424a)
       dsbx_routes.py        (future — B-10)
       lev_kit_routes.py     (future — B-11)
       config_hub_routes.py  (future — B-12)
