@@ -338,10 +338,33 @@ function fillEquipmentFromDsb(dsb_data, group_index) {
 
 // ── System Picker Modal ───────────────────────────────────────────────────────
 
+function openSystemPickerModal() {
+  systemModal.style.display = 'flex';
+  trapFocus(systemModal);
+}
+
+function closeSystemPickerModal(msg) {
+  // Remove focus trap handler so it doesn't accumulate
+  if (systemModal._trapHandler) {
+    systemModal.removeEventListener('keydown', systemModal._trapHandler);
+    delete systemModal._trapHandler;
+  }
+  systemModal.style.display = 'none';
+  releaseFocus();
+  if (msg !== undefined) showDsbStatus(msg, '');
+}
+
+// Escape key to close system picker (trapped by the modal's keydown handler)
+systemModal.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    closeSystemPickerModal('DSB upload cancelled');
+  }
+});
+
 function showSystemPickerModal(dsb_data, match_result) {
-  const titleEl    = document.getElementById('systemPickerTitle');
-  const subtitleEl = document.getElementById('systemPickerSubtitle');
-  const optionsEl  = document.getElementById('systemPickerOptions');
+  var titleEl    = document.getElementById('systemPickerTitle');
+  var subtitleEl = document.getElementById('systemPickerSubtitle');
+  var optionsEl  = document.getElementById('systemPickerOptions');
 
   if (match_result.status === 'none') {
     titleEl.textContent    = 'No matching system found — please select manually';
@@ -354,57 +377,99 @@ function showSystemPickerModal(dsb_data, match_result) {
   optionsEl.innerHTML = '';
 
   // Which entries to show — ambiguous: use matches list; none: show all groups
-  const entries = (match_result.status === 'ambiguous' && match_result.matches.length > 0)
-    ? match_result.matches.map(m => ({ group_index: m.group_index, score: m.score, missing: m.missing_in_dsb, extra: m.extra_in_dsb }))
-    : dsb_data.groups.map((g, i) => ({ group_index: i, score: null, missing: [], extra: [] }));
+  var entries = (match_result.status === 'ambiguous' && match_result.matches.length > 0)
+    ? match_result.matches.map(function (m) { return { group_index: m.group_index, score: m.score, missing: m.missing_in_dsb, extra: m.extra_in_dsb }; })
+    : dsb_data.groups.map(function (g, i) { return { group_index: i, score: null, missing: [], extra: [] }; });
 
-  entries.forEach(entry => {
-    const group = dsb_data.groups[entry.group_index];
+  entries.forEach(function (entry) {
+    var group = dsb_data.groups[entry.group_index];
     if (!group) return;
 
-    const systemNames = (group.systems || []).map(s => s.name).filter(Boolean).join(', ');
-    const card = document.createElement('div');
+    var systemNames = (group.systems || []).map(function (s) { return s.name; }).filter(Boolean).join(', ');
+    var card = document.createElement('div');
     card.className = 'system-picker-option';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'option');
 
-    let html = `<strong>${group.name || `Group ${entry.group_index + 1}`}</strong>`;
+    var html = '<strong>' + escHtml(group.name || ('Group ' + (entry.group_index + 1))) + '</strong>';
     if (systemNames) {
-      html += `<div class="picker-systems">${systemNames}</div>`;
+      html += '<div class="picker-systems">' + escHtml(systemNames) + '</div>';
     }
 
     if (entry.score != null) {
-      html += `<div class="deviation-detail">Match score: ${Math.round(entry.score * 100)}%`;
+      html += '<div class="deviation-detail">Match score: ' + Math.round(entry.score * 100) + '%';
       if (entry.missing && entry.missing.length > 0) {
-        html += ` &bull; Missing in DSB: ${entry.missing.join(', ')}`;
+        html += ' &bull; Missing in DSB: ' + entry.missing.join(', ');
       }
       if (entry.extra && entry.extra.length > 0) {
-        html += ` &bull; Extra in DSB: ${entry.extra.join(', ')}`;
+        html += ' &bull; Extra in DSB: ' + entry.extra.join(', ');
       }
-      html += `</div>`;
+      html += '</div>';
     }
 
     card.innerHTML = html;
-    card.addEventListener('click', () => {
+
+    function selectOption() {
       fillEquipmentFromDsb(dsb_data, entry.group_index);
-      showDsbStatus(`Applied: ${group.name || 'selected group'}`, 'success');
-      systemModal.style.display = 'none';
+      closeSystemPickerModal('Applied: ' + (group.name || 'selected group'));
+    }
+
+    card.addEventListener('click', selectOption);
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectOption();
+      }
     });
+
     optionsEl.appendChild(card);
   });
 
-  systemModal.style.display = 'flex';
+  openSystemPickerModal();
 }
 
-document.getElementById('systemPickerCancel').addEventListener('click', () => {
-  systemModal.style.display = 'none';
-  showDsbStatus('DSB upload cancelled', '');
+document.getElementById('systemPickerCancel').addEventListener('click', function () {
+  closeSystemPickerModal('DSB upload cancelled');
 });
 
 // Close modal on overlay click (outside the box)
-systemModal.addEventListener('click', e => {
+systemModal.addEventListener('click', function (e) {
   if (e.target === systemModal) {
-    systemModal.style.display = 'none';
-    showDsbStatus('DSB upload cancelled', '');
+    closeSystemPickerModal('DSB upload cancelled');
   }
+});
+
+// ── Changelog Modal ───────────────────────────────────────────────────────────
+
+var changelogModal = document.getElementById('changelogModal');
+
+function openChangelogModal() {
+  changelogModal.style.display = 'flex';
+  trapFocus(changelogModal);
+}
+
+function closeChangelogModal() {
+  // Remove focus trap handler so it doesn't accumulate
+  if (changelogModal._trapHandler) {
+    changelogModal.removeEventListener('keydown', changelogModal._trapHandler);
+    delete changelogModal._trapHandler;
+  }
+  changelogModal.style.display = 'none';
+  releaseFocus();
+}
+
+// Escape key to close changelog
+changelogModal.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    closeChangelogModal();
+  }
+});
+
+document.getElementById('btn-changelog').addEventListener('click', openChangelogModal);
+document.getElementById('changelogClose').addEventListener('click', closeChangelogModal);
+document.getElementById('changelogCloseBtm').addEventListener('click', closeChangelogModal);
+changelogModal.addEventListener('click', function (e) {
+  if (e.target === changelogModal) closeChangelogModal();
 });
 
 // ── Report generation ─────────────────────────────────────────────────────────

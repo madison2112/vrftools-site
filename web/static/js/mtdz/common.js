@@ -30,3 +30,43 @@ function handleExpired() {
   var pages = window.MTDZ_PAGES || {};
   window.location.href = (pages.index || '/mtdz/') + '?expired=1';
 }
+
+// ── Focus Trap ────────────────────────────────────────────────────────────────
+
+var _trapPreviousFocus = null;
+
+function trapFocus(modalEl) {
+  _trapPreviousFocus = document.activeElement;
+
+  var FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  var focusable = modalEl.querySelectorAll(FOCUSABLE);
+  var first = focusable[0];
+  var last  = focusable[focusable.length - 1];
+
+  function handleKeyDown(e) {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey) {
+      if (document.activeElement === first || !modalEl.contains(document.activeElement)) {
+        e.preventDefault();
+        last && last.focus();
+      }
+    } else {
+      if (document.activeElement === last || !modalEl.contains(document.activeElement)) {
+        e.preventDefault();
+        first && first.focus();
+      }
+    }
+  }
+
+  modalEl.addEventListener('keydown', handleKeyDown);
+  modalEl._trapHandler = handleKeyDown;
+
+  if (first) first.focus();
+}
+
+function releaseFocus() {
+  if (_trapPreviousFocus && typeof _trapPreviousFocus.focus === 'function') {
+    _trapPreviousFocus.focus();
+  }
+  _trapPreviousFocus = null;
+}
