@@ -76,6 +76,7 @@ def _read_restart_signal() -> str | None:
     except (FileNotFoundError, ValueError, OSError):
         return None
 
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -150,6 +151,8 @@ def page_lev_kit_single_ah002():
 @app.route("/lev-kit-single/ah001")
 def page_lev_kit_single_ah001():
     return render_template("site_lev_kit_single_ah001.html")
+
+
 # ============================================================================
 # LEV Kit Configurator — routes added 2026-05-10
 # ============================================================================
@@ -520,9 +523,13 @@ def api_lev_kit_compute_switches():
             "cnrmConnected": result["cnrm_connected"],
         }
     )
+
+
 @app.route("/disclaimer")
 def page_disclaimer():
     return render_template("disclaimer.html")
+
+
 @app.route("/mtdz/")
 def page_mtdz_index():
     return render_template("mtdz/index.html")
@@ -541,6 +548,8 @@ def page_mtdz_report():
 @app.route("/mtdz/sysinfo")
 def page_mtdz_sysinfo():
     return render_template("mtdz/sysinfo.html")
+
+
 # DSBX tool routes (/dsbx-to-dat, /api/upload/dsbx, /api/session/<sid>/groups,
 # /api/download/dsbx-to-dat/<sid>) are registered by dsbx_routes.py (dsbx_bp below).
 # DAT tool page routes (/rearranger, /convert, /split, /docs)
@@ -746,6 +755,8 @@ def api_upload_config_hub():
             "blocks": blocks,
         }
     )
+
+
 # DAT download/sort/rename/export routes are registered by dat_routes.py.
 
 # ---------------------------------------------------------------------------
@@ -788,6 +799,8 @@ def proxy_mtdz(path):
     exclude = {"content-encoding", "content-length", "transfer-encoding", "connection"}
     headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in exclude]
     return Response(resp.content, resp.status_code, headers)
+
+
 # ---------------------------------------------------------------------------
 # Error handlers
 # ---------------------------------------------------------------------------
@@ -802,5 +815,7 @@ def handle_error(e):
     if request.path.startswith("/api/"):
         return jsonify({"error": str(e.description)}), e.code
     return render_template("error.html", error=e), e.code
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
