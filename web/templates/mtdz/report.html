@@ -189,7 +189,7 @@
   </form>
 </div>
 
-<div id="systemPickerModal" class="modal-overlay" style="display:none">
+<div id="systemPickerModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="systemPickerTitle">
   <div class="modal-box">
     <h3 id="systemPickerTitle">Select Centralized System</h3>
     <p id="systemPickerSubtitle"></p>
@@ -210,26 +210,12 @@
 </script>
 <script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mtdz/report.js') }}"></script>
-<script>
-  (function () {
-    const modal    = document.getElementById('changelogModal');
-    const openBtn  = document.getElementById('btn-changelog');
-    const closeX   = document.getElementById('changelogClose');
-    const closeBtm = document.getElementById('changelogCloseBtm');
-    function open()  { modal.style.display = 'flex'; }
-    function close() { modal.style.display = 'none'; }
-    openBtn.addEventListener('click', open);
-    closeX.addEventListener('click', close);
-    closeBtm.addEventListener('click', close);
-    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
-  })();
-</script>
 
 <!-- Changelog & Known Issues Modal -->
-<div id="changelogModal" class="modal-overlay" style="display:none">
+<div id="changelogModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
   <div class="modal-box modal-box--wide">
     <div class="modal-header">
-      <h3 style="margin:0">Changelog &amp; Known Issues</h3>
+      <h3 style="margin:0" id="changelogTitle">Changelog &amp; Known Issues</h3>
       <button type="button" id="changelogClose" class="modal-close" aria-label="Close">&times;</button>
     </div>
 
