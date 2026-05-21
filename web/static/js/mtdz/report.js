@@ -441,36 +441,38 @@ systemModal.addEventListener('click', function (e) {
 
 // ── Changelog Modal ───────────────────────────────────────────────────────────
 
-var changelogModal = document.getElementById('changelogModal');
+(function() {
+  var changelogModal = document.getElementById('changelogModal');
 
-function openChangelogModal() {
-  changelogModal.style.display = 'flex';
-  trapFocus(changelogModal);
-}
-
-function closeChangelogModal() {
-  // Remove focus trap handler so it doesn't accumulate
-  if (changelogModal._trapHandler) {
-    changelogModal.removeEventListener('keydown', changelogModal._trapHandler);
-    delete changelogModal._trapHandler;
+  function openChangelogModal() {
+    changelogModal.style.display = 'flex';
+    trapFocus(changelogModal);
   }
-  changelogModal.style.display = 'none';
-  releaseFocus();
-}
 
-// Escape key to close changelog
-changelogModal.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape') {
-    closeChangelogModal();
+  function closeChangelogModal() {
+    // Remove focus trap handler so it doesn't accumulate
+    if (changelogModal._trapHandler) {
+      changelogModal.removeEventListener('keydown', changelogModal._trapHandler);
+      delete changelogModal._trapHandler;
+    }
+    changelogModal.style.display = 'none';
+    releaseFocus();
   }
-});
 
-document.getElementById('btn-changelog').addEventListener('click', openChangelogModal);
-document.getElementById('changelogClose').addEventListener('click', closeChangelogModal);
-document.getElementById('changelogCloseBtm').addEventListener('click', closeChangelogModal);
-changelogModal.addEventListener('click', function (e) {
-  if (e.target === changelogModal) closeChangelogModal();
-});
+  // Escape key to close changelog
+  changelogModal.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeChangelogModal();
+    }
+  });
+
+  document.getElementById('btn-changelog').addEventListener('click', openChangelogModal);
+  document.getElementById('changelogClose').addEventListener('click', closeChangelogModal);
+  document.getElementById('changelogCloseBtm').addEventListener('click', closeChangelogModal);
+  changelogModal.addEventListener('click', function (e) {
+    if (e.target === changelogModal) closeChangelogModal();
+  });
+})();
 
 // ── Report generation ─────────────────────────────────────────────────────────
 
