@@ -3,10 +3,8 @@ Central Controller Config Tools — Flask web application.
 """
 
 import base64
-import io
 import logging
 import os
-import xml.etree.ElementTree as ET
 import zipfile
 
 import requests as req_lib
@@ -16,8 +14,7 @@ from lib import sessions
 from lib import lev_kit_utils
 from lib.dat_utils import (
     parse_dat_controllers,
-    generate_dat_bytes,
-    apply_rearrangement,
+    extract_groups_from_xml,
     _check_warnings,
 )
 from lib.dsbx_utils import (
@@ -28,9 +25,9 @@ from lib.dsbx_utils import (
     parse_dsbx_bytes,
 )
 from lib.json_utils import export_session_json, import_session_json
-from lib.session_utils import apply_order_to_groups
 from lib.agent_routes import agent_bp
 from lib.dat_routes import dat_bp, _TOOL_ROUTES
+from lib.dsbx_routes import dsbx_bp
 from lib.route_helpers import (
     MAX_UPLOAD_BYTES,
     ALLOWED_EXT,
@@ -56,6 +53,7 @@ if not _secret_key and APP_ENV == "prod":
 app.secret_key = _secret_key or "dev-only-insecure-key"
 app.register_blueprint(agent_bp)
 app.register_blueprint(dat_bp)
+app.register_blueprint(dsbx_bp)
 
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
@@ -543,164 +541,11 @@ def page_mtdz_report():
 @app.route("/mtdz/sysinfo")
 def page_mtdz_sysinfo():
     return render_template("mtdz/sysinfo.html")
-@app.route("/dsbx-to-dat")
-def page_dsbx_to_dat():
-    preloaded = _preloaded_session("dsbx")
-    return render_template("dsbx_to_dat.html", preloaded_session=preloaded)
+# DSBX tool routes (/dsbx-to-dat, /api/upload/dsbx, /api/session/<sid>/groups,
+# /api/download/dsbx-to-dat/<sid>) are registered by dsbx_routes.py (dsbx_bp below).
 # DAT tool page routes (/rearranger, /convert, /split, /docs)
 # are registered by dat_routes.py (dat_bp above).
-
-# ---------------------------------------------------------------------------
-# API — DSBX to DAT
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/upload/dsbx", methods=["POST"])
-def api_upload_dsbx():
-    data, _ = _validate_upload(request.files.get("file"), {".dsbx"})
-
-    # Validate it's a ZIP
-    if not data[:4] == b"PK\x03\x04":
-        abort(400, "File does not appear to be a valid .dsbx archive.")
-
-    try:
-        mapping = load_mapping()
-        dsb_root = parse_dsbx_bytes(data)
-        g50_list = get_groupof50_list(dsb_root)
-    except Exception as e:
-        logger.warning("Could not parse .dsbx file", exc_info=True)
-        abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
-
-    blocks = []
-    for g50 in g50_list:
-        cards = extract_group_cards(g50, mapping)
-        blocks.append(
-            {
-                "name": g50.findtext("Name") or "",
-                "groups": cards,
-                "warnings": _check_warnings(cards),
-            }
-        )
-
-    sid = sessions.create(
-        {
-            "type": "dsbx",
-            "dsbx_data": data,
-            "blocks": blocks,
-        }
-    )
-
-    return jsonify({"session_id": sid, "blocks": blocks})
-
-
-@app.route("/api/session/<sid>/groups", methods=["GET"])
-def api_get_groups(sid):
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
-
-    blocks = s.get("blocks", [])
-
-    # Apply saved rearrangement orders to group slot numbers so the
-    # frontend renders cards in the user's arranged positions, not the
-    # original extraction order.
-    result = []
-    for i, block in enumerate(blocks):
-        groups = [dict(g) for g in block.get("groups", [])]
-        apply_order_to_groups(groups, s.get(f"order_{i}"))
-        result.append({**block, "groups": groups})
-
-    return jsonify({"blocks": result})
-
-
-@app.route("/api/session/<sid>/groups", methods=["POST"])
-def api_update_groups(sid):
-    """Accept rearranged group order for a DSBX block or DAT."""
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
-
-    body = request.get_json(force=True) or {}
-    new_order = body.get("new_order")  # list of old slot numbers
-    block_idx = body.get("block_index", 0)  # which Groupof50 block (dsbx only)
-
-    if not isinstance(new_order, list):
-        abort(400, "new_order must be a list of slot numbers.")
-
-    sessions.update(sid, {f"order_{block_idx}": new_order})
-    return jsonify({"ok": True})
-
-
-# ---------------------------------------------------------------------------
-# API — Download DSBX→DAT
-# ---------------------------------------------------------------------------
-
-
-@app.route("/api/download/dsbx-to-dat/<sid>")
-def api_download_dsbx_to_dat(sid):
-    s = sessions.get(sid)
-    if not s or s.get("type") != "dsbx":
-        abort(404, "Session not found or expired.")
-
-    version = request.args.get("version", "AE-C400A")
-    if version not in ("AE-C400A", "AE-200"):
-        abort(400, "version must be AE-C400A or AE-200.")
-
-    try:
-        results = dsbx_to_dat_bytes(s["dsbx_data"], version)
-    except Exception as e:
-        logger.error("Conversion failed", exc_info=True)
-        abort(500, "Conversion failed. Please try again or contact support.")
-
-    # Apply user edits in correct order: names FIRST, then rearrangement.
-    # Names must be written to the original Group numbers before
-    # apply_rearrangement remaps them — otherwise renames hit wrong records.
-    from lib.dat_utils import apply_rearrangement, apply_group_names
-
-    controller_names = s.get("controller_names", {})
-    group_names = s.get("group_names", {})
-
-    for i, r in enumerate(results):
-        try:
-            controllers = parse_dat_controllers(r["data"])
-            if controllers:
-                xml = controllers[0]["xml_bytes"]
-
-                # 1. Apply controller name
-                name = controller_names.get(str(i))
-                if name:
-                    root = ET.fromstring(xml)
-                    sd = root.find(".//SystemData")
-                    if sd is not None:
-                        sd.set("Name", name)
-                    buf = io.BytesIO()
-                    ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
-                    xml = buf.getvalue()
-
-                # 2. Apply group tag names (on original Group numbers)
-                tag_map = group_names.get(str(i), {})
-                int_map = {int(k): v for k, v in tag_map.items()}
-                if int_map:
-                    xml = apply_group_names(xml, int_map)
-
-                # 3. Apply rearrangement (remaps Group numbers AFTER names)
-                order = s.get(f"order_{i}")
-                if isinstance(order, list) and order:
-                    xml = apply_rearrangement(xml, order)
-
-                r["data"] = generate_dat_bytes(xml, r["controller"])
-
-                # Use the renamed controller name for the filename
-                if name:
-                    r["name"] = f"{name} {r['controller']}"
-        except Exception:
-            logger.warning("DSBX→DAT export edit failed for block %d", i, exc_info=True)
-
-    if len(results) == 1:
-        r = results[0]
-        return _send_dat(r["data"], r["name"] + ".dat")
-
-    return _send_zip(_zip_results(results), "dsbx_export.zip")
+# DAT upload route (/api/upload/dat) is registered by dat_routes.py.
 # DAT upload route (/api/upload/dat) is registered by dat_routes.py.
 
 # ---------------------------------------------------------------------------
