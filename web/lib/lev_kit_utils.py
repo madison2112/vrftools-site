@@ -30,7 +30,7 @@ import re
 import zipfile
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Dict, Literal, Union
+from typing import Any, Literal
 from xml.etree import ElementTree as ET
 
 
@@ -422,7 +422,7 @@ def _thermo_by_value(value: int, controller_type: str = CONTROLLER_AH002) -> dic
     raise ValueError(f"Unknown thermo value: {value} (controller={controller_type})")
 
 
-def generate_switch_positions(config: Union[SwitchConfig, dict]) -> dict:
+def generate_switch_positions(config: SwitchConfig | dict) -> dict:
     """Compute final DIP switch positions and CNRM connection state for a single unit.
 
     Accepts either a SwitchConfig dataclass (preferred) or a plain dict for
@@ -754,7 +754,7 @@ class SwitchConfig:
     run_humidifier: bool = False
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "SwitchConfig":
+    def from_dict(cls, d: dict[str, Any]) -> SwitchConfig:
         """Construct a SwitchConfig from a plain dict, ignoring unknown keys."""
         valid_keys = {f.name for f in cls.__dataclass_fields__.values()}
         return cls(**{k: v for k, v in d.items() if k in valid_keys})
