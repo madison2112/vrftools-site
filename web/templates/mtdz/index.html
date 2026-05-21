@@ -2,7 +2,7 @@
 {% block title %}MTDZ Viewer{% endblock %}
 
 {% block nav_links %}
-<a href="{{ url_for('page_docs') }}">How to Use</a>
+<a href="{{ url_for('dat.page_docs') }}">How to Use</a>
 <a href="/">Home</a>
 {% endblock %}
 
@@ -17,7 +17,7 @@
 <div class="suite-overview">
   <h2>About These Tools</h2>
   <p>The MTDZ Viewer opens maintenance tool monitoring files directly in the browser. Upload your file below and select a tool to graph log data, generate a diagnostic report, inspect system topology with port connections, or download extracted raw CSV data &mdash; no software installation required.</p>
-  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are deleted nightly at 1:00 AM Pacific Standard Time. Maximum file size: 50 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
+  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are deleted nightly at 1:00 AM Pacific Standard Time. Maximum file size: 50 MB. See the <a href="{{ url_for('dat.page_docs') }}">How to Use</a> guide for detailed instructions.</p>
 </div>
 
 <div class="card" id="upload-card">

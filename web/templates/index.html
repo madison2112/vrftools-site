@@ -9,7 +9,7 @@
 <div class="suite-overview">
   <h2>About These Tools</h2>
   <p>The central controller config file required to load group and address data into an AE-200 or AE-C400A already exists in your DSB file — it just isn't in the right format. The DSBX to DAT converter closes that gap, turning a .dsbx file into one loading-ready config file per centralized system with no manual data entry. The remaining tools handle the next most common pain points: reordering groups after the fact, converting between controller generations, and splitting a site database into individual controller files that can actually be loaded when the IT backbone isn't complete yet.</p>
-  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are deleted nightly at 1:00 AM Pacific Standard Time. Maximum file size: 5 MB. See the <a href="{{ url_for('page_docs') }}">How to Use</a> guide for detailed instructions.</p>
+  <p style="margin-top:8px;">All processing happens on the server. Uploaded files are deleted nightly at 1:00 AM Pacific Standard Time. Maximum file size: 5 MB. See the <a href="{{ url_for('dat.page_docs') }}">How to Use</a> guide for detailed instructions.</p>
 </div>
 
 <div class="card" id="upload-card">
@@ -45,21 +45,21 @@
     <button class="info-btn" data-popup="dsbx-to-dat">i</button>
   </div>
 
-  <div class="tool-card-square" data-tool="rearranger" data-href="{{ url_for('page_rearranger') }}">
+  <div class="tool-card-square" data-tool="rearranger" data-href="{{ url_for('dat.page_rearranger') }}">
     <div class="tool-icon-sq">&#8645;</div>
     <div class="tool-name-sq">Group Rearranger</div>
     <div class="tool-formats-sq"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
     <button class="info-btn" data-popup="rearranger">i</button>
   </div>
 
-  <div class="tool-card-square" data-tool="convert" data-href="{{ url_for('page_convert') }}">
+  <div class="tool-card-square" data-tool="convert" data-href="{{ url_for('dat.page_convert') }}">
     <div class="tool-icon-sq">&#8646;</div>
     <div class="tool-name-sq">Generation Change</div>
     <div class="tool-formats-sq"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
     <button class="info-btn" data-popup="convert">i</button>
   </div>
 
-  <div class="tool-card-square" data-tool="split" data-href="{{ url_for('page_split') }}">
+  <div class="tool-card-square" data-tool="split" data-href="{{ url_for('dat.page_split') }}">
     <div class="tool-icon-sq">&#9003;</div>
     <div class="tool-name-sq">Database Decoupler</div>
     <div class="tool-formats-sq"><span class="badge">multi .dat</span> &rarr; <span class="badge">.dat</span></div>
