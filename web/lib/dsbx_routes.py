@@ -44,7 +44,7 @@ from .route_helpers import (
     _validate_upload,
     _zip_results,
 )
-from .session_utils import apply_order_to_groups
+from .session_utils import apply_order_to_groups, require_session
 
 logger = logging.getLogger(__name__)
 
@@ -112,9 +112,7 @@ def api_upload_dsbx():
 
 @dsbx_bp.route("/api/session/<sid>/groups", methods=["GET"])
 def api_get_groups(sid):
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
+    s = require_session(sid)
 
     blocks = s.get("blocks", [])
 
@@ -133,9 +131,7 @@ def api_get_groups(sid):
 @dsbx_bp.route("/api/session/<sid>/groups", methods=["POST"])
 def api_update_groups(sid):
     """Accept rearranged group order for a DSBX block or DAT."""
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
+    s = require_session(sid)
 
     body = request.get_json(force=True) or {}
     new_order = body.get("new_order")  # list of old slot numbers
@@ -155,9 +151,7 @@ def api_update_groups(sid):
 
 @dsbx_bp.route("/api/download/dsbx-to-dat/<sid>")
 def api_download_dsbx_to_dat(sid):
-    s = sessions.get(sid)
-    if not s or s.get("type") != "dsbx":
-        abort(404, "Session not found or expired.")
+    s = require_session(sid, "dsbx")
 
     version = request.args.get("version", "AE-C400A")
     if version not in ("AE-C400A", "AE-200"):

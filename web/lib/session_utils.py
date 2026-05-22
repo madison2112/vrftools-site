@@ -2,6 +2,25 @@
 Session utility helpers shared across routes and blueprints.
 """
 
+from flask import abort
+
+from . import sessions
+
+
+def require_session(sid: str, expected_type: str | None = None) -> dict:
+    """Return the session dict for ``sid`` or abort 404.
+
+    If ``expected_type`` is supplied, also abort 404 when the session's
+    ``"type"`` field does not match. The 404 message is sanitized — do
+    NOT leak the session id or expected type into the response body.
+    """
+    s = sessions.get(sid)
+    if not s:
+        abort(404, "Session not found.")
+    if expected_type is not None and s.get("type") != expected_type:
+        abort(404, "Session not found.")
+    return s
+
 
 def apply_order_to_groups(groups: list[dict], order: list[int] | None) -> list[dict]:
     """Remap group slot numbers according to a rearrangement order.

@@ -11,7 +11,7 @@ Pattern-setting notes (B-09 — first blueprint extraction):
 - Shared helpers: route-level helpers used by multiple blueprints live in
   web/lib/route_helpers.py. Domain functions stay in web/lib/<tool>_utils.py.
 - Session helpers: session CRUD is called directly via `from . import sessions`.
-  The `require_session` helper (B-13) is not yet introduced.
+  The `require_session` helper (B-13) is now introduced.
 - Module-global constants: DAT-specific constants (_TOOL_ROUTES, _VALID_TOOLS)
   live in the blueprint module; shared constants (MAX_UPLOAD_BYTES) live in
   route_helpers.py.
@@ -58,7 +58,7 @@ from .route_helpers import (
     _validate_upload,
     _zip_results,
 )
-from .session_utils import apply_order_to_groups
+from .session_utils import apply_order_to_groups, require_session
 
 logger = logging.getLogger(__name__)
 
@@ -290,9 +290,7 @@ def api_upload_dat():
 
 @dat_bp.route("/api/download/rearrange/<sid>")
 def api_download_rearrange(sid):
-    s = sessions.get(sid)
-    if not s or s.get("type") != "dat":
-        abort(404, "Session not found or expired.")
+    s = require_session(sid, "dat")
 
     export = request.args.get("export", "packaged")
     export_blocks = _gather_export_state(s)
@@ -330,9 +328,7 @@ def api_download_rearrange(sid):
 
 @dat_bp.route("/api/download/convert/<sid>")
 def api_download_convert(sid):
-    s = sessions.get(sid)
-    if not s or s.get("type") != "dat":
-        abort(404, "Session not found or expired.")
+    s = require_session(sid, "dat")
 
     export_blocks = _gather_export_state(s)
     dat_data = _package_export_dat(export_blocks, s.get("dat_data", b""))
@@ -357,9 +353,7 @@ def api_download_convert(sid):
 
 @dat_bp.route("/api/download/split/<sid>")
 def api_download_split(sid):
-    s = sessions.get(sid)
-    if not s or s.get("type") != "dat":
-        abort(404, "Session not found or expired.")
+    s = require_session(sid, "dat")
 
     export_blocks = _gather_export_state(s)
     dat_data = _package_export_dat(export_blocks, s.get("dat_data", b""))
@@ -382,9 +376,7 @@ def api_download_split(sid):
 
 @dat_bp.route("/api/session/<sid>/sort", methods=["POST"])
 def api_sort_groups(sid):
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
+    s = require_session(sid)
 
     body = request.get_json(force=True) or {}
     block_idx = body.get("block_index", 0)
@@ -402,9 +394,7 @@ def api_sort_groups(sid):
 
 @dat_bp.route("/api/session/<sid>/controller-name", methods=["POST"])
 def api_update_controller_name(sid):
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
+    s = require_session(sid)
 
     body = request.get_json(force=True) or {}
     block_idx = body.get("block_index", 0)
@@ -428,9 +418,7 @@ def api_update_controller_name(sid):
 
 @dat_bp.route("/api/session/<sid>/group-name", methods=["POST"])
 def api_update_group_name(sid):
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
+    s = require_session(sid)
 
     body = request.get_json(force=True) or {}
     block_idx = body.get("block_index", 0)
@@ -478,9 +466,7 @@ def api_export_json():
     if tool not in _VALID_TOOLS:
         abort(400, "Invalid tool.")
 
-    s = sessions.get(sid)
-    if not s:
-        abort(404, "Session not found or expired.")
+    s = require_session(sid)
 
     # Apply any orders the frontend sent in the request body.
     orders_payload = body.get("orders")
@@ -490,7 +476,7 @@ def api_export_json():
                 sessions.update(sid, {f"order_{idx_str}": order})
 
     # Re-read session to pick up the just-applied orders
-    s = sessions.get(sid)
+    s = require_session(sid)
 
     # Canonical export state — names, group tags, and order all applied
     export_blocks = _gather_export_state(s)
