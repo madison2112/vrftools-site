@@ -237,7 +237,9 @@
       for (const [name, positions] of [['SW1', 10], ['SW2', 6], ['SW3', 10], ['SW4', 10]]) {
         container.appendChild(renderDipBank(name, positions, sw[name]));
       }
-      container.appendChild(renderSingleRowBank('SWA', AH001_SWA_LABELS, sw.SWA));
+      // labels are visual-ordered left-to-right [3, 2, 1]. Reverse values so
+      // pos1 (SWA[0]) maps to the rightmost cell, matching the physical switch.
+      container.appendChild(renderSingleRowBank('SWA', AH001_SWA_LABELS, [...sw.SWA].reverse()));
       const sw5_bit = sw.SW5[0];
       container.appendChild(renderSingleRowBank('SW5', AH001_SW5_LABELS,
                                                 [sw5_bit === 1 ? 1 : 0,
