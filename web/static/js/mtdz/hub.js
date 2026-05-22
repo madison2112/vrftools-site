@@ -301,6 +301,12 @@
 
   // ── Upload zone ──────────────────────────────────────────────────────
   dropZone.addEventListener('click', function () { fileInput.click(); });
+  dropZone.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();  // prevent Space from scrolling the page
+      fileInput.click();
+    }
+  });
   dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragging'); });
   dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragging'); });
   dropZone.addEventListener('drop', function (e) {
