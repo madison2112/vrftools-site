@@ -21,11 +21,11 @@
 <div class="card" id="lk-mode-chooser">
   <div class="card-title">Choose Workflow</div>
   <div class="lk-mode-cards">
-    <a href="{{ url_for('page_lev_kit_batch') }}" class="lk-mode-card">
+    <a href="{{ url_for('lev_kit.page_lev_kit_batch') }}" class="lk-mode-card">
       <div class="lk-mode-card-title">Batch &mdash; Multiple Units</div>
       <div class="lk-mode-card-desc">Upload a DSB project file or enter units manually. Generates a submittal PDF with all units and DIP switch settings.</div>
     </a>
-    <a href="{{ url_for('page_lev_kit_single') }}" class="lk-mode-card">
+    <a href="{{ url_for('lev_kit.page_lev_kit_single') }}" class="lk-mode-card">
       <div class="lk-mode-card-title">Single Unit</div>
       <div class="lk-mode-card-desc">Step-by-step wizard for one unit. Generates a DIP switch image sized for phones and quick reference.</div>
     </a>
