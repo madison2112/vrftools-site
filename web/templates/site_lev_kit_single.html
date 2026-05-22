@@ -2,7 +2,7 @@
 {% block title %}LEV Kit Single-Unit Configurator{% endblock %}
 
 {% block nav_links %}
-<a href="{{ url_for('page_lev_kit_batch') }}">Batch Configurator</a>
+<a href="{{ url_for('lev_kit.page_lev_kit_batch') }}">Batch Configurator</a>
 <a href="/">Home</a>
 {% endblock %}
 
@@ -23,11 +23,11 @@
 <div class="card" id="lks-controller-chooser">
   <div class="card-title">Choose Controller Type</div>
   <div class="lk-mode-cards">
-    <a href="{{ url_for('page_lev_kit_single_ah002') }}" class="lk-mode-card">
+    <a href="{{ url_for('lev_kit.page_lev_kit_single_ah002') }}" class="lk-mode-card">
       <div class="lk-mode-card-title">PAC-AH002 (R-32)</div>
       <div class="lk-mode-card-desc">Newer R-32 refrigerant LEV Kit controllers. Generates a DIP switch image sized for phones and quick reference.</div>
     </a>
-    <a href="{{ url_for('page_lev_kit_single_ah001') }}" class="lk-mode-card">
+    <a href="{{ url_for('lev_kit.page_lev_kit_single_ah001') }}" class="lk-mode-card">
       <div class="lk-mode-card-title">PAC-AH001 (R-410A)</div>
       <div class="lk-mode-card-desc">Older R-410A refrigerant LEV Kit controllers. Generates a DIP switch image sized for phones and quick reference.</div>
     </a>

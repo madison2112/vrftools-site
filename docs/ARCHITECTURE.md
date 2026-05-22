@@ -996,8 +996,8 @@ vrf-tools/
       agent_routes.py       Hermes agent Blueprint (already a Blueprint)
       dat_routes.py         DAT tool Blueprint (B-09, landed at 3f6424a)
       route_helpers.py      Shared HTTP-context wrappers (B-09, landed at 3f6424a)
-      dsbx_routes.py        (future — B-10)
-      lev_kit_routes.py     (future — B-11)
+      dsbx_routes.py        DSBX tool Blueprint (B-10, landed at 8d01d27)
+      lev_kit_routes.py     LEV Kit Blueprint (B-11, current)
       config_hub_routes.py  (future — B-12)
       proxy_routes.py       (future — B-12)
     templates/

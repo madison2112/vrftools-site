@@ -2,14 +2,14 @@
 {% block title %}LEV Kit Batch Configurator{% endblock %}
 
 {% block nav_links %}
-<a href="{{ url_for('page_lev_kit_single') }}">Single Unit</a>
+<a href="{{ url_for('lev_kit.page_lev_kit_single') }}">Single Unit</a>
 <a href="{{ url_for('dat.page_docs') }}">How to Use</a>
 <a href="/">Home</a>
 {% endblock %}
 
 {% block breadcrumb_path %}
 <a href="/">vrftools.com</a> /
-<a href="{{ url_for('page_lev_kit') }}">LEV Kit Configurator</a> /
+<a href="{{ url_for('lev_kit.page_lev_kit') }}">LEV Kit Configurator</a> /
 <span>Batch</span>
 {% endblock %}
 
