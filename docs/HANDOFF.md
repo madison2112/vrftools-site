@@ -52,26 +52,39 @@ The lesson: **when dispatching an MF-## card, the card body must name the exact 
 
 ## 7. Audience & Viewport Policy
 
-**VRFTools targets desktop browsers only.** Mobile responsiveness is a non-goal.
+**VRFTools is mostly desktop-focused, but mobile-friendliness is opt-in per tool.** There is no blanket "desktop-only" rule — each tool has an explicit viewport designation.
 
 ### Why
 
-The audience is HVAC commissioning engineers, who work at desks with physical keyboards and multi-monitor setups. The web app's value-add over the Mitsubishi Windows desktop tool is platform independence (Mac, Linux, no install) — not phone usability. There is no real-world mobile use case for these tools.
+Most tools target HVAC commissioning engineers who work at desks with physical keyboards and multi-monitor setups. But some tools have real mobile use cases — for example, a field tech using the LEV Kit configurator on a tablet at a job site. The project owner decides which tools are mobile-friendly on a case-by-case basis.
+
+### Mobile-friendly tools (exception list)
+
+- **LEV Kit Single-Unit Configurator** — intentionally mobile-friendly (already shipped in LF-08)
+- **LEV Kit Batch Configurator** — intentionally mobile-friendly (already shipped in LF-06/LF-07)
+- Future tools may be added at the project owner's direction
+
+### Desktop-only tools (current default for everything else)
+
+- **MTDZ** (viewer, sysinfo, report, hub) — the existing `isMobile()` hard blocks in `web/static/js/mtdz/viewer.js` and `web/static/js/mtdz/sysinfo.js` are **correct** and should not be "fixed"
+- **DAT / DSBX / config tools** — desktop-only
+- Anything not explicitly on the mobile-friendly list above
 
 ### What this means for workers
 
-- Do NOT add mobile breakpoints, responsive layouts, viewport-specific behavior, or "test on mobile" acceptance criteria to new work.
-- The existing `isMobile()` hard blocks in `web/static/js/mtdz/viewer.js` and `web/static/js/mtdz/sysinfo.js` are **correct**. Do not "fix" them.
-- Accessibility (keyboard navigation, screen readers, ARIA, focus management) IS a priority. These are viewport-agnostic and not in tension with this policy. Continue treating a11y work (the LF-09 / MF-08 pattern) as in scope.
+- When working on a tool **on the mobile-friendly list**: responsive work is in scope. Continue per the LEV Kit Frontend plan (e.g. LF-13/14 CSS dedup should preserve LEV Kit responsive breakpoints).
+- When working on **any other tool**: do NOT add mobile breakpoints, responsive layouts, viewport-specific behavior, or "test on mobile" acceptance criteria.
+- Accessibility (keyboard navigation, screen readers, ARIA, focus management) IS always a priority regardless of viewport. Continue treating a11y work (the LF-09 / MF-08 pattern) as in scope for every tool.
+- When working on a new tool not yet on either list, **ask before defaulting** — don't guess at the viewport designation.
 
 ### Items removed from refactor scope (2026-05-22)
 
-- `MF-10` — Replace `isMobile()` hard blocks with responsive MTDZ layouts
-- `MF-11` — Responsive CSS for MTDZ pages
-- `HC-07` — Unified responsive design strategy
+- `MF-10` — Replace `isMobile()` hard blocks with responsive MTDZ layouts (MTDZ is desktop-only)
+- `MF-11` — Responsive CSS for MTDZ pages (depended on MF-10)
+- `HC-07` — Unified responsive design strategy (MTDZ off the list, LEV Kit's responsive work already shipped → no remaining coordination work)
 
 The Obsidian plan documents have been annotated with the removal.
 
 ### Already-shipped responsive work
 
-The LEV Kit frontend already shipped responsive breakpoints in LF-06, LF-07, and LF-08 (P2-C and P3-B). That work is **not** being reverted — it doesn't hurt desktop users and ripping it out would be net-negative churn. Treat it as completed-and-frozen. Do not extend it.
+LF-06, LF-07, and LF-08 shipped responsive breakpoints for the LEV Kit frontend. That work is correct and stays as-is — LEV Kit is on the mobile-friendly exception list.
