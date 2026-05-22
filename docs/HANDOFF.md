@@ -5,6 +5,7 @@ Living document of handoff notes for the `vrf-tools-refactor` Kanban board. Sect
 Current sections:
 
 - §6 — MTDZ Refactor Scope
+- §7 — Audience & Viewport Policy
 
 ---
 
@@ -46,3 +47,31 @@ The lesson: **when dispatching an MF-## card, the card body must name the exact 
 ### Pointer for newcomers
 
 - Live-site MTDZ (different concern): see memory `reference_mtdz_frontend_layout` — the live site (`central-control-database-tools` deployed at vrftools.com) serves its own MTDZ copy. Editing that one belongs to the bug-fix lane against the live-site repo, not to the refactor.
+
+---
+
+## 7. Audience & Viewport Policy
+
+**VRFTools targets desktop browsers only.** Mobile responsiveness is a non-goal.
+
+### Why
+
+The audience is HVAC commissioning engineers, who work at desks with physical keyboards and multi-monitor setups. The web app's value-add over the Mitsubishi Windows desktop tool is platform independence (Mac, Linux, no install) — not phone usability. There is no real-world mobile use case for these tools.
+
+### What this means for workers
+
+- Do NOT add mobile breakpoints, responsive layouts, viewport-specific behavior, or "test on mobile" acceptance criteria to new work.
+- The existing `isMobile()` hard blocks in `web/static/js/mtdz/viewer.js` and `web/static/js/mtdz/sysinfo.js` are **correct**. Do not "fix" them.
+- Accessibility (keyboard navigation, screen readers, ARIA, focus management) IS a priority. These are viewport-agnostic and not in tension with this policy. Continue treating a11y work (the LF-09 / MF-08 pattern) as in scope.
+
+### Items removed from refactor scope (2026-05-22)
+
+- `MF-10` — Replace `isMobile()` hard blocks with responsive MTDZ layouts
+- `MF-11` — Responsive CSS for MTDZ pages
+- `HC-07` — Unified responsive design strategy
+
+The Obsidian plan documents have been annotated with the removal.
+
+### Already-shipped responsive work
+
+The LEV Kit frontend already shipped responsive breakpoints in LF-06, LF-07, and LF-08 (P2-C and P3-B). That work is **not** being reverted — it doesn't hurt desktop users and ripping it out would be net-negative churn. Treat it as completed-and-frozen. Do not extend it.
