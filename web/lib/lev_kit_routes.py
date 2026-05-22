@@ -27,6 +27,7 @@ from flask import Blueprint, abort, jsonify, render_template, request, send_file
 
 from . import lev_kit_utils, sessions
 from .route_helpers import _validate_upload
+from .session_utils import require_session
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +111,7 @@ def _send_pdf(data_bytes, filename):
 
 
 def _lev_kit_session(sid):
-    s = sessions.get(sid)
-    if not s or s.get("type") != "lev-kit":
-        abort(404, "Session not found or expired.")
-    return s
+    return require_session(sid, "lev-kit")
 
 
 def _lev_kit_filename(project_name):
