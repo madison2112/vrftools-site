@@ -16,36 +16,6 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mtdz.css') }}">
-<style>
-  /* Sysinfo banner: red-toned because this file type carries no monitoring
-     data, just topology. Overrides the blue .info-banner from mtdz.css. */
-  #sysinfo-banner.info-banner {
-    background: #fff3f3;
-    border: 1px solid #ffb3b3;
-    border-left: 4px solid var(--danger);
-    color: var(--dark);
-    font-size: 0.9rem;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-  }
-  #sysinfo-banner.info-banner strong { display: block; margin-bottom: 2px; }
-
-  /* Topology SVG renderer */
-  .topo-scroll { overflow-x: auto; padding-bottom: 8px; }
-  .oc-box  { fill: #1a1a1a; }
-  .os-box  { fill: #2d2d2d; stroke: #888; stroke-width: 1; stroke-dasharray: 3 2; }
-  .bc-box  { fill: #555; }
-  .ic-box  { fill: #2a7a52; }
-  .unit-label-single {
-    font-size: 12px; font-weight: 600; fill: #fff;
-    dominant-baseline: middle; text-anchor: middle;
-  }
-  .connect-line   { stroke: #999; stroke-width: 1.5; fill: none; }
-  .port-cap-line  { stroke: #555; stroke-width: 1.5; }
-  .port-cap-sq    { fill: none; stroke: #555; stroke-width: 1.5; }
-  .sys-divider    { stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 4; }
-  .no-systems     { color: var(--muted); font-style: italic; padding: 16px 0; }
-</style>
 {% endblock %}
 
 {% block content %}
