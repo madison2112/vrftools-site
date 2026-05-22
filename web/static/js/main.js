@@ -102,7 +102,7 @@ function renderGroupGrid(groups, listIdPrefix, blockIdx) {
     const mnets = (g.mnet_addresses || []).join(', ');
     const types = (g.unit_types || []).join(', ');
     return `<div class="slot-item" data-original-slot="${g.slot}">
-      <div class="group-card" draggable="true">
+      <div class="group-card" draggable="true" tabindex="0" role="option">
         <span class="group-tag">${escHtml(g.tag || '(unnamed)')}</span>
         <span class="group-mnets">${escHtml(mnets)}</span>
         <span class="group-types">${escHtml(types)}</span>
@@ -123,11 +123,11 @@ function renderGroupGrid(groups, listIdPrefix, blockIdx) {
   return `<div class="slots-grid">
     <div class="slots-half">
       ${makeLabels(1, 25)}
-      <div class="slots-col" id="${listIdPrefix}-col1" data-block="${blockIdx}">${col1}</div>
+      <div class="slots-col" id="${listIdPrefix}-col1" data-block="${blockIdx}" role="listbox" aria-label="Slot column 1 (slots 1–25)">${col1}</div>
     </div>
     <div class="slots-half">
       ${makeLabels(26, 50)}
-      <div class="slots-col" id="${listIdPrefix}-col2" data-block="${blockIdx}">${col2}</div>
+      <div class="slots-col" id="${listIdPrefix}-col2" data-block="${blockIdx}" role="listbox" aria-label="Slot column 2 (slots 26–50)">${col2}</div>
     </div>
   </div>`;
 }
@@ -203,6 +203,54 @@ function initSlotGrid(listIdPrefix, blockIdx) {
   }
 
   allSlots().forEach(bindSlot);
+
+  // Keyboard navigation — ArrowUp / ArrowDown swap cards in the same column (LF-09)
+  function handleSlotKeydown(e) {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+
+    const card = e.target.closest('.group-card');
+    if (!card) return;
+
+    const slotItem = card.closest('.slot-item');
+    if (!slotItem) return;
+
+    const col = slotItem.parentElement;
+    const items = [...col.children];
+    const currentIndex = items.indexOf(slotItem);
+
+    const targetIndex = e.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
+
+    // Boundary check — no-ops at column edges
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+
+    e.preventDefault();
+
+    const targetItem = items[targetIndex];
+
+    // Swap data-original-slot (same as drag-drop path)
+    const tmpOrig = slotItem.dataset.originalSlot;
+    slotItem.dataset.originalSlot = targetItem.dataset.originalSlot;
+    targetItem.dataset.originalSlot = tmpOrig;
+
+    // Swap innerHTML
+    const tmpHtml = slotItem.innerHTML;
+    slotItem.innerHTML = targetItem.innerHTML;
+    targetItem.innerHTML = tmpHtml;
+
+    // Re-attach draggable after innerHTML swap
+    [slotItem, targetItem].forEach(s => {
+      const c = s.querySelector('.group-card');
+      if (c) c.setAttribute('draggable', 'true');
+    });
+
+    // Move focus to the card in its NEW position
+    targetItem.querySelector('.group-card')?.focus();
+
+    _persistSlotOrder(blockIdx, col1, col2);
+  }
+
+  col1.addEventListener('keydown', handleSlotKeydown);
+  col2.addEventListener('keydown', handleSlotKeydown);
 
   // Sort button
   document.querySelectorAll(`.sort-btn[data-idx="${blockIdx}"]`).forEach(btn => {

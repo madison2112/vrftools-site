@@ -435,8 +435,7 @@ def generate_switch_positions(config: SwitchConfig | dict) -> dict:
     """
     if isinstance(config, SwitchConfig):
         config_dict = {
-            f.name: getattr(config, f.name)
-            for f in config.__dataclass_fields__.values()
+            f.name: getattr(config, f.name) for f in config.__dataclass_fields__.values()
         }
     else:
         config_dict = config
