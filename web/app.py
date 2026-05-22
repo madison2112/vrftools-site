@@ -10,6 +10,7 @@ import zipfile
 import requests as req_lib
 from flask import Flask, Response, jsonify, render_template, request, send_file, abort
 
+from extensions import csrf
 from lib import sessions
 from lib.dat_utils import (
     parse_dat_controllers,
@@ -48,6 +49,8 @@ app.register_blueprint(dat_bp)
 app.register_blueprint(dsbx_bp)
 app.register_blueprint(lev_kit_bp)
 app.register_blueprint(mtdz_bp)
+
+csrf.init_app(app)
 
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
@@ -353,6 +356,7 @@ def api_upload_config_hub():
 
 
 @app.route("/api/<path:path>", methods=["GET", "POST", "DELETE", "PUT", "PATCH"])
+@csrf.exempt
 def proxy_mtdz(path):
     url = f"{MTDZ_BACKEND}/api/{path}"
     try:

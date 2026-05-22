@@ -4,6 +4,10 @@
 (function () {
   'use strict';
 
+  function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').content;
+  }
+
   var PAGES = window.MTDZ_PAGES || {};
 
   // ── DOM refs ─────────────────────────────────────────────────────────
@@ -152,7 +156,7 @@
     form.append('file', file);
 
     try {
-      var resp = await fetch(API + '/api/upload', { method: 'POST', body: form });
+      var resp = await fetch(API + '/api/upload', { method: 'POST', headers: { 'X-CSRFToken': csrfToken() }, body: form });
       if (!resp.ok) {
         var err = await resp.json().catch(function () { return { detail: resp.statusText }; });
         throw new Error(err.detail || 'Upload failed');

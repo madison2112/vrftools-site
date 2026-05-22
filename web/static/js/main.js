@@ -2,6 +2,10 @@
  * Shared JS for Central Controller Config Tools.
  */
 
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
 // ---------------------------------------------------------------------------
 // Drop zone setup
 // ---------------------------------------------------------------------------
@@ -41,7 +45,7 @@ function uploadFile(file, url, zone, onSuccess) {
   const fd = new FormData();
   fd.append('file', file);
 
-  fetch(url, { method: 'POST', body: fd })
+  fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken() }, body: fd })
     .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
     .then(({ ok, data }) => {
       zone.classList.remove('uploading');
@@ -277,7 +281,7 @@ function _persistSlotOrder(blockIdx, col1, col2) {
 
   return fetch(`/api/session/${sid}/groups`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
     body:    JSON.stringify({ block_index: blockIdx, new_order: newOrder }),
   }).catch(() => {});
 }
@@ -288,7 +292,7 @@ function _sortByTag(blockIdx, listIdPrefix, col1, col2) {
 
   fetch(`/api/session/${sid}/sort`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
     body:    JSON.stringify({ block_index: blockIdx }),
   })
   .then(r => r.json())
@@ -381,7 +385,7 @@ async function exportJson(sessionId, tool) {
 
   fetch('/api/export-json', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
     body:    JSON.stringify({ session_id: sessionId, tool: tool, orders: orders }),
   })
   .then(r => {
@@ -446,7 +450,7 @@ document.addEventListener('change', function(e) {
 
   fetch('/api/session/' + window.state.sessionId + '/controller-name', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
     body: JSON.stringify({ block_index: idx, name: newName }),
   })
   .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
@@ -488,7 +492,7 @@ document.addEventListener('dblclick', function(e) {
     if (newTag && newTag !== currentText && window.state && window.state.sessionId) {
       fetch('/api/session/' + window.state.sessionId + '/group-name', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
         body: JSON.stringify({ block_index: blockIdx, slot: slot, tag: newTag }),
       })
       .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })

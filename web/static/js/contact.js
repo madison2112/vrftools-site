@@ -1,5 +1,9 @@
 const API = '';
 
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
 const form             = document.getElementById('contact-form');
 const categorySelector    = document.getElementById('category-selector');
 const categoryLocked      = document.getElementById('category-locked');
@@ -186,7 +190,7 @@ form.addEventListener('submit', async e => {
   }
 
   try {
-    const resp = await fetch(`${API}/api/contact`, { method: 'POST', body: fd });
+    const resp = await fetch(`${API}/api/contact`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken() }, body: fd });
     const body = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       throw new Error(body.detail || `Server error (${resp.status})`);
