@@ -27,6 +27,7 @@ from lib.agent_routes import agent_bp
 from lib.dat_routes import dat_bp, _TOOL_ROUTES
 from lib.dsbx_routes import dsbx_bp
 from lib.lev_kit_routes import lev_kit_bp
+from lib.mtdz_routes import mtdz_bp
 from lib.route_helpers import _validate_upload
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ app.register_blueprint(agent_bp)
 app.register_blueprint(dat_bp)
 app.register_blueprint(dsbx_bp)
 app.register_blueprint(lev_kit_bp)
+app.register_blueprint(mtdz_bp)
 
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
@@ -132,24 +134,8 @@ def page_disclaimer():
     return render_template("disclaimer.html")
 
 
-@app.route("/mtdz/")
-def page_mtdz_index():
-    return render_template("mtdz/index.html")
-
-
-@app.route("/mtdz/viewer")
-def page_mtdz_viewer():
-    return render_template("mtdz/viewer.html")
-
-
-@app.route("/mtdz/report")
-def page_mtdz_report():
-    return render_template("mtdz/report.html")
-
-
-@app.route("/mtdz/sysinfo")
-def page_mtdz_sysinfo():
-    return render_template("mtdz/sysinfo.html")
+# MTDZ page routes (/mtdz/, /mtdz/viewer, /mtdz/report, /mtdz/sysinfo)
+# are registered by mtdz_routes.py (mtdz_bp above).
 
 
 # DSBX tool routes (/dsbx-to-dat, /api/upload/dsbx, /api/session/<sid>/groups,
