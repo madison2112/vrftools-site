@@ -11,6 +11,8 @@ import os
 
 from flask import Blueprint, jsonify, request
 
+from extensions import csrf
+
 agent_bp = Blueprint("agent", __name__, url_prefix="/agent")
 
 _AGENT_KEY = os.environ.get("AGENT_API_KEY", "")
@@ -35,6 +37,7 @@ def agent_status():
 
 
 @agent_bp.route("/ping", methods=["POST"])
+@csrf.exempt
 @require_agent_key
 def agent_ping():
     """Authenticated round-trip test. Returns the message echoed back."""

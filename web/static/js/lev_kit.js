@@ -18,6 +18,10 @@
 (() => {
   'use strict';
 
+  function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').content;
+  }
+
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -234,7 +238,7 @@
   function apiBlankSession() {
     return apiCall('/api/session/lev-kit-blank', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
       body:    '{}',
     });
   }
@@ -242,7 +246,7 @@
   function apiUpdateSession(sid, payload) {
     return apiCall(`/api/session/${encodeURIComponent(sid)}/lev-kit-update`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
       body:    JSON.stringify(payload),
     });
   }

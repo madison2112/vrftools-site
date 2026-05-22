@@ -1,5 +1,9 @@
 'use strict';
 
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
 (function () {
 
   const C_AH001 = 'PAC-AH001';
@@ -344,7 +348,7 @@
     }
     const resp = await fetch('/api/lev-kit/compute-switches', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
       body: JSON.stringify(payload),
     });
     const { switches, cnrmConnected } = await resp.json();
