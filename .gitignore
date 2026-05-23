@@ -17,3 +17,8 @@ CLAUDE.local.md
 
 # Hermes agent profile data — should not be tracked
 .hermes/
+
+# Test artifacts
+.coverage
+.pytest_cache/
+htmlcov/

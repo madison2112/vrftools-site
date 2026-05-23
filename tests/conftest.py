@@ -29,3 +29,9 @@ def app_client():
 def sample_dat_bytes():
     """Return bytes of a known-good empty DAT file (AE-C400)."""
     return (FIXTURES_DIR / "sample_ae_c400_empty.dat").read_bytes()
+
+
+@pytest.fixture
+def sample_dsbx_bytes():
+    """Return bytes of a minimal valid DSBX file (ZIP-wrapped XML with <Project>)."""
+    return (FIXTURES_DIR / "sample_minimal.dsbx").read_bytes()
