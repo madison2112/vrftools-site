@@ -156,7 +156,7 @@
     form.append('file', file);
 
     try {
-      var resp = await fetch(API + '/api/upload', { method: 'POST', headers: { 'X-CSRFToken': csrfToken() }, body: form });
+      var resp = await fetch(API + '/api/upload', { method: 'POST', headers: Object.assign({ 'X-CSRFToken': csrfToken() }, proxyKeyHeader()), body: form });
       if (!resp.ok) {
         var err = await resp.json().catch(function () { return { detail: resp.statusText }; });
         throw new Error(err.detail || 'Upload failed');
@@ -267,7 +267,7 @@
   async function downloadRawData() {
     if (!state.sessionId) return;
     try {
-      var resp = await fetch(API + '/api/rawdata/' + state.sessionId);
+      var resp = await fetch(API + '/api/rawdata/' + state.sessionId, { headers: proxyKeyHeader() });
       if (resp.status === 404) {
         clearSession();
         showUploadError('Your session expired — please re-upload your file.');

@@ -69,7 +69,7 @@ async function loadDay(day) {
 
   let data;
   try {
-    const resp = await fetch(`${API}/api/data/${sessionId}/${day}`);
+    const resp = await fetch(`${API}/api/data/${sessionId}/${day}`, { headers: proxyKeyHeader() });
     if (!resp.ok) {
       if (resp.status === 404) {
         handleExpired();

@@ -3,6 +3,7 @@ Central Controller Config Tools — Flask web application.
 """
 
 import base64
+import hmac
 import logging
 import os
 import zipfile
@@ -53,12 +54,13 @@ app.register_blueprint(mtdz_bp)
 csrf.init_app(app)
 
 MTDZ_BACKEND = os.environ.get("MTDZ_BACKEND_URL", "http://mtdz-backend:8000")
+MTDZ_PROXY_KEY = os.environ.get("MTDZ_PROXY_KEY", "dev-mtdz-proxy-key")
 SIGNAL_FILE = os.environ.get("RESTART_SIGNAL_FILE", "/app/signals/restart.json")
 
 
 @app.context_processor
 def inject_globals():
-    return {"codetest": True, "app_env": APP_ENV}
+    return {"codetest": True, "app_env": APP_ENV, "mtdz_proxy_key": MTDZ_PROXY_KEY}
 
 
 def _read_restart_signal() -> str | None:
@@ -358,6 +360,11 @@ def api_upload_config_hub():
 @app.route("/api/<path:path>", methods=["GET", "POST", "DELETE", "PUT", "PATCH"])
 @csrf.exempt
 def proxy_mtdz(path):
+    # Validate inbound proxy key — prevents unauthenticated requests from
+    # reaching the MTDZ backend through the CSRF-exempt catch-all proxy.
+    if not hmac.compare_digest(request.headers.get("X-Proxy-Key", ""), MTDZ_PROXY_KEY):
+        return jsonify({"error": "Missing or invalid proxy key"}), 401
+
     url = f"{MTDZ_BACKEND}/api/{path}"
     try:
         if request.files:

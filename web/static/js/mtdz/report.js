@@ -273,7 +273,7 @@ async function handleDsbUpload(file) {
     formData.append('file', file);
     formData.append('session_id', sessionId);
 
-    const resp = await fetch(`${API}/api/dsb`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken() }, body: formData });
+    const resp = await fetch(`${API}/api/dsb`, { method: 'POST', headers: Object.assign({ 'X-CSRFToken': csrfToken() }, proxyKeyHeader()), body: formData });
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
@@ -510,7 +510,7 @@ form.addEventListener('submit', async e => {
   try {
     const resp = await fetch(`${API}/api/report`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+      headers: Object.assign({ 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, proxyKeyHeader()),
       body: JSON.stringify({ session_id: sessionId, days: selectedDays, job_info: jobInfo, equipment_data }),
     });
 
@@ -574,7 +574,7 @@ btnExport.addEventListener('click', async () => {
   try {
     const resp = await fetch(`${API}/api/graphs/export`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+      headers: Object.assign({ 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, proxyKeyHeader()),
       body: JSON.stringify({ session_id: sessionId, days: selectedDays, equipment_data, site_name }),
     });
 

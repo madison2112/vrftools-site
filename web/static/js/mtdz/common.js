@@ -4,6 +4,11 @@
 
 const API = '';
 
+function proxyKeyHeader() {
+  var meta = document.querySelector('meta[name="mtdz-proxy-key"]');
+  return { 'X-Proxy-Key': meta ? meta.content : '' };
+}
+
 function isMobile() {
   return window.innerWidth < 768;
 }

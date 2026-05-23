@@ -152,6 +152,8 @@ curl -fsS https://tranesubishi.com/status
 | `PYTHONUNBUFFERED=1` | Unbuffered Python output |
 | `APP_ENV=production` | App environment (used by Flask) |
 | `SECRET_KEY` | Flask session signing key (from `$TRANESUBISHI_SECRET_KEY` env) |
+| `AGENT_API_KEY` | API key for Hermes agent endpoints (optional; set if agent integration enabled) |
+| `MTDZ_PROXY_KEY` | Shared secret for MTDZ backend proxy authentication (dev default: `dev-mtdz-proxy-key`) |
 
 ## Monitoring
 
