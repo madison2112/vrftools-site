@@ -28,4 +28,19 @@ ignore = ["E701", "E401", "E402", "E501", "F401", "F811", "F821", "F841", "B007"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=web --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["web"]
+omit = [
+    "web/app.py",  # Flask init has side effects that complicate coverage; revisit when B-20 lands
+    "tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+show_missing = true
