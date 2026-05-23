@@ -40,10 +40,14 @@ app = Flask(__name__)
 # Must be read BEFORE SECRET_KEY so the fail-fast check can gate on it.
 APP_ENV = os.environ.get("APP_ENV", "test")
 
+_DEV_INSECURE_SECRET_KEY = "dev-only-insecure-key"
+
 _secret_key = os.environ.get("SECRET_KEY")
-if not _secret_key and APP_ENV == "prod":
-    raise RuntimeError("SECRET_KEY must be set in production")
-app.secret_key = _secret_key or "dev-only-insecure-key"
+if APP_ENV == "prod" and _secret_key in (None, "", _DEV_INSECURE_SECRET_KEY):
+    raise RuntimeError(
+        "SECRET_KEY must be set to a non-default value in production"
+    )
+app.secret_key = _secret_key or _DEV_INSECURE_SECRET_KEY
 app.register_blueprint(agent_bp)
 app.register_blueprint(dat_bp)
 app.register_blueprint(dsbx_bp)
