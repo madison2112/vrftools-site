@@ -1,0 +1,232 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   base.css — Shared CSS foundation for all VRFTools pages
+
+   Canonical definitions extracted from style.css (LEV Kit / Config Tools)
+   and site.css (public site pages).  Loaded BEFORE both stylesheets so
+   per‑section overrides still win via normal cascade.
+
+   HC-03 step 1 (additive slice) — no existing CSS rules have been removed.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Design tokens ──────────────────────────────────────────────────── */
+:root {
+  --danger:     #cc0000;   /* merged from --red / --danger  (canonical) */
+  --dark:       #1a1a1a;
+  --gray:       #444;
+  --light-gray: #f5f5f5;
+  --border:     #ddd;
+  --white:      #fff;
+  --muted:      #666;
+  --green:      #2e7d32;   /* unified — deeper, accessible shade       */
+  --warn-bg:    #fff8e1;
+  --warn-border:#f9a825;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SHARED COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Card ───────────────────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gray);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-block;
+  padding: 9px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--danger); color: var(--white); }
+.btn-outline {
+  background: transparent;
+  color: var(--dark);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--gray); }
+
+/* ── Drop zone ──────────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  color: var(--muted);
+}
+.drop-zone:hover,
+.drop-zone.dragging {
+  background: #fff3f3;
+  border-color: var(--danger);
+  color: var(--dark);
+}
+.drop-zone.uploading {
+  background: #f5f5f5;
+  border-color: #bbb;
+  cursor: wait;
+}
+.drop-zone .icon { font-size: 2.5rem; margin-bottom: 12px; }
+.drop-zone p    { font-size: 0.95rem; }
+.drop-zone small { font-size: 0.78rem; margin-top: 6px; display: block; }
+.drop-zone:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--danger);
+}
+
+/* ── Breadcrumb ─────────────────────────────────────────────────────── */
+.breadcrumb {
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  color: var(--gray);
+  border-bottom: 1px solid var(--border);
+  background: #f9f9f9;
+  flex-shrink: 0;
+}
+.breadcrumb a { color: var(--danger); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+
+/* ── Page title / subtitle ──────────────────────────────────────────── */
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.page-subtitle {
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-size: 0.95rem;
+}
+
+/* ── Error / success messages ───────────────────────────────────────── */
+.error-msg {
+  background: #fdf0ef;
+  border: 1px solid #e88;
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: var(--danger);
+  font-size: 0.9rem;
+  margin-top: 12px;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+.success-msg {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-left: 4px solid var(--green);
+  border-radius: 6px;
+  padding: 16px;
+  color: #166534;
+  font-size: 0.9rem;
+  display: none;
+}
+.success-msg.visible { display: block; }
+
+/* ── Alerts ─────────────────────────────────────────────────────────── */
+.alert {
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  margin-top: 12px;
+}
+.alert-error { background: #fdecea; border: 1px solid #f5c6cb; color: #c0392b; }
+.alert-warn  { background: var(--warn-bg); border: 1px solid var(--warn-border); color: #5a4000; }
+.alert-info  { background: #e8f4fd; border: 1px solid #bee3f8; color: #1a5276; }
+
+/* ── Badges ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  background: #eee;
+  color: var(--gray);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  font-family: monospace;
+}
+.badge-green { background: #e8f5e9; color: var(--green); }
+
+.badge-pill {
+  display: inline-block;
+  background: #fff3f3;
+  color: var(--danger);
+  border: 1px solid #ffb3b3;
+  border-radius: 999px;
+  padding: 0.2rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+/* ── Info popup overlay (deduplicated — shared by all pages) ────────── */
+.info-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: popupFadeIn 0.15s ease;
+}
+.info-popup {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.info-popup h3 {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: var(--dark);
+}
+.info-popup .problem-label { font-weight: 600; color: var(--dark); }
+.info-popup .solution-label { font-weight: 600; color: var(--danger); }
+.info-popup p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.info-popup .close-popup {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: var(--dark);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+@keyframes popupFadeIn { from { opacity: 0; } to { opacity: 1; } }
