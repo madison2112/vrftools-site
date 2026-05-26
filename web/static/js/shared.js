@@ -39,3 +39,45 @@ async function apiCall(url, init) {
   }
   return body || {};
 }
+
+// ── Focus Trap ────────────────────────────────────────────────────────────────
+
+(function() {
+  var _trapPreviousFocus = null;
+
+  window.trapFocus = function(modalEl) {
+    _trapPreviousFocus = document.activeElement;
+
+    var FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    var focusable = modalEl.querySelectorAll(FOCUSABLE);
+    var first = focusable[0];
+    var last  = focusable[focusable.length - 1];
+
+    function handleKeyDown(e) {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first || !modalEl.contains(document.activeElement)) {
+          e.preventDefault();
+          last && last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !modalEl.contains(document.activeElement)) {
+          e.preventDefault();
+          first && first.focus();
+        }
+      }
+    }
+
+    modalEl.addEventListener('keydown', handleKeyDown);
+    modalEl._trapHandler = handleKeyDown;
+
+    if (first) first.focus();
+  };
+
+  window.releaseFocus = function() {
+    if (_trapPreviousFocus && typeof _trapPreviousFocus.focus === 'function') {
+      _trapPreviousFocus.focus();
+    }
+    _trapPreviousFocus = null;
+  };
+})();
