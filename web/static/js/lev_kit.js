@@ -220,20 +220,7 @@
   // API helpers
   // ---------------------------------------------------------------------------
 
-  async function apiCall(url, init) {
-    let resp;
-    try {
-      resp = await fetch(url, init);
-    } catch (e) {
-      throw new Error('Network error: ' + e.message);
-    }
-    let body = null;
-    try { body = await resp.json(); } catch (e) { /* non-JSON response */ }
-    if (!resp.ok) {
-      throw new Error((body && body.error) || `Request failed (${resp.status})`);
-    }
-    return body || {};
-  }
+  // apiCall has moved to shared.js
 
   function apiBlankSession() {
     return apiCall('/api/session/lev-kit-blank', {
