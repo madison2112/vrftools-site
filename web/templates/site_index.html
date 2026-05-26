@@ -93,15 +93,5 @@ function showHomeInfoPopup(info) {
   overlay.querySelector('.close-popup').addEventListener('click', function() { overlay.remove(); });
   overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
-
-/* Duplicated from main.js — LF-02: will deduplicate into utils.js in Phase 4 (LF-15).
-   Keep in sync with the canonical definition in web/static/js/main.js. */
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;');
-}
 </script>
 {% endblock %}

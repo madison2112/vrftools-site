@@ -8,11 +8,7 @@ function isMobile() {
   return window.innerWidth < 768;
 }
 
-function escHtml(str) {
-  var div = document.createElement('div');
-  div.appendChild(document.createTextNode(str));
-  return div.innerHTML;
-}
+// escHtml has moved to shared.js
 
 function clearStoredSession() {
   try {

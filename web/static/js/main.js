@@ -339,17 +339,7 @@ function renderWarnings(w) {
 }
 
 
-// ---------------------------------------------------------------------------
-// Utility
-// ---------------------------------------------------------------------------
-
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+// no-op: escHtml has moved to shared.js
 
 function showError(id, msg) {
   const el = document.getElementById(id);
