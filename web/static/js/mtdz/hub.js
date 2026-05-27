@@ -199,8 +199,24 @@
         '<button class="close-popup">Close</button>' +
       '</div>';
     document.body.appendChild(overlay);
-    overlay.querySelector('.close-popup').addEventListener('click', function () { overlay.remove(); });
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+
+    function closePopup() {
+      document.removeEventListener('keydown', handleEscape);
+      window.releaseFocus();
+      overlay.remove();
+    }
+    function handleEscape(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closePopup();
+      }
+    }
+    document.addEventListener('keydown', handleEscape);
+
+    overlay.querySelector('.close-popup').addEventListener('click', closePopup);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closePopup(); });
+
+    window.trapFocus(overlay);
   }
 
   // ── Red flash + popup when clicking a card before uploading ───────────
@@ -256,6 +272,7 @@
 
     // Keyboard handler (Enter / Space)
     card.addEventListener('keydown', function (e) {
+      if (e.target.closest('.info-btn')) return;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();  // prevent Space from scrolling the page
         activateCard(card);
