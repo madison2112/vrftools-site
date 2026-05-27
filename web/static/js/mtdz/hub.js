@@ -189,6 +189,7 @@
 
   // ── Info popup (same as central control hub pattern) ──────────────────
   function showInfoPopup(info) {
+    var prevFocus = document.activeElement;
     var overlay = document.createElement('div');
     overlay.className = 'info-popup-overlay';
     overlay.innerHTML =
@@ -199,8 +200,25 @@
         '<button class="close-popup">Close</button>' +
       '</div>';
     document.body.appendChild(overlay);
-    overlay.querySelector('.close-popup').addEventListener('click', function () { overlay.remove(); });
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+
+    var closeBtn = overlay.querySelector('.close-popup');
+    closeBtn.focus();
+
+    function closePopup() {
+      overlay.remove();
+      if (prevFocus && typeof prevFocus.focus === 'function') {
+        prevFocus.focus();
+      }
+    }
+
+    closeBtn.addEventListener('click', closePopup);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closePopup(); });
+    overlay.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closePopup();
+      }
+    });
   }
 
   // ── Red flash + popup when clicking a card before uploading ───────────
@@ -256,6 +274,7 @@
 
     // Keyboard handler (Enter / Space)
     card.addEventListener('keydown', function (e) {
+      if (e.target.closest('.info-btn')) return;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();  // prevent Space from scrolling the page
         activateCard(card);
@@ -300,6 +319,18 @@
       var info = TOOL_INFO[toolId];
       if (!info) return;
       showInfoPopup(info);
+    });
+
+    // Keyboard handler (Enter / Space)
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();  // prevent Space from scrolling
+        e.stopPropagation();
+        var toolId = btn.dataset.popup;
+        var info = TOOL_INFO[toolId];
+        if (!info) return;
+        showInfoPopup(info);
+      }
     });
   });
 
