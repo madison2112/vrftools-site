@@ -7,6 +7,18 @@
 # hard-exits on any ccct-* shaped name so a copy-paste accident can't touch prod.
 set -e
 
+# ---- SMTP CREDENTIALS (local, never committed) ----------------------------
+# If ~/.vrf-tools/secrets/smtp.env exists, source it so MAIL_USERNAME/MAIL_PASSWORD
+# (and other MAIL_* overrides) are available to docker run -e. File should be
+# chmod 600 and located OUTSIDE any git repo. Silently no-op if absent.
+_SMTP_ENV_FILE="$HOME/.vrf-tools/secrets/smtp.env"
+if [ -f "$_SMTP_ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$_SMTP_ENV_FILE"
+  set +a
+fi
+
 # ---- HARD-CODED RESOURCE NAMES --------------------------------------------
 # Deliberately hard-coded so a typo can't repurpose this script to touch
 # the live codetest/vrftools deployment.
@@ -49,6 +61,12 @@ docker run -d \
   -e PYTHONUNBUFFERED=1 \
   -e APP_ENV=production \
   -e SECRET_KEY="${TRANESUBISHI_SECRET_KEY:-tranesubishi-hmac-key-change-before-going-live}" \
+  -e MAIL_USERNAME="${MAIL_USERNAME:-}" \
+  -e MAIL_PASSWORD="${MAIL_PASSWORD:-}" \
+  -e MAIL_FROM="${MAIL_FROM:-support@vrftools.com}" \
+  -e MAIL_TO="${MAIL_TO:-support@vrftools.com}" \
+  -e MAIL_SMTP_HOST="${MAIL_SMTP_HOST:-smtp.hostinger.com}" \
+  -e MAIL_SMTP_PORT="${MAIL_SMTP_PORT:-465}" \
   -v "$SIGNAL_DIR":/app/signals \
   "$IMAGE"
 

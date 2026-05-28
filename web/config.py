@@ -20,6 +20,17 @@ class Config:
         "RESTART_SIGNAL_FILE", "/app/signals/restart.json"
     )
 
+    # Contact-form SMTP. Credentials come from environment at container-run
+    # time — never commit them. The endpoint at /api/contact returns a 503
+    # JSON error if MAIL_USERNAME / MAIL_PASSWORD are unset.
+    MAIL_SMTP_HOST: str = os.environ.get("MAIL_SMTP_HOST", "smtp.hostinger.com")
+    MAIL_SMTP_PORT: int = int(os.environ.get("MAIL_SMTP_PORT", "465"))
+    MAIL_USERNAME: str = os.environ.get("MAIL_USERNAME", "")
+    MAIL_PASSWORD: str = os.environ.get("MAIL_PASSWORD", "")
+    MAIL_FROM: str = os.environ.get("MAIL_FROM", "support@vrftools.com")
+    MAIL_TO: str = os.environ.get("MAIL_TO", "support@vrftools.com")
+    MAIL_TIMEOUT: int = int(os.environ.get("MAIL_TIMEOUT", "15"))
+
 
 class ProductionConfig(Config):
     """Production configuration. Inherits all base defaults."""
