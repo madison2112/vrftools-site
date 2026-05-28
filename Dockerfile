@@ -26,4 +26,4 @@ EXPOSE 5050
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD python -c "import urllib.request,json,sys; r=urllib.request.urlopen('http://localhost:5050/status',timeout=4); sys.exit(0 if json.loads(r.read()).get('ok') else 1)"
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "2", "--timeout", "60", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "2", "--timeout", "60", "wsgi:application"]
