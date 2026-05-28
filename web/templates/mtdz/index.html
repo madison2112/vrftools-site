@@ -10,6 +10,10 @@
 <a href="/">vrftools.com</a> / <span>MTDZ Viewer</span>
 {% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mtdz.css') }}">
+{% endblock %}
+
 {% block content %}
 <h1 class="page-title">MTDZ Viewer</h1>
 <p class="page-subtitle">View, report on, and inspect Mitsubishi Maintenance Tool monitoring files (.MTDZ, .MTLZ, .MTPZ).</p>
@@ -30,6 +34,10 @@
   </div>
   <div class="progress-bar" id="progress-bar" aria-live="polite"><div class="progress-fill"></div></div>
   <div id="upload-error" class="alert alert-error" style="display:none" role="alert"></div>
+  <div id="upload-processing-row" class="upload-processing-row" style="display:none" aria-live="polite">
+    <div class="action-spinner" aria-hidden="true"></div>
+    <span class="upload-processing-text">Processing&hellip;</span>
+  </div>
   <div id="file-loaded-badge" class="file-loaded-badge" style="display:none" aria-live="polite">
     <span class="file-loaded-icon">&#128206;</span>
     <span id="file-loaded-name"></span>
