@@ -97,10 +97,7 @@
     sysconfig: '/mtdz/sysinfo',
   };
 </script>
-<script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
-<script src="{{ url_for('static', filename='js/mtdz/report.js') }}"></script>
-
-<!-- Changelog & Known Issues Modal -->
+<!-- Changelog & Known Issues Modal — must appear BEFORE the script tags below, because report.js queries getElementById('changelogModal') at top level (no DOMContentLoaded wrapper). -->
 <div id="changelogModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="changelogTitle">
   <div class="modal-box modal-box--wide">
     <div class="modal-header">
@@ -163,4 +160,7 @@
     </div>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mtdz/report.js') }}"></script>
 {% endblock %}
