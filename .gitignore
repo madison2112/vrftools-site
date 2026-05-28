@@ -4,6 +4,8 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+.coverage
+.pytest_cache/
 
 # Claude Code
 .claude/

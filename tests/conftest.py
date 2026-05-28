@@ -1,6 +1,9 @@
 """Shared pytest fixtures for the vrf-tools test suite."""
 
+import socket
 import sys
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -35,3 +38,37 @@ def app_client():
 def sample_dat_bytes():
     """Return bytes of a known-good empty DAT file (AE-C400)."""
     return (FIXTURES_DIR / "sample_ae_c400_empty.dat").read_bytes()
+
+
+# ---------------------------------------------------------------------------
+# HC-08 — Live server fixture for Playwright visual regression tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def live_server():
+    """Start the Flask app on a random localhost port in a background thread.
+
+    Returns the base URL (``http://127.0.0.1:<port>``).  The server is
+    shut down automatically when the test session finishes.
+    """
+    from werkzeug.serving import make_server
+    from web.app import create_app
+
+    app = create_app("testing")
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+
+    server = make_server("127.0.0.1", port, app, threaded=True)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    # Give the server a moment to start accepting connections.
+    time.sleep(0.3)
+
+    base_url = f"http://127.0.0.1:{port}"
+    yield base_url
+
+    server.shutdown()
+    thread.join(timeout=2)
