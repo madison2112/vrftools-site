@@ -6,8 +6,10 @@ construction.  Per-environment config classes live in `web/config.py`.
 
 import logging
 import os
+import time
+import uuid
 
-from flask import Flask
+from flask import Flask, g, request
 
 from config import CONFIG_BY_NAME
 from extensions import csrf
@@ -19,6 +21,17 @@ from lib.main_routes import main_bp
 from lib.mtdz_routes import mtdz_bp
 
 logger = logging.getLogger(__name__)
+
+
+class _RequestIdFilter(logging.Filter):
+    """Inject ``request_id`` onto every log record so format strings that
+    reference ``%(request_id)s`` never raise ``KeyError`` — even when the
+    record is emitted outside a Flask request context (startup, cron, …)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not hasattr(record, "request_id"):
+            record.request_id = "-"
+        return True
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -54,6 +67,64 @@ def create_app(config_name: str | None = None) -> Flask:
         raise RuntimeError(
             "SECRET_KEY must be set to a non-default value in production"
         )
+
+    # ------------------------------------------------------------------
+    # B-19 — Structured request-ID logging
+    # ------------------------------------------------------------------
+    # Configure root logger (skip if gunicorn already did it).
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s [%(request_id)s] %(message)s",
+        )
+    logging.getLogger().addFilter(_RequestIdFilter())
+    request_logger = logging.getLogger("vrftools.request")
+
+    @app.before_request
+    def _log_request_start() -> None:
+        g.request_id = uuid.uuid4().hex[:12]
+        g.request_started_at = time.monotonic()
+        level = logging.DEBUG if request.path == "/status" else logging.INFO
+        request_logger.log(
+            level,
+            "→ %s %s",
+            request.method,
+            request.path,
+            extra={"request_id": g.request_id},
+        )
+
+    @app.after_request
+    def _log_request_end(response):
+        elapsed_ms = (
+            time.monotonic() - getattr(g, "request_started_at", time.monotonic())
+        ) * 1000.0
+        level = logging.DEBUG if request.path == "/status" else logging.INFO
+        request_logger.log(
+            level,
+            "← %s %s → %d (%.1fms)",
+            request.method,
+            request.path,
+            response.status_code,
+            elapsed_ms,
+            extra={"request_id": getattr(g, "request_id", "?")},
+        )
+        response.headers["X-Request-ID"] = getattr(g, "request_id", "")
+        return response
+
+    @app.teardown_request
+    def _log_request_exception(exc: BaseException | None) -> None:
+        if exc is not None:
+            request_logger.warning(
+                "✗ %s %s raised %s: %s",
+                request.method,
+                request.path,
+                exc.__class__.__name__,
+                exc,
+                extra={"request_id": getattr(g, "request_id", "?")},
+                exc_info=True,
+            )
+
+    # --- end B-19 -------------------------------------------------------
 
     csrf.init_app(app)
 
