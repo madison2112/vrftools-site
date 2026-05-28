@@ -16,6 +16,8 @@ import base64
 import json as _json
 import logging
 import os
+import smtplib
+from email.message import EmailMessage
 
 import requests as req_lib
 from flask import (
@@ -98,6 +100,109 @@ def page_contact():
 @main_bp.route("/disclaimer")
 def page_disclaimer():
     return render_template("disclaimer.html")
+
+
+# ---------------------------------------------------------------------------
+# API — Contact form (sends email via Hostinger SMTP to MAIL_TO)
+# ---------------------------------------------------------------------------
+
+
+_CONTACT_ALLOWED_EXTS = {".mtdz", ".mtlz", ".png", ".jpg", ".jpeg", ".gif"}
+_CONTACT_MAX_FILES = 3
+_CONTACT_MAX_TOTAL_BYTES = 25 * 1024 * 1024
+_CONTACT_MAX_MESSAGE_LEN = 10_000
+_CONTACT_MAX_FIELD_LEN = 200
+
+
+@main_bp.route("/api/contact", methods=["POST"])
+def api_contact():
+    name = (request.form.get("name") or "").strip()
+    email = (request.form.get("email") or "").strip()
+    message = (request.form.get("message") or "").strip()
+    category = (request.form.get("category") or "").strip()
+    tools = (request.form.get("tools") or "").strip()
+    reply_consent = request.form.get("reply_consent") == "true"
+
+    if not email or "@" not in email or "." not in email.split("@", 1)[-1]:
+        return jsonify({"detail": "A valid email address is required."}), 400
+    if not message:
+        return jsonify({"detail": "Please include a message."}), 400
+    if not category:
+        return jsonify({"detail": "Please select a category."}), 400
+    if len(message) > _CONTACT_MAX_MESSAGE_LEN:
+        return jsonify({"detail": "Message exceeds the allowed length."}), 400
+    if len(email) > _CONTACT_MAX_FIELD_LEN or len(name) > _CONTACT_MAX_FIELD_LEN:
+        return jsonify({"detail": "One or more fields exceed the allowed length."}), 400
+
+    files = [f for f in request.files.getlist("attachments") if f and f.filename]
+    if len(files) > _CONTACT_MAX_FILES:
+        return jsonify({"detail": f"Maximum {_CONTACT_MAX_FILES} attachments allowed."}), 400
+
+    file_payloads = []
+    total_size = 0
+    for f in files:
+        ext = "." + f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+        if ext not in _CONTACT_ALLOWED_EXTS:
+            return jsonify({"detail": f"Unsupported attachment type: {ext}"}), 400
+        data = f.read()
+        total_size += len(data)
+        if total_size > _CONTACT_MAX_TOTAL_BYTES:
+            return jsonify({"detail": "Attachments exceed the 25 MB total size limit."}), 400
+        file_payloads.append((f.filename, data, f.content_type or "application/octet-stream"))
+
+    smtp_host = current_app.config["MAIL_SMTP_HOST"]
+    smtp_port = current_app.config["MAIL_SMTP_PORT"]
+    smtp_user = current_app.config["MAIL_USERNAME"]
+    smtp_pass = current_app.config["MAIL_PASSWORD"]
+    if not smtp_user or not smtp_pass:
+        logger.error("Contact form: SMTP credentials not configured (MAIL_USERNAME/MAIL_PASSWORD)")
+        return jsonify({
+            "detail": "Email service is not configured. Please email support@vrftools.com directly."
+        }), 503
+
+    msg = EmailMessage()
+    msg["From"] = current_app.config["MAIL_FROM"]
+    msg["To"] = current_app.config["MAIL_TO"]
+    msg["Reply-To"] = email
+    msg["Subject"] = f"[VRFTools / {category}] from {name or email}"
+
+    body_lines = [
+        f"Category:  {category}",
+        f"Name:      {name or '(not provided)'}",
+        f"Email:     {email}",
+        f"Reply OK:  {'yes' if reply_consent else 'no'}",
+    ]
+    if tools:
+        body_lines.append(f"Tools:     {tools}")
+    body_lines.append(f"Env:       {current_app.config['APP_ENV']}")
+    body_lines.append("")
+    body_lines.append("Message:")
+    body_lines.append("-" * 40)
+    body_lines.append(message)
+    msg.set_content("\n".join(body_lines))
+
+    for filename, data, ctype in file_payloads:
+        maintype, _, subtype = ctype.partition("/")
+        if not maintype or not subtype:
+            maintype, subtype = "application", "octet-stream"
+        msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=filename)
+
+    try:
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=current_app.config["MAIL_TIMEOUT"]) as smtp:
+            smtp.login(smtp_user, smtp_pass)
+            smtp.send_message(msg)
+    except smtplib.SMTPAuthenticationError:
+        logger.exception("Contact form: SMTP authentication failed")
+        return jsonify({
+            "detail": "Email service authentication failed. Please email support@vrftools.com directly."
+        }), 502
+    except Exception:
+        logger.exception("Contact form: SMTP send failed")
+        return jsonify({
+            "detail": "Could not send message. Please try again or email support@vrftools.com directly."
+        }), 502
+
+    return jsonify({"ok": True}), 200
 
 
 # ---------------------------------------------------------------------------
