@@ -18,6 +18,7 @@
   var uploadCard  = document.getElementById('upload-card');
   var fileBadge   = document.getElementById('file-loaded-badge');
   var fileNameEl  = document.getElementById('file-loaded-name');
+  var processingRow = document.getElementById('upload-processing-row');
 
   // ── State ────────────────────────────────────────────────────────────
   var state = {
@@ -151,6 +152,8 @@
     }
     clearUploadError();
     progressBar.classList.add('visible');
+    if (fileBadge) fileBadge.style.display = 'none';
+    if (processingRow) processingRow.style.display = '';
 
     var form = new FormData();
     form.append('file', file);
@@ -165,10 +168,12 @@
     } catch (e) {
       showUploadError('Upload error: ' + e.message);
       progressBar.classList.remove('visible');
+      if (processingRow) processingRow.style.display = 'none';
       return;
     }
 
     progressBar.classList.remove('visible');
+    if (processingRow) processingRow.style.display = 'none';
     data._filename = file.name;
     saveSession(data);
     clearHighlights();

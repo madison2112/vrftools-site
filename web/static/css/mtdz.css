@@ -234,6 +234,16 @@ textarea { resize: vertical; min-height: 80px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .action-status-text { font-size: 0.82rem; color: var(--muted); }
 
+/* ===== Hub page: upload processing indicator ===== */
+
+.upload-processing-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin-top: 8px;
+  background: var(--surface, #f7f7f9); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.upload-processing-text { font-size: 0.9rem; color: var(--muted); }
+
 /* ===== Report page: system-picker modal ===== */
 
 .modal-overlay {
