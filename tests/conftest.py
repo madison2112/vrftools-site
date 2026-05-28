@@ -10,17 +10,10 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
 @pytest.fixture
 def app_client():
-    """Flask test client.
+    """Flask test client via the app factory with TestingConfig."""
+    from web.app import create_app
 
-    Imports `web.app:app` directly. When B-20 (app factory) lands, this
-    fixture should be rewritten to call `create_app()` instead.
-    """
-    from web.app import app as flask_app
-
-    flask_app.config["TESTING"] = True
-    # CSRF tokens are not signed in test mode unless WTF_CSRF_ENABLED is True;
-    # disable here so individual tests opt-in if they want to assert CSRF behavior.
-    flask_app.config["WTF_CSRF_ENABLED"] = False
+    flask_app = create_app("testing")
     with flask_app.test_client() as client:
         yield client
 
