@@ -20,7 +20,7 @@
   <a class="logo" href="/">VRF<span>Tools</span></a>
   <nav>
     {% block nav_links %}
-    <a href="{{ url_for('page_config_tools') }}">Config Tools</a>
+    <a href="{{ url_for('main.page_config_tools') }}">Config Tools</a>
     <a href="{{ url_for('dat.page_docs') }}">How to Use</a>
     <a href="/">Home</a>
     {% endblock %}
@@ -30,7 +30,7 @@
 <div class="breadcrumb">
   {% block breadcrumb_path %}
   <a href="/">vrftools.com</a> /
-  <a href="{{ url_for('page_config_tools') }}">Config Tools</a>
+  <a href="{{ url_for('main.page_config_tools') }}">Config Tools</a>
   {% block breadcrumb %}{% endblock %}
   {% endblock %}
 </div>
