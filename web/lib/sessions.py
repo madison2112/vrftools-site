@@ -9,6 +9,7 @@ than on a rolling TTL. Every update refreshes the expiry to the next
 
 import os
 import pickle
+import tempfile
 import threading
 import time
 import uuid
@@ -50,6 +51,13 @@ def _cleanup_loop():
             now = time.time()
             for fname in os.listdir(SESSION_DIR):
                 path = os.path.join(SESSION_DIR, fname)
+                # Clean up orphaned temp files from crashed atomic writes
+                if fname.endswith(".tmp"):
+                    try:
+                        os.unlink(path)
+                    except OSError:
+                        pass
+                    continue
                 try:
                     with open(path, "rb") as f:
                         data = pickle.load(f)
@@ -68,8 +76,22 @@ def create(data: dict) -> str:
     os.makedirs(SESSION_DIR, exist_ok=True)
     sid = str(uuid.uuid4())
     payload = {**data, "expires": _expiry()}
-    with open(_session_path(sid), "wb") as f:
-        pickle.dump(payload, f)
+    target = _session_path(sid)
+    fd, tmp_path = tempfile.mkstemp(
+        dir=SESSION_DIR, suffix=".tmp", prefix=".session_"
+    )
+    try:
+        with os.fdopen(fd, "wb") as f:
+            pickle.dump(payload, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, target)
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
     return sid
 
 
@@ -95,8 +117,21 @@ def update(sid: str, patch: dict) -> bool:
             return False
         data.update(patch)
         data["expires"] = _expiry()
-        with open(path, "wb") as f:
-            pickle.dump(data, f)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=SESSION_DIR, suffix=".tmp", prefix=".session_"
+        )
+        try:
+            with os.fdopen(fd, "wb") as f:
+                pickle.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, path)
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
         return True
     except (FileNotFoundError, pickle.UnpicklingError, EOFError):
         return False
