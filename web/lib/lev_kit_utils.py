@@ -366,11 +366,16 @@ CAPACITY_OPTIONS_AH001: list[dict] = [
     },
 ]
 
-# AH001 only has three thermo-off options (no 82°F option, which is AH002-specific)
+# AH001 thermo-off options: encoded via SW3 positions 8 and 9 only (SW3[7..8]).
+# SW4 positions 7 and 8 (SW4[6..7]) are control-mode settings, NOT thermo-off:
+#   DAT: SW4-7=ON, SW4-8=ON    RAT: SW4-7=OFF, SW4-8=OFF
+# Value 2 (N/A for Unit Vent) has no setpoint temperature — it disables thermo-off
+# for unit-vent applications.
 THERMO_OPTIONS_AH001: list[dict] = [
-    {"value": 4, "label": "Thermo OFF at 59°F (Default)", "sw3": [1, 1], "sw4": [1, 1]},
-    {"value": 3, "label": "Thermo OFF at 70°F", "sw3": [0, 0], "sw4": [0, 0]},
-    {"value": 1, "label": "Thermo OFF at 50°F", "sw3": [0, 1], "sw4": [0, 1]},
+    {"value": 4, "label": "Thermo OFF at 59°F (Default)", "sw3": [1, 1]},
+    {"value": 3, "label": "Thermo OFF at 70°F", "sw3": [0, 0]},
+    {"value": 1, "label": "Thermo OFF at 50°F", "sw3": [0, 1]},
+    {"value": 2, "label": "Thermo OFF at 82°F", "sw3": [1, 0]},
 ]
 
 # AH001 DAT setpoint range options (encoded via SW3[0])
@@ -571,7 +576,7 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
       input_voltage         str  "208" or "230"
       discharge_enable      str  "central" or "bas"
       discharge_setpoint    str  "central" or "bas"
-      thermo_temp           int  1, 3, or 4 from THERMO_OPTIONS_AH001 (DAT only)
+      thermo_temp           int  1, 2, 3, or 4 from THERMO_OPTIONS_AH001 (DAT only)
       dat_setpoint          int  1 or 2 from DAT_SETPOINT_OPTIONS_AH001 (DAT only)
       return_control        str  "room" or "rat"
       return_enable         str  "central" or "bas"
@@ -652,13 +657,20 @@ def _generate_switch_positions_ah001(config: dict) -> dict:
     # SW4[0]: OFF in DAT, ON in RAT
     switches["SW4"][0] = 1 if e11 == 1 else 0
 
-    # SW3[7..8] and SW4[6..7]: thermo-off pair (DAT only)
+    # SW4[6..7]: discharge-error vs return-error control mode
+    #   DAT: SW4-7=ON, SW4-8=ON   RAT: SW4-7=OFF, SW4-8=OFF
+    if e11 == 0:   # DAT
+        switches["SW4"][6] = 1
+        switches["SW4"][7] = 1
+    else:           # RAT
+        switches["SW4"][6] = 0
+        switches["SW4"][7] = 0
+
+    # SW3[7..8]: thermo-off temperature (DAT only)
     if e11 == 0 and thermo_temp > 0:
         opt = _thermo_by_value(thermo_temp, CONTROLLER_AH001)
         switches["SW3"][7] = opt["sw3"][0]
         switches["SW3"][8] = opt["sw3"][1]
-        switches["SW4"][6] = opt["sw4"][0]
-        switches["SW4"][7] = opt["sw4"][1]
     elif e11 == 1 and not temp_adjustment:
         switches["SW3"][7] = 1
 
