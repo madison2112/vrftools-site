@@ -36,7 +36,7 @@
   cursor: pointer;
 }
 
-.lks-select:focus { outline: 2px solid var(--red); outline-offset: 2px; }
+.lks-select:focus { outline: 2px solid var(--danger); outline-offset: 2px; }
 
 .lks-fieldset {
   border: 1px solid var(--border);
@@ -98,14 +98,14 @@
 }
 
 .lks-choice:hover:not(:disabled):not(.lks-active) {
-  border-color: var(--red);
+  border-color: var(--danger);
   background: #fff3f3;
 }
 
 .lks-choice.lks-active {
-  background: var(--red);
+  background: var(--danger);
   color: var(--white);
-  border-color: var(--red);
+  border-color: var(--danger);
 }
 
 .lks-choice:disabled {
@@ -293,7 +293,7 @@
 }
 
 .lks-controller-card:hover {
-  border-color: var(--red);
+  border-color: var(--danger);
 }
 
 .lks-controller-card:active {

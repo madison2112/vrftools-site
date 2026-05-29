@@ -1,12 +1,10 @@
 :root {
-  --red:        #cc0000;
   --dark:       #1a1a1a;
   --gray:       #444;
   --light-gray: #f5f5f5;
   --border:     #ddd;
   --white:      #fff;
   --muted:      #666;
-  --green:      #2e7d32;
   --warn-bg:    #fff8e1;
   --warn-border:#f9a825;
 }
@@ -28,7 +26,7 @@ header {
   display: flex;
   align-items: center;
   height: 60px;
-  border-bottom: 3px solid var(--red);
+  border-bottom: 3px solid var(--danger);
   flex-shrink: 0;
 }
 header .logo {
@@ -38,7 +36,7 @@ header .logo {
   color: var(--white);
   text-decoration: none;
 }
-header .logo span { color: var(--red); }
+header .logo span { color: var(--danger); }
 header nav {
   margin-left: auto;
   display: flex;
@@ -78,7 +76,7 @@ footer {
   gap: 0.4rem;
   flex-shrink: 0;
 }
-footer a { color: var(--red); text-decoration: none; }
+footer a { color: var(--danger); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 
 /* ── Tool grid (hub page) ── */
@@ -99,7 +97,7 @@ footer a:hover { text-decoration: underline; }
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .tool-card:hover {
-  border-color: var(--red);
+  border-color: var(--danger);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .tool-icon {
@@ -107,7 +105,7 @@ footer a:hover { text-decoration: underline; }
   flex-shrink: 0;
   width: 40px;
   text-align: center;
-  color: var(--red);
+  color: var(--danger);
 }
 .tool-name {
   font-weight: 700;
@@ -136,7 +134,7 @@ footer a:hover { text-decoration: underline; }
 }
 .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.link-btn { color: var(--red); cursor: pointer; text-decoration: underline; }
+.link-btn { color: var(--danger); cursor: pointer; text-decoration: underline; }
 
 /* ── Group slot grid ── */
 .block-section { margin-bottom: 24px; }
@@ -204,7 +202,7 @@ footer a:hover { text-decoration: underline; }
   transition: background 0.1s, border-color 0.1s;
 }
 .group-card:hover { background: #e8e8e8; border-color: #bbb; }
-.slot-item.drag-over { outline: 2px solid var(--red); outline-offset: -2px; border-radius: 4px; }
+.slot-item.drag-over { outline: 2px solid var(--danger); outline-offset: -2px; border-radius: 4px; }
 .slot-empty-card {
   flex: 1;
   height: 30px;
@@ -231,10 +229,10 @@ footer a:hover { text-decoration: underline; }
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .tool-list-item:hover {
-  border-color: var(--red);
+  border-color: var(--danger);
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
-.tool-list-item:hover .tool-name { color: var(--red); }
+.tool-list-item:hover .tool-name { color: var(--danger); }
 .tool-list-left { display: flex; }
 .tool-card-inner {
   display: flex;
@@ -244,11 +242,11 @@ footer a:hover { text-decoration: underline; }
 .tool-list-right { font-size: 0.875rem; line-height: 1.6; }
 .tool-list-right p + p { margin-top: 8px; }
 .tool-list-right .problem-label { font-weight: 600; color: var(--dark); }
-.tool-list-right .solution-label { font-weight: 600; color: var(--red); }
+.tool-list-right .solution-label { font-weight: 600; color: var(--danger); }
 .suite-overview {
   background: var(--white);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--red);
+  border-left: 4px solid var(--danger);
   border-radius: 8px;
   padding: 20px 24px;
   margin-bottom: 24px;
@@ -314,7 +312,7 @@ footer a:hover { text-decoration: underline; }
   display: inline-block;
   width: 20px; height: 20px;
   border: 2px solid #ddd;
-  border-top-color: var(--red);
+  border-top-color: var(--danger);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   vertical-align: middle;
@@ -346,13 +344,13 @@ footer a:hover { text-decoration: underline; }
   aspect-ratio: 1 / 1;
 }
 .tool-card-square:hover {
-  border-color: var(--red);
+  border-color: var(--danger);
   box-shadow: 0 3px 12px rgba(0,0,0,0.1);
   transform: translateY(-2px);
 }
 .tool-card-square:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--red);
+  box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--danger);
 }
 .tool-card-square.highlighted {
   border-color: var(--green);
@@ -364,14 +362,14 @@ footer a:hover { text-decoration: underline; }
   box-shadow: 0 3px 14px rgba(46,125,50,0.2);
 }
 .tool-card-square.warning-flash {
-  border-color: var(--red) !important;
+  border-color: var(--danger) !important;
   box-shadow: 0 0 0 4px rgba(204,0,0,0.2) !important;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .tool-card-square .tool-icon-sq {
   font-size: 2.2rem;
   margin-bottom: 12px;
-  color: var(--red);
+  color: var(--danger);
   flex-shrink: 0;
   line-height: 1;
 }
@@ -440,7 +438,7 @@ footer a:hover { text-decoration: underline; }
   margin-bottom: 16px;
 }
 .resume-card:hover {
-  border-color: var(--red);
+  border-color: var(--danger);
   box-shadow: 0 3px 12px rgba(0,0,0,0.1);
 }
 .resume-card.highlighted {
@@ -471,7 +469,7 @@ footer a:hover { text-decoration: underline; }
   position: fixed;
   bottom: 28px;
   right: 28px;
-  background: var(--red);
+  background: var(--danger);
   color: var(--white);
   border: none;
   border-radius: 50px;
@@ -512,7 +510,7 @@ footer a:hover { text-decoration: underline; }
 }
 .ctrl-name-input:focus {
   outline: none;
-  border-color: var(--red);
+  border-color: var(--danger);
   background: var(--white);
 }
 
@@ -524,7 +522,7 @@ footer a:hover { text-decoration: underline; }
   position: absolute;
   inset: 0;
   z-index: 10;
-  border: 2px solid var(--red);
+  border: 2px solid var(--danger);
   border-radius: 3px;
   padding: 0 4px;
   font-weight: 600;
@@ -542,7 +540,7 @@ footer a:hover { text-decoration: underline; }
   align-items: center;
   gap: 6px;
   font-size: 0.95rem;
-  color: var(--red);
+  color: var(--danger);
   text-decoration: none;
   font-weight: 600;
   margin-bottom: 18px;

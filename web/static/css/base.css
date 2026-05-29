@@ -10,7 +10,7 @@
 
 /* ── Design tokens ──────────────────────────────────────────────────── */
 :root {
-  --danger:     #cc0000;   /* merged from --red / --danger  (canonical) */
+  --danger:     #c0392b;   /* canonical danger color, merged from former --red */
   --dark:       #1a1a1a;
   --gray:       #444;
   --light-gray: #f5f5f5;

@@ -7,13 +7,6 @@
  * loading skeleton.
  * ============================================================================ */
 
-:root {
-  /* Imported from site.css for the bits of the MTDZ sub-pages that still
-     reference var(--danger). Slightly different from var(--red) for legacy
-     visual continuity (#c0392b vs #cc0000). */
-  --danger: #c0392b;
-}
-
 /* ── File-status action links ───────────────────────────────────────── */
 
 .mode-card-actions {

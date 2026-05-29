@@ -32,14 +32,14 @@
 }
 
 .lk-mode-card:hover {
-  border-color: var(--red);
+  border-color: var(--danger);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .lk-mode-card-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--red);
+  color: var(--danger);
   margin-bottom: 8px;
 }
 
