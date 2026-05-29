@@ -1,3 +1,4 @@
+/* Scoping: Global-scope form handler. */
 const API = '';
 
 function csrfToken() {
