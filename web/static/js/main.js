@@ -1,6 +1,8 @@
 /**
  * Shared JS for Central Controller Config Tools.
  */
+/* Scoping: Global-scope utilities (setupDropZone, escHtml, renderWarnings, etc.). */
+/* lev_kit.js calls setupDropZone() from this file at the global level. */
 
 function csrfToken() {
   return document.querySelector('meta[name="csrf-token"]').content;

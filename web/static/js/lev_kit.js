@@ -14,6 +14,7 @@
  * summary. AH001 units have additional inputs (fan_controlled_by + extras
  * gated by it); when fan_controlled_by=BAS, the extras are disabled.
  */
+/* Scoping: IIFE — calls global setupDropZone() defined in main.js. */
 
 (() => {
   'use strict';
