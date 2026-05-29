@@ -229,6 +229,52 @@ def test_ah001_sw3_8_stratification():
     check("SW3-8 OFF when stratification ON", rat_adj_on["switches"]["SW3"][7], 0)
 
 
+def test_ah001_thermo_unit_vent():
+    """AH001 thermo-off value 2 (N/A for Unit Vent) sets SW3-8 ON, SW3-9 OFF"""
+    print("\n── AH001 Thermo Unit Vent: SW3[7]=1, SW3[8]=0 ──")
+    dat = generate_switch_positions(
+        {
+            "controller_type": CONTROLLER_AH001,
+            "capacity": 2,
+            "control_mode": "discharge",
+            "heat_pump": True,
+            "input_voltage": "208",
+            "thermo_temp": 2,
+        }
+    )
+    # thermo value 2 = N/A for Unit Vent → sw3=[1,0]
+    # which maps to SW3[7]=1, SW3[8]=0
+    check("SW3-8 ON  (unit vent)", dat["switches"]["SW3"][7], 1)
+    check("SW3-9 OFF (unit vent)", dat["switches"]["SW3"][8], 0)
+
+
+def test_ah001_sw4_7_8_control_mode():
+    """AH001 SW4-7 and SW4-8 are control-mode settings, not thermo-off"""
+    print("\n── AH001 SW4-7/SW4-8: ON/ON in DAT, OFF/OFF in RAT ──")
+    dat = generate_switch_positions(
+        {
+            "controller_type": CONTROLLER_AH001,
+            "capacity": 2,
+            "control_mode": "discharge",
+            "heat_pump": True,
+            "input_voltage": "208",
+        }
+    )
+    rat = generate_switch_positions(
+        {
+            "controller_type": CONTROLLER_AH001,
+            "capacity": 2,
+            "control_mode": "return",
+            "heat_pump": True,
+            "input_voltage": "208",
+        }
+    )
+    check("SW4-7 ON  in DAT", dat["switches"]["SW4"][6], 1)
+    check("SW4-8 ON  in DAT", dat["switches"]["SW4"][7], 1)
+    check("SW4-7 OFF in RAT", rat["switches"]["SW4"][6], 0)
+    check("SW4-8 OFF in RAT", rat["switches"]["SW4"][7], 0)
+
+
 if __name__ == "__main__":
     test_ah002_sw4_1_toggles_with_mode()
     test_ah001_sw1_1_for_rat()
@@ -236,6 +282,8 @@ if __name__ == "__main__":
     test_ah001_sw3_2_electric_heat()
     test_ah001_sw3_4_defrost_gating()
     test_ah001_sw3_8_stratification()
+    test_ah001_thermo_unit_vent()
+    test_ah001_sw4_7_8_control_mode()
     print(f"\n{'=' * 50}")
     print(f"Results: {PASS} passed, {FAIL} failed out of {PASS + FAIL}")
     if FAIL:
