@@ -1,0 +1,11 @@
+{# Canonical window.MTDZ_PAGES injection. Included by every MTDZ template
+   so URL-prefix changes only require updating one file. Uses url_for()
+   so changes to the mtdz blueprint url_prefix take effect automatically. #}
+<script>
+  window.MTDZ_PAGES = {
+    index:     "{{ url_for('mtdz.page_mtdz_index') }}",
+    viewer:    "{{ url_for('mtdz.page_mtdz_viewer') }}",
+    report:    "{{ url_for('mtdz.page_mtdz_report') }}",
+    sysconfig: "{{ url_for('mtdz.page_mtdz_sysinfo') }}",
+  };
+</script>
