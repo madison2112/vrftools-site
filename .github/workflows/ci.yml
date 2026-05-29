@@ -17,4 +17,16 @@ jobs:
       - run: ruff check .
       # ruff format --check omitted until P2-xx mass-format card
       # re-enable with: - run: ruff format --check .
+      # HC-08: install Playwright browsers BEFORE pytest, since pytest
+      # auto-discovers tests/test_visual_regression.py which needs Chromium.
+      - name: Install Playwright browsers
+        run: playwright install --with-deps chromium
       - run: pytest
+      - name: Upload visual diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: |
+            /tmp/pytest-of-*/pytest-current/test_route_visual_baseline*/
+          if-no-files-found: ignore
