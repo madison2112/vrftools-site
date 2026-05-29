@@ -72,7 +72,7 @@ function setCategory(cat) {
   if (cat === 'issue' || cat === 'feature') {
     toolSection.style.display = '';
     toolReqLabel.textContent = cat === 'issue' ? '(required)' : '(optional)';
-    toolReqLabel.style.color = cat === 'issue' ? 'var(--danger)' : '';
+    toolReqLabel.style.color = cat === 'issue' ? 'var(--red)' : '';
     toolReqLabel.style.fontWeight = cat === 'issue' ? '600' : '';
   } else {
     toolSection.style.display = 'none';

@@ -10,7 +10,7 @@
 
 /* ── Design tokens ──────────────────────────────────────────────────── */
 :root {
-  --danger:     #cc0000;   /* merged from --red / --danger  (canonical) */
+  --red:        #c0392b;   /* canonical red — replaces --danger and the former #cc0000 --red */
   --dark:       #1a1a1a;
   --gray:       #444;
   --light-gray: #f5f5f5;
@@ -62,7 +62,7 @@
   transition: opacity 0.15s;
 }
 .btn:hover { opacity: 0.85; }
-.btn-primary { background: var(--danger); color: var(--white); }
+.btn-primary { background: var(--red); color: var(--white); }
 .btn-outline {
   background: transparent;
   color: var(--dark);
@@ -83,7 +83,7 @@
 .drop-zone:hover,
 .drop-zone.dragging {
   background: #fff3f3;
-  border-color: var(--danger);
+  border-color: var(--red);
   color: var(--dark);
 }
 .drop-zone.uploading {
@@ -96,7 +96,7 @@
 .drop-zone small { font-size: 0.78rem; margin-top: 6px; display: block; }
 .drop-zone:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--danger);
+  box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--red);
 }
 
 /* ── Breadcrumb ─────────────────────────────────────────────────────── */
@@ -108,7 +108,7 @@
   background: #f9f9f9;
   flex-shrink: 0;
 }
-.breadcrumb a { color: var(--danger); text-decoration: none; }
+.breadcrumb a { color: var(--red); text-decoration: none; }
 .breadcrumb a:hover { text-decoration: underline; }
 
 /* ── Page title / subtitle ──────────────────────────────────────────── */
@@ -129,7 +129,7 @@
   border: 1px solid #e88;
   border-radius: 6px;
   padding: 12px 16px;
-  color: var(--danger);
+  color: var(--red);
   font-size: 0.9rem;
   margin-top: 12px;
   display: none;
@@ -174,7 +174,7 @@
 .badge-pill {
   display: inline-block;
   background: #fff3f3;
-  color: var(--danger);
+  color: var(--red);
   border: 1px solid #ffb3b3;
   border-radius: 999px;
   padding: 0.2rem 0.8rem;
@@ -210,7 +210,7 @@
   color: var(--dark);
 }
 .info-popup .problem-label { font-weight: 600; color: var(--dark); }
-.info-popup .solution-label { font-weight: 600; color: var(--danger); }
+.info-popup .solution-label { font-weight: 600; color: var(--red); }
 .info-popup p {
   font-size: 0.9rem;
   line-height: 1.6;
