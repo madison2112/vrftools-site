@@ -37,19 +37,6 @@
 
 .privacy-notice { font-size: 0.82rem; }
 
-.error-msg {
-  background: #fdf0ef;
-  border: 1px solid #e88;
-  border-radius: 6px;
-  padding: 12px 16px;
-  color: var(--red);
-  font-size: 0.9rem;
-  margin-top: 12px;
-  display: none;
-}
-
-.error-msg.visible { display: block; }
-
 /* ── Upload progress ────────────────────────────────────────────────── */
 
 .progress-bar {
