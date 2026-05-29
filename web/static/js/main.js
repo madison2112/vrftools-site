@@ -360,12 +360,12 @@ async function exportJson(sessionId, tool) {
   // Gather the current grid orders so they can be sent atomically
   // with the export request — eliminates the race between the flush
   // POST and the export fetch.
-  var orders = {};
+  const orders = {};
   if (window.state && window.state.gridCols) {
     Object.entries(window.state.gridCols).forEach(function(entry) {
-      var idx = entry[0];
-      var cols = entry[1];
-      var newOrder = cols.col1.children.length
+      const idx = entry[0];
+      const cols = entry[1];
+      const newOrder = cols.col1.children.length
         ? [].slice.call(cols.col1.children).concat([].slice.call(cols.col2.children))
             .map(function(item) { return parseInt(item.dataset.originalSlot) || 0; })
         : [];
@@ -407,10 +407,10 @@ function preloadSession(sid, onSuccess) {
 }
 
 function initFloatingSaveButton(toolName) {
-  var existing = document.getElementById('float-save-btn');
+  const existing = document.getElementById('float-save-btn');
   if (existing) existing.remove();
 
-  var btn = document.createElement('button');
+  const btn = document.createElement('button');
   btn.id = 'float-save-btn';
   btn.className = 'float-save-btn';
   btn.innerHTML = '<span class="save-icon">&#128190;</span> Save Session / Share';
@@ -427,15 +427,15 @@ function initFloatingSaveButton(toolName) {
 }
 
 function showFloatingSaveButton() {
-  var btn = document.getElementById('float-save-btn');
+  const btn = document.getElementById('float-save-btn');
   if (btn) btn.classList.add('visible');
 }
 
 // Controller name auto-save on change
 document.addEventListener('change', function(e) {
   if (!e.target.classList.contains('ctrl-name-input')) return;
-  var idx = parseInt(e.target.dataset.idx);
-  var newName = e.target.value.trim();
+  const idx = parseInt(e.target.dataset.idx);
+  const newName = e.target.value.trim();
   if (!newName || !(window.state && window.state.sessionId)) return;
 
   fetch('/api/session/' + window.state.sessionId + '/controller-name', {
@@ -459,26 +459,26 @@ document.addEventListener('change', function(e) {
 
 // Double-click group tag names to edit inline
 document.addEventListener('dblclick', function(e) {
-  var tagEl = e.target.closest('.group-tag');
+  const tagEl = e.target.closest('.group-tag');
   if (!tagEl || tagEl.querySelector('.group-tag-edit')) return;
 
-  var slotItem = tagEl.closest('.slot-item');
+  const slotItem = tagEl.closest('.slot-item');
   if (!slotItem) return;
-  var slot = parseInt(slotItem.dataset.originalSlot);
+  const slot = parseInt(slotItem.dataset.originalSlot);
   if (!slot) return;
 
-  var blockSection = slotItem.closest('.block-section');
-  var blockIdx = blockSection ? parseInt(blockSection.dataset.blockIdx) : 0;
+  const blockSection = slotItem.closest('.block-section');
+  const blockIdx = blockSection ? parseInt(blockSection.dataset.blockIdx) : 0;
 
-  var currentText = tagEl.textContent.trim();
-  var input = document.createElement('input');
+  const currentText = tagEl.textContent.trim();
+  const input = document.createElement('input');
   input.type = 'text';
   input.className = 'group-tag-edit';
   input.value = currentText;
   input.style.width = Math.max(currentText.length * 10 + 20, 80) + 'px';
 
-  var commit = function() {
-    var newTag = input.value.trim();
+  const commit = function() {
+    const newTag = input.value.trim();
     if (newTag && newTag !== currentText && window.state && window.state.sessionId) {
       fetch('/api/session/' + window.state.sessionId + '/group-name', {
         method: 'POST',
@@ -496,7 +496,7 @@ document.addEventListener('dblclick', function(e) {
     input.remove();
   };
 
-  var cancel = function() {
+  const cancel = function() {
     input.remove();
   };
 
@@ -513,6 +513,6 @@ document.addEventListener('dblclick', function(e) {
 
 // Cancel any active tag edit when a drag starts
 document.addEventListener('dragstart', function() {
-  var active = document.querySelector('.group-tag-edit');
+  const active = document.querySelector('.group-tag-edit');
   if (active) active.remove();
 });
