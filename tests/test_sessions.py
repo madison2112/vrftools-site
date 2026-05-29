@@ -575,15 +575,6 @@ class TestLegacyMigrationErrorPaths:
 
 
 class TestConcurrentUpdate:
-    @pytest.mark.xfail(
-        reason=(
-            "Known lost-update race: update() does read-modify-write without locking. "
-            "Two threads can both read the same base state, each modify different keys, "
-            "and the second atomic write overwrites the first. This is a real concurrency "
-            "bug (no write-intent locking), not a test flake."
-        ),
-        strict=True,
-    )
     def test_no_lost_writes_under_concurrent_updates(self):
         """Two threads concurrently updating distinct keys — final session
         should carry both keys.  This test exercises the B-14 atomic-write

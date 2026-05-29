@@ -12,6 +12,7 @@ valid JSON.
 """
 
 import base64
+import fcntl
 import json
 import os
 import pickle  # retained for backward-compat .pkl migration path
@@ -53,6 +54,11 @@ def _session_path(sid: str) -> str:
 def _legacy_session_path(sid: str) -> str:
     """Path for pre-B-15 pickle-based sessions (migration source only)."""
     return os.path.join(SESSION_DIR, f"{sid}.pkl")
+
+
+def _lock_path(sid: str) -> str:
+    """Path for the per-session advisory lock file."""
+    return os.path.join(SESSION_DIR, f".{sid}.lock")
 
 
 def _encode_binary(payload: dict) -> dict:
@@ -107,12 +113,27 @@ def _cleanup_loop():
         time.sleep(300)
         try:
             now = time.time()
-            for fname in os.listdir(SESSION_DIR):
+            # Snapshot directory contents first so unlinking inside the
+            # loop doesn't perturb iteration.
+            entries = os.listdir(SESSION_DIR)
+            for fname in entries:
                 path = os.path.join(SESSION_DIR, fname)
                 # Clean up orphaned temp files from crashed atomic writes
                 if fname.endswith(".tmp"):
                     try:
                         os.unlink(path)
+                    except OSError:
+                        pass
+                    continue
+                # GC orphan lock files: if the session has been deleted or
+                # expired (no .json or .pkl), remove the lock sentinel.
+                if fname.endswith(".lock"):
+                    try:
+                        session_id = fname[1:-5]  # strip leading "." and trailing ".lock"
+                        json_path = os.path.join(SESSION_DIR, f"{session_id}.json")
+                        pkl_path = os.path.join(SESSION_DIR, f"{session_id}.pkl")
+                        if not os.path.exists(json_path) and not os.path.exists(pkl_path):
+                            os.unlink(path)
                     except OSError:
                         pass
                     continue
@@ -211,31 +232,39 @@ def get(sid: str) -> dict | None:
 
 
 def update(sid: str, patch: dict) -> bool:
-    # Reuse get() for read + expiry check + legacy migration.
-    data = get(sid)
-    if data is None:
-        return False
-
-    data.update(patch)
-    data["expires"] = _expiry()
-
-    target = _session_path(sid)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=SESSION_DIR, suffix=".tmp", prefix=".session_"
-    )
+    lock_path = _lock_path(sid)
+    os.makedirs(SESSION_DIR, exist_ok=True)
+    fd = os.open(lock_path, os.O_CREAT | os.O_WRONLY, 0o600)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(_encode_binary(data), f, ensure_ascii=False)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, target)
-    except BaseException:
+        fcntl.flock(fd, fcntl.LOCK_EX)  # blocks until exclusive lock acquired
+
+        # Reuse get() for read + expiry check + legacy migration.
+        data = get(sid)
+        if data is None:
+            return False
+
+        data.update(patch)
+        data["expires"] = _expiry()
+
+        target = _session_path(sid)
+        tmp_fd, tmp_path = tempfile.mkstemp(
+            dir=SESSION_DIR, suffix=".tmp", prefix=".session_"
+        )
         try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-        raise
-    return True
+            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                json.dump(_encode_binary(data), f, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, target)
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+        return True
+    finally:
+        os.close(fd)
 
 
 def delete(sid: str):
@@ -245,3 +274,7 @@ def delete(sid: str):
             os.unlink(path_fn(sid))
         except FileNotFoundError:
             pass
+    try:
+        os.unlink(_lock_path(sid))
+    except FileNotFoundError:
+        pass
