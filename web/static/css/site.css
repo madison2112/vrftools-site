@@ -1,13 +1,10 @@
 :root {
-  --red:        #cc0000;
   --dark:       #1a1a1a;
   --gray:       #444;
   --light-gray: #f5f5f5;
   --border:     #ddd;
   --white:      #fff;
   --muted:      #666;
-  --danger:     #c0392b;
-  --green:      #22c55e;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -138,7 +135,7 @@ footer a:hover { text-decoration: underline; }
   color: var(--red);
   border: 1px solid var(--red);
 }
-.btn-danger { background: var(--danger); color: var(--white); }
+.btn-danger { background: var(--red); color: var(--white); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Info / error / success banners ── */
@@ -159,7 +156,7 @@ footer a:hover { text-decoration: underline; }
   border: 1px solid #e88;
   border-radius: 6px;
   padding: 12px 16px;
-  color: var(--danger);
+  color: var(--red);
   font-size: 0.9rem;
   margin-top: 12px;
   display: none;
@@ -278,7 +275,7 @@ footer a:hover { text-decoration: underline; }
 .mode-card .icon { font-size: 2rem; margin-bottom: 8px; }
 .mode-card h3 { font-size: 1rem; color: var(--dark); font-weight: 700; }
 .mode-card p  { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
-.mobile-note  { display: none; color: var(--danger) !important; font-style: italic; }
+.mobile-note  { display: none; color: var(--red) !important; font-style: italic; }
 .mode-card-actions {
   display: flex;
   gap: 20px;
@@ -289,7 +286,7 @@ footer a:hover { text-decoration: underline; }
 }
 .back-link   { color: var(--red); text-decoration: none; }
 .back-link:hover { text-decoration: underline; }
-.delete-link { color: var(--danger); text-decoration: none; }
+.delete-link { color: var(--red); text-decoration: none; }
 .delete-link:hover { text-decoration: underline; }
 
 /* ── Day tabs ── */
