@@ -411,19 +411,6 @@ footer a:hover { text-decoration: underline; }
   color: var(--white);
 }
 
-/* Info popup close button — kept in style.css due to font-family divergence (HC-03d candidate) */
-.info-popup .close-popup {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 8px 20px;
-  background: var(--dark);
-  color: var(--white);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
 /* Resume Session card (wide, short, above tool grid on hub page) */
 .resume-card {
   background: var(--white);
