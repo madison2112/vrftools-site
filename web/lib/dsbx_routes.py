@@ -198,7 +198,10 @@ def api_get_groups(sid):
         apply_order_to_groups(groups, s.get(f"order_{i}"))
         result.append({**block, "groups": groups})
 
-    return jsonify({"blocks": result})
+    result_data = {"blocks": result}
+    if s.get("type") == "dsbx":
+        result_data["expansion_map"] = s.get("expansion_map", {})
+    return jsonify(result_data)
 
 
 @dsbx_bp.route("/api/session/<sid>/groups", methods=["POST"])
@@ -439,7 +442,8 @@ def api_download_dsbx_to_multi_dat(sid):
         logger.error("Multi-DAT packaging failed", exc_info=True)
         abort(500, "Multi-DAT packaging failed. Please try again or contact support.")
 
-    return _send_dat(dat_bytes, "multi_controller.dat")
+    base_name = s.get("dsbx_file_name", "export")
+    return _send_dat(dat_bytes, f"{base_name}_central_controller.dat")
 
 
 def _build_200_multi_dat(processed: list, blocks: list, expansion_map: dict) -> bytes:

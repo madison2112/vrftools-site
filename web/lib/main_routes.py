@@ -33,8 +33,16 @@ from flask import (
 from extensions import csrf
 from . import sessions
 from .dat_routes import _TOOL_ROUTES
-from .dat_utils import extract_groups_from_xml, parse_dat_controllers, _check_warnings
-from .dsbx_utils import extract_group_cards, get_groupof50_list, load_mapping, parse_dsbx_bytes
+from .dat_utils import extract_groups_from_xml, parse_dat_controllers, safe_filename, _check_warnings
+from .dsbx_routes import _compute_default_expansion_map
+from .dsbx_utils import (
+    extract_group_cards,
+    get_dsbx_project_lan,
+    get_groupof50_controller_info,
+    get_groupof50_list,
+    load_mapping,
+    parse_dsbx_bytes,
+)
 from .json_utils import import_session_json
 from .route_helpers import _validate_upload
 
@@ -248,17 +256,35 @@ def api_upload_config_hub():
                     "Could not restore the session from the stored source. Please try re-uploading the file.",
                 )
 
+            lan_enabled = get_dsbx_project_lan(dsb_root)
             blocks = []
+            ip_counter = [1]
             for g50 in g50_list:
                 cards = extract_group_cards(g50, mapping)
+                default_ip = f"192.168.1.{ip_counter[0]}"
+                ip_counter[0] += 1
+                ctrl_info = get_groupof50_controller_info(
+                    g50, ip_override="" if lan_enabled else default_ip
+                )
                 blocks.append(
                     {
                         "name": g50.findtext("Name") or "",
+                        "controller_type": ctrl_info["controller_type"],
+                        "display_model": ctrl_info["display_model"],
+                        "ip": ctrl_info["ip"] if lan_enabled else default_ip,
+                        "has_controller": ctrl_info["has_controller"],
+                        "is_master": ctrl_info["is_master"],
                         "groups": cards,
                         "warnings": _check_warnings(cards),
                     }
                 )
-            session_data = {"type": "dsbx", "dsbx_data": source_bytes, "blocks": blocks}
+            session_data = {
+                "type": "dsbx",
+                "dsbx_data": source_bytes,
+                "blocks": blocks,
+                "expansion_map": _compute_default_expansion_map(blocks),
+                "lan_enabled": lan_enabled,
+            }
         else:
             if not source_bytes[:4] == b"PK\x03\x04":
                 abort(400, "Stored source data does not appear to be a valid .dat archive.")
@@ -342,22 +368,41 @@ def api_upload_config_hub():
             logger.warning("Could not parse .dsbx file (config hub)", exc_info=True)
             abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
 
+        dsbx_file_name = safe_filename(
+            os.path.splitext(request.files.get("file").filename or "")[0]
+        ) or "export"
+        lan_enabled = get_dsbx_project_lan(dsb_root)
         blocks = []
+        ip_counter = [1]
         for g50 in g50_list:
             cards = extract_group_cards(g50, mapping)
+            default_ip = f"192.168.1.{ip_counter[0]}"
+            ip_counter[0] += 1
+            ctrl_info = get_groupof50_controller_info(
+                g50, ip_override="" if lan_enabled else default_ip
+            )
             blocks.append(
                 {
                     "name": g50.findtext("Name") or "",
+                    "controller_type": ctrl_info["controller_type"],
+                    "display_model": ctrl_info["display_model"],
+                    "ip": ctrl_info["ip"] if lan_enabled else default_ip,
+                    "has_controller": ctrl_info["has_controller"],
+                    "is_master": ctrl_info["is_master"],
                     "groups": cards,
                     "warnings": _check_warnings(cards),
                 }
             )
+        expansion_map = _compute_default_expansion_map(blocks)
 
         sid = sessions.create(
             {
                 "type": "dsbx",
                 "dsbx_data": data,
                 "blocks": blocks,
+                "expansion_map": expansion_map,
+                "lan_enabled": lan_enabled,
+                "dsbx_file_name": dsbx_file_name,
             }
         )
         return jsonify(
@@ -365,6 +410,7 @@ def api_upload_config_hub():
                 "session_id": sid,
                 "applicable_tools": ["dsbx-to-dat"],
                 "blocks": blocks,
+                "expansion_map": expansion_map,
             }
         )
 

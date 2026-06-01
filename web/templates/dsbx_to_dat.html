@@ -14,27 +14,34 @@
 
 <div id="results-section" style="display:none">
 
-  <div class="card">
+  <div class="card" id="series-selector-card" style="display:none">
+    <div class="card-title">Select Controller Series</div>
+    <p class="muted-text" style="margin-bottom:12px">This DSB file contains both 200-series and 400-series controllers. These series use different DAT formats and must be configured separately. Choose which series to configure:</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-series-200">200-Series Controllers</button>
+      <button class="btn btn-primary" id="btn-series-400">400-Series Controllers</button>
+    </div>
+    <p class="muted-text" style="margin-top:10px;font-size:0.85em">Note: A DSB file with mixed controller series may indicate a configuration issue. Please verify your DSB setup if this is unexpected.</p>
+  </div>
+
+  <div class="card" id="review-card">
     <div class="card-title">1. Review &amp; Optionally Rearrange Groups</div>
-    <div id="series-tabs" class="series-tabs" style="display:none"></div>
+    <div id="series-breadcrumb" style="display:none"></div>
     <div id="blocks-container"></div>
     <div id="no-ctrl-notices"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="download-card">
     <div class="card-title">2. Download</div>
     <div class="generate-blocks-row">
       <label>
         <input type="checkbox" id="chk-generate-blocks" checked>
-        Generate block assignments
+        Automatically generate blocks based on refrigerant systems
       </label>
-      <span class="muted-text">Uncheck for SC Plus and similar third-party integrations</span>
     </div>
     <div class="btn-row">
-      <button class="btn btn-primary" id="btn-download-multi" style="display:none">Download Multi-DAT</button>
-      <button class="btn btn-primary" id="btn-download-multi-200" style="display:none">Download 200-Series Multi-DAT</button>
-      <button class="btn btn-primary" id="btn-download-multi-400" style="display:none">Download 400-Series Multi-DAT</button>
-      <button class="btn btn-outline" id="btn-download-individual">Download Individual DATs</button>
+      <button class="btn btn-primary" id="btn-download-multi" style="display:none">Download Single DAT File</button>
+      <button class="btn btn-outline" id="btn-download-individual">Download DAT File</button>
       <a href="/contact?type=issue&tool=dsbx-to-dat" class="bug-link bug-link--inline">🐜 Report a Bug</a>
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
@@ -54,6 +61,7 @@ window.state = {
   generateBlocks: true,
   blocks: [],
   activeSeries: null,  // null = all, '200', '400'
+  hasMixed: false,
 };
 initFloatingSaveButton('dsbx-to-dat');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
@@ -73,35 +81,13 @@ function onUploaded(data) {
 
   var has200 = ctrlBlocks.some(function(b) { return _200_TYPES.has(b.controller_type); });
   var has400 = ctrlBlocks.some(function(b) { return _400_TYPES.has(b.controller_type); });
-  var hasMixed = has200 && has400;
+  state.hasMixed = has200 && has400;
 
   // Build AE-200 list for expansion dropdowns
   var ae200List = [];
   blocks.forEach(function(b, i) {
     if (b.controller_type === 'AE-200' && b.has_controller !== false) ae200List.push([i, b]);
   });
-
-  // Series tabs (only when mixed)
-  var tabsEl = document.getElementById('series-tabs');
-  if (hasMixed) {
-    tabsEl.style.display = '';
-    tabsEl.innerHTML = [
-      '<button class="series-tab active" data-series="200">200-Series Controllers</button>',
-      '<button class="series-tab" data-series="400">400-Series Controllers</button>',
-    ].join('');
-    state.activeSeries = '200';
-    tabsEl.querySelectorAll('.series-tab').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        tabsEl.querySelectorAll('.series-tab').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        state.activeSeries = btn.dataset.series;
-        updateSeriesVisibility();
-      });
-    });
-  } else {
-    tabsEl.style.display = 'none';
-    state.activeSeries = null;
-  }
 
   // Render blocks
   var container = document.getElementById('blocks-container');
@@ -160,18 +146,20 @@ function onUploaded(data) {
     noticesEl.appendChild(div);
   });
 
-  // Show/hide multi-DAT buttons based on session composition
-  var hasCtrlCount = ctrlBlocks.length;
-  var has200CtrlCount = ctrlBlocks.filter(function(b) { return _200_TYPES.has(b.controller_type); }).length;
-  var has400CtrlCount = ctrlBlocks.filter(function(b) { return _400_TYPES.has(b.controller_type); }).length;
-
-  document.getElementById('btn-download-multi').style.display = (!hasMixed && hasCtrlCount > 1) ? '' : 'none';
-  document.getElementById('btn-download-multi-200').style.display = (hasMixed && has200CtrlCount > 1) ? '' : 'none';
-  document.getElementById('btn-download-multi-400').style.display = (hasMixed && has400CtrlCount > 1) ? '' : 'none';
-
-  updateSeriesVisibility();
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
+
+  if (state.hasMixed) {
+    // Force series selection before showing blocks
+    document.getElementById('series-selector-card').style.display = '';
+    document.getElementById('review-card').style.display = 'none';
+    document.getElementById('download-card').style.display = 'none';
+  } else {
+    state.activeSeries = null;
+    document.getElementById('series-selector-card').style.display = 'none';
+    updateSeriesVisibility();
+    updateDownloadButtons();
+  }
 
   // Wire expansion UI events
   document.querySelectorAll('.expansion-row').forEach(function(row) {
@@ -195,11 +183,55 @@ function onUploaded(data) {
   });
 }
 
+function applySeriesSelection(series) {
+  state.activeSeries = series;
+  document.getElementById('series-selector-card').style.display = 'none';
+  document.getElementById('review-card').style.display = '';
+  document.getElementById('download-card').style.display = '';
+
+  var label = series === '200' ? '200-Series Controllers' : '400-Series Controllers';
+  var breadcrumb = document.getElementById('series-breadcrumb');
+  breadcrumb.style.display = '';
+  breadcrumb.innerHTML = '<div class="series-breadcrumb-row">' +
+    '<span class="series-breadcrumb-label">' + label + '</span>' +
+    '<a href="#" class="series-breadcrumb-change" id="link-change-series">Change series</a>' +
+  '</div>';
+  document.getElementById('link-change-series').addEventListener('click', function(e) {
+    e.preventDefault();
+    state.activeSeries = null;
+    document.getElementById('review-card').style.display = 'none';
+    document.getElementById('download-card').style.display = 'none';
+    breadcrumb.style.display = 'none';
+    document.getElementById('series-selector-card').style.display = '';
+  });
+
+  updateSeriesVisibility();
+  updateDownloadButtons();
+}
+
 function updateSeriesVisibility() {
   if (!state.activeSeries) return;
   document.querySelectorAll('#blocks-container .block-section').forEach(function(el) {
     el.style.display = (el.dataset.series === state.activeSeries) ? '' : 'none';
   });
+}
+
+function updateDownloadButtons() {
+  var blocks = state.blocks || [];
+  var ctrlBlocks = blocks.filter(function(b) { return b.has_controller !== false; });
+  var visibleCtrlBlocks;
+  if (state.activeSeries === '200') {
+    visibleCtrlBlocks = ctrlBlocks.filter(function(b) { return _200_TYPES.has(b.controller_type); });
+  } else if (state.activeSeries === '400') {
+    visibleCtrlBlocks = ctrlBlocks.filter(function(b) { return _400_TYPES.has(b.controller_type); });
+  } else {
+    visibleCtrlBlocks = ctrlBlocks;
+  }
+  var count = visibleCtrlBlocks.length;
+  var btnMulti = document.getElementById('btn-download-multi');
+  var btnIndividual = document.getElementById('btn-download-individual');
+  btnMulti.style.display = (count > 1) ? '' : 'none';
+  btnIndividual.textContent = (count === 1) ? 'Download DAT File' : 'Download One File per Controller';
 }
 
 function saveExpansionMap() {
@@ -263,6 +295,13 @@ document.getElementById('chk-generate-blocks').addEventListener('change', functi
   state.generateBlocks = this.checked;
 });
 
+document.getElementById('btn-series-200').addEventListener('click', function() {
+  applySeriesSelection('200');
+});
+document.getElementById('btn-series-400').addEventListener('click', function() {
+  applySeriesSelection('400');
+});
+
 async function downloadDat(endpoint, extraParams) {
   if (!state.sessionId) return;
   var errEl = document.getElementById('download-error');
@@ -282,13 +321,8 @@ async function downloadDat(endpoint, extraParams) {
 }
 
 document.getElementById('btn-download-multi').addEventListener('click', function() {
-  downloadDat('/api/download/dsbx-to-multi-dat/');
-});
-document.getElementById('btn-download-multi-200').addEventListener('click', function() {
-  downloadDat('/api/download/dsbx-to-multi-dat/', 'series=200');
-});
-document.getElementById('btn-download-multi-400').addEventListener('click', function() {
-  downloadDat('/api/download/dsbx-to-multi-dat/', 'series=400');
+  var seriesParam = state.activeSeries ? 'series=' + state.activeSeries : '';
+  downloadDat('/api/download/dsbx-to-multi-dat/', seriesParam);
 });
 document.getElementById('btn-download-individual').addEventListener('click', function() {
   downloadDat('/api/download/dsbx-to-dat/');

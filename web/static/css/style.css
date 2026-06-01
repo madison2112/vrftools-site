@@ -592,6 +592,27 @@ footer a:hover { text-decoration: underline; }
 .series-tab.active { color: var(--red); border-bottom-color: var(--red); }
 .series-tab:hover:not(.active) { color: var(--dark); }
 
+/* ── Series breadcrumb (shown after series selection in mixed sessions) ── */
+.series-breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.series-breadcrumb-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--dark);
+}
+.series-breadcrumb-change {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.series-breadcrumb-change:hover { color: var(--red); text-decoration: underline; }
+
 /* ── Inline group tag editing ── */
 .group-tag {
   position: relative;

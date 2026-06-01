@@ -400,7 +400,7 @@ function preloadSession(sid, onSuccess) {
     .then(r => r.json())
     .then(data => {
       if (data.blocks) {
-        onSuccess({ session_id: sid, blocks: data.blocks, multi: data.blocks.length > 1 });
+        onSuccess({ session_id: sid, ...data });
       }
     })
     .catch(() => {});
