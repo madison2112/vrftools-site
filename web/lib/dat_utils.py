@@ -3,8 +3,10 @@ DAT file operations: parse, convert, split, rearrange.
 All functions accept/return bytes for the web context.
 """
 
+import copy
 import io
 import os
+import re
 import xml.etree.ElementTree as ET
 
 import pyzipper
@@ -58,6 +60,38 @@ FAMILY_MAP = {
 }
 
 
+# Maps Model attribute prefixes (uppercased) to canonical controller types.
+# AE-50 and EW-50 are the same physical device (regional rebrand); both map to EW-50.
+MODEL_PREFIX_MAP = [
+    ("AE-200",   "AE-200"),
+    ("AE200",    "AE-200"),
+    ("AE-C400",  "AE-C400A"),
+    ("AE-C400A", "AE-C400A"),
+    ("AE-C50",   "EW-C50"),
+    ("AEC50",    "EW-C50"),
+    ("EW-C50",   "EW-C50"),
+    ("EWC50",    "EW-C50"),
+    ("EW-50",    "EW-50"),
+    ("EW50",     "EW-50"),
+    ("AE-50",    "EW-50"),
+    ("AE50",     "EW-50"),
+]
+
+
+def _model_to_ctrl_type(model: str, has_network: bool, has_img: bool) -> str:
+    """Resolve controller type from Model attribute, falling back to ZIP structure flags."""
+    m = model.upper()
+    for prefix, ctrl_type in MODEL_PREFIX_MAP:
+        if m.startswith(prefix):
+            return ctrl_type
+    # Fall back to file-level structure detection
+    if has_network:
+        return "EW-C50" if m.startswith("EW") else "AE-C400A"
+    if has_img:
+        return "EW-50"
+    return "AE-200"
+
+
 def safe_filename(name: str) -> str:
     for ch in r'\/:*?"<>|':
         name = name.replace(ch, "_")
@@ -83,24 +117,26 @@ def detect_controller_type(dat_bytes: bytes) -> str:
     root = ET.fromstring(xml_bytes)
     sd = root.find(".//SystemData")
     model = (sd.get("Model", "") if sd is not None else "").upper()
-
-    if has_network:
-        return "EW-C50" if model.startswith("EW") else "AE-C400A"
-    if has_img:
-        return "EW-50"
-    return "AE-200"
+    return _model_to_ctrl_type(model, has_network, has_img)
 
 
 def parse_dat_controllers(dat_bytes: bytes) -> list:
     """
     Extract all controller XML entries from a (possibly multi-controller) DAT.
-    Returns list of {"entry": str, "name": str, "controller_type": str, "xml_bytes": bytes}
+    Returns list of {"entry": str, "name": str, "controller_type": str, "ip": str, "xml_bytes": bytes}
+
+    Multi-controller DATs use entries like "1", "1-1", "1-2", "2" — the hyphenated
+    entries are EW-50/AE-50 expansion controllers subordinate to their main controller.
+    Entries are returned sorted so expansions immediately follow their parent (1, 1-1, 1-2, 2).
     """
     with _open_dat(dat_bytes) as z:
         names = z.namelist()
         has_network = "NetworkSetting.xml" in names
         has_img = any(n.endswith("/") for n in names)
-        xml_entries = [e for e in names if e.isdigit()]
+        xml_entries = sorted(
+            [e for e in names if re.match(r"^\d+(-\d+)*$", e)],
+            key=lambda s: tuple(int(x) for x in s.split("-")),
+        )
 
         controllers = []
         for entry in xml_entries:
@@ -110,21 +146,16 @@ def parse_dat_controllers(dat_bytes: bytes) -> list:
                 sd = root.find(".//SystemData")
                 name = sd.get("Name", entry) if sd is not None else entry
                 model = (sd.get("Model", "") if sd is not None else "").upper()
+                ip = sd.get("IPAdrsLan", "") if sd is not None else ""
             except ET.ParseError:
                 continue
-
-            if has_network:
-                ctrl_type = "EW-C50" if model.startswith("EW") else "AE-C400A"
-            elif has_img:
-                ctrl_type = "EW-50"
-            else:
-                ctrl_type = "AE-200"
 
             controllers.append(
                 {
                     "entry": entry,
                     "name": name,
-                    "controller_type": ctrl_type,
+                    "controller_type": _model_to_ctrl_type(model, has_network, has_img),
+                    "ip": ip,
                     "xml_bytes": xml_bytes,
                 }
             )
@@ -178,13 +209,13 @@ def _check_warnings(cards: list) -> dict:
         all(
             c["slot"] == int(c["mnet_addresses"][0])
             for c in cards
-            if c["mnet_addresses"] and c["unit_types"] and c["unit_types"][0] in ("IC", "AIC")
+            if c["mnet_addresses"] and c["unit_types"] and c["unit_types"][0] in ("IC", "AIC", "??")
         )
         if cards
         else False
     )
 
-    ic_tags = [c["tag"] for c in cards if c["unit_types"] and c["unit_types"][0] in ("IC", "AIC")]
+    ic_tags = [c["tag"] for c in cards if c["unit_types"] and c["unit_types"][0] in ("IC", "AIC", "??")]
     unsorted = ic_tags != sorted(ic_tags) if len(ic_tags) > 1 else False
 
     return {"sequential_mnet": sequential, "unsorted_tags": unsorted}
@@ -436,12 +467,10 @@ def sort_groups_by_tag(cards: list) -> list:
     sort (IDU-1, IDU-2, IDU-10, IDU-11 — not IDU-1, IDU-10, IDU-11, IDU-2).
     LC groups follow, preserving internal order within each category.
     """
-    import re
-
     def _natural_key(s):
         return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", s)]
 
-    ic_slots = [c["slot"] for c in cards if c["unit_types"] and c["unit_types"][0] in ("IC", "AIC")]
+    ic_slots = [c["slot"] for c in cards if c["unit_types"] and c["unit_types"][0] in ("IC", "AIC", "??")]
     lc_slots = [c["slot"] for c in cards if c["unit_types"] and c["unit_types"][0] == "LC"]
     other = [c["slot"] for c in cards if c["slot"] not in ic_slots and c["slot"] not in lc_slots]
 
@@ -450,6 +479,147 @@ def sort_groups_by_tag(cards: list) -> list:
     )
 
     return ic_sorted + other + lc_slots
+
+
+_STRIP_FOR_EXPANSION = {"Web", "EneBlock", "Apportion"}
+
+
+def build_multi_dat_200(controllers: list) -> bytes:
+    """
+    Package 200-series controllers into a single multi-controller .dat file.
+
+    controllers: list of dicts with:
+      entry     — ZIP entry name: "1", "1-1", "2", etc.
+      xml_bytes — XML with user edits already applied
+      ip        — IP address string (written to SystemData/@IPAdrsLan)
+
+    Main entries (no "-"): ControlAeList AeNo updated to match the assigned
+    entry number; Web/EneBlock/Apportion kept intact.
+    Expansion entries ("-" present): Web, EneBlock, and Apportion stripped.
+    IMG/ and per-entry IMG/<entry>/ directories are added automatically.
+    """
+    entries = []
+
+    for ctrl in controllers:
+        entry = ctrl["entry"]
+        xml = ctrl["xml_bytes"]
+        ip = ctrl.get("ip", "")
+        is_expansion = "-" in entry
+        ae_no = int(entry.split("-")[0])
+
+        try:
+            root = ET.fromstring(xml)
+            db = root.find(".//DatabaseManager")
+            if db is not None:
+                sd = db.find("SystemData")
+                if sd is not None and ip:
+                    sd.set("IPAdrsLan", ip)
+
+                if is_expansion:
+                    for child in list(db):
+                        if child.tag in _STRIP_FOR_EXPANSION:
+                            db.remove(child)
+                else:
+                    # Update ControlAeList: self-reference only (v8.03 format)
+                    for web_elem in db.findall("Web"):
+                        cae_list = web_elem.find("ControlAeList")
+                        if cae_list is not None:
+                            for rec in cae_list.findall("ControlAeRecord"):
+                                rec.set("AeNo", str(ae_no))
+
+            buf = io.BytesIO()
+            ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
+            xml = buf.getvalue()
+        except ET.ParseError:
+            pass
+
+        entries.append((entry, xml, True))
+
+    # Add IMG/ root and one subdirectory per controller entry
+    entries.append(("IMG/", None, False))
+    for c in sorted(controllers, key=lambda c: tuple(int(x) for x in c["entry"].split("-"))):
+        entries.append((f"IMG/{c['entry']}/", None, False))
+
+    return build_dat_bytes(entries)
+
+
+def build_multi_dat_400(controllers: list) -> bytes:
+    """
+    Package 400-series controllers into a single multi-controller .dat file.
+
+    controllers: list of dicts with:
+      entry     — ZIP entry name: "1", "2", ...
+      xml_bytes — XML with user edits already applied
+      ip        — IP address string
+      is_master — bool (BACnet master → TotalMaster="ON" in ScSystem)
+
+    ScSystem is updated in every entry with the full network topology.
+    NetworkSetting.xml is generated with one <Item> per controller.
+    """
+    entries = []
+
+    for ctrl in controllers:
+        entry = ctrl["entry"]
+        xml = ctrl["xml_bytes"]
+        ip = ctrl.get("ip", "")
+
+        try:
+            root = ET.fromstring(xml)
+            db = root.find(".//DatabaseManager")
+            if db is not None:
+                sd = db.find("SystemData")
+                if sd is not None and ip:
+                    sd.set("IPAdrsLan", ip)
+
+                new_sc = ET.Element("ScSystem")
+                sc_list = ET.SubElement(new_sc, "ScSystemDataList")
+                for other in controllers:
+                    is_self = other["entry"] == entry
+                    ET.SubElement(
+                        sc_list, "ScSystemDataRecord",
+                        ScNo=other["entry"],
+                        HostName="" if is_self else (other.get("ip") or ""),
+                        TotalMaster="ON" if other.get("is_master") else "OFF",
+                        Apportion="OFF",
+                    )
+
+                old_sc = db.find("ScSystem")
+                if old_sc is not None:
+                    idx = list(db).index(old_sc)
+                    db.remove(old_sc)
+                    db.insert(idx, new_sc)
+                else:
+                    db.append(new_sc)
+
+            buf = io.BytesIO()
+            ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
+            xml = buf.getvalue()
+        except ET.ParseError:
+            pass
+
+        entries.append((entry, xml, True))
+
+    entries.append(("NetworkSetting.xml", _build_400_network_setting(len(controllers)), True))
+    return build_dat_bytes(entries)
+
+
+def _build_400_network_setting(count: int) -> bytes:
+    """Clone the single-controller NetworkSetting template to produce N items."""
+    net_template_path = os.path.join(TEMPLATES_DIR, "NetworkSetting-AE-C400A.xml")
+    tree = ET.parse(net_template_path)
+    root = tree.getroot()
+    items_el = root.find("Items")
+    base_item = items_el.find("Item")
+    items_el.clear()
+    for i in range(count):
+        item = copy.deepcopy(base_item)
+        cc_no_el = item.find("CcNo")
+        if cc_no_el is not None:
+            cc_no_el.text = str(i + 1)
+        items_el.append(item)
+    buf = io.BytesIO()
+    tree.write(buf, encoding="utf-8", xml_declaration=True)
+    return buf.getvalue()
 
 
 def apply_group_names(xml_bytes: bytes, tag_map: dict) -> bytes:

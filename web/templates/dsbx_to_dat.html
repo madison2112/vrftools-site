@@ -9,22 +9,32 @@
 
 <div class="instruct-card">
   <div class="instruct-title">How to Use</div>
-  <p>Upload a <strong>.dsbx</strong> file on the <a href="/config-tools">Central Controller Config Tools</a> page, then click <strong>DSBX to DAT</strong> to open it here. Groups are auto-populated from the DSB data. You can <strong>double-click any group tag name</strong> to edit it inline, and <strong>click the controller name</strong> above the grid to rename it. Both are saved to the .dat and JSON exports. Drag cards to reorder groups before downloading.</p>
+  <p>Upload a <strong>.dsbx</strong> file on the <a href="/config-tools">Central Controller Config Tools</a> page, then click <strong>DSBX to DAT</strong> to open it here. Groups are auto-populated from the DSB data. You can <strong>double-click any group tag name</strong> to edit it inline, and <strong>click the controller name</strong> above the grid to rename it. Edit IP addresses as needed. Drag cards to reorder groups before downloading.</p>
 </div>
 
 <div id="results-section" style="display:none">
 
   <div class="card">
     <div class="card-title">1. Review &amp; Optionally Rearrange Groups</div>
+    <div id="series-tabs" class="series-tabs" style="display:none"></div>
     <div id="blocks-container"></div>
+    <div id="no-ctrl-notices"></div>
   </div>
 
   <div class="card">
     <div class="card-title">2. Download</div>
-    <p class="muted-text" style="margin-bottom:16px">Choose the target tool version. If your project has multiple controller blocks, a ZIP file will be returned.</p>
+    <div class="generate-blocks-row">
+      <label>
+        <input type="checkbox" id="chk-generate-blocks" checked>
+        Generate block assignments
+      </label>
+      <span class="muted-text">Uncheck for SC Plus and similar third-party integrations</span>
+    </div>
     <div class="btn-row">
-      <button class="btn btn-primary" id="btn-download-c400">Download for AE-C400 Tool</button>
-      <button class="btn btn-outline" id="btn-download-ae200">Download for AE-200 Tool</button>
+      <button class="btn btn-primary" id="btn-download-multi" style="display:none">Download Multi-DAT</button>
+      <button class="btn btn-primary" id="btn-download-multi-200" style="display:none">Download 200-Series Multi-DAT</button>
+      <button class="btn btn-primary" id="btn-download-multi-400" style="display:none">Download 400-Series Multi-DAT</button>
+      <button class="btn btn-outline" id="btn-download-individual">Download Individual DATs</button>
       <a href="/contact?type=issue&tool=dsbx-to-dat" class="bug-link bug-link--inline">🐜 Report a Bug</a>
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
@@ -36,42 +46,253 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-window.state = { sessionId: null };
+window.state = {
+  sessionId: null,
+  sessionType: 'dsbx',
+  expansionMap: {},
+  multiDatValid: true,
+  generateBlocks: true,
+  blocks: [],
+  activeSeries: null,  // null = all, '200', '400'
+};
 initFloatingSaveButton('dsbx-to-dat');
 const PRELOADED_SESSION = {{ preloaded_session | tojson }};
 
+var _200_TYPES = new Set(['AE-200', 'EW-50']);
+var _400_TYPES = new Set(['AE-C400A', 'EW-C50']);
+var _EW50_TYPES = new Set(['EW-50']);
+
 function onUploaded(data) {
   state.sessionId = data.session_id;
-  const container = document.getElementById('blocks-container');
-  container.innerHTML = '';
+  state.blocks = data.blocks || [];
+  state.expansionMap = data.expansion_map || {};
 
-  data.blocks.forEach((block, idx) => {
-    const div = document.createElement('div');
-    div.className = 'block-section';
-    div.dataset.blockIdx = idx;
-    div.innerHTML = `
-      <div class="block-header">
-        <input type="text" class="ctrl-name-input" value="${escHtml(block.name)}" data-idx="${idx}" title="Edit controller name — saved to .dat and JSON exports">
-        <span class="muted-text">${block.groups.length} groups</span>
-        <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>
-      </div>
-      ${renderGroupGrid(block.groups, `group-grid-${idx}`, idx)}`;
-    container.appendChild(div);
+  var blocks = state.blocks;
+  var ctrlBlocks = blocks.filter(function(b) { return b.has_controller !== false; });
+  var noCtrlBlocks = blocks.filter(function(b) { return b.has_controller === false; });
 
-    initSlotGrid(`group-grid-${idx}`, idx);
+  var has200 = ctrlBlocks.some(function(b) { return _200_TYPES.has(b.controller_type); });
+  var has400 = ctrlBlocks.some(function(b) { return _400_TYPES.has(b.controller_type); });
+  var hasMixed = has200 && has400;
+
+  // Build AE-200 list for expansion dropdowns
+  var ae200List = [];
+  blocks.forEach(function(b, i) {
+    if (b.controller_type === 'AE-200' && b.has_controller !== false) ae200List.push([i, b]);
   });
 
+  // Series tabs (only when mixed)
+  var tabsEl = document.getElementById('series-tabs');
+  if (hasMixed) {
+    tabsEl.style.display = '';
+    tabsEl.innerHTML = [
+      '<button class="series-tab active" data-series="200">200-Series Controllers</button>',
+      '<button class="series-tab" data-series="400">400-Series Controllers</button>',
+    ].join('');
+    state.activeSeries = '200';
+    tabsEl.querySelectorAll('.series-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        tabsEl.querySelectorAll('.series-tab').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        state.activeSeries = btn.dataset.series;
+        updateSeriesVisibility();
+      });
+    });
+  } else {
+    tabsEl.style.display = 'none';
+    state.activeSeries = null;
+  }
+
+  // Render blocks
+  var container = document.getElementById('blocks-container');
+  container.innerHTML = '';
+
+  blocks.forEach(function(block, idx) {
+    if (block.has_controller === false) return;  // rendered separately as notices
+
+    var series = _200_TYPES.has(block.controller_type) ? '200' : (_400_TYPES.has(block.controller_type) ? '400' : '');
+    var isEw50 = _EW50_TYPES.has(block.controller_type);
+    var showExpansion = isEw50 && ae200List.length > 0;
+
+    var expansionHtml = '';
+    if (showExpansion) {
+      var parentIdx = state.expansionMap[String(idx)];
+      var isStandalone = (parentIdx === null || parentIdx === undefined);
+      var opts = ae200List.map(function(pair) {
+        var pIdx = pair[0], pBlock = pair[1];
+        return '<option value="' + pIdx + '"' + (String(pIdx) === String(parentIdx) ? ' selected' : '') + '>' + escHtml(pBlock.name) + '</option>';
+      }).join('');
+      expansionHtml = '<div class="expansion-row" data-idx="' + idx + '">' +
+        '<label class="expansion-opt"><input type="radio" name="exp-' + idx + '" value="standalone"' + (isStandalone ? ' checked' : '') + '> Standalone</label>' +
+        '<label class="expansion-opt"><input type="radio" name="exp-' + idx + '" value="expansion"' + (!isStandalone ? ' checked' : '') + '> Expansion of:</label>' +
+        '<select class="expansion-parent-select" data-idx="' + idx + '"' + (isStandalone ? ' disabled' : '') + '>' + opts + '</select>' +
+        '<span class="expansion-limit-msg" style="display:none"></span>' +
+      '</div>';
+    }
+
+    var div = document.createElement('div');
+    div.className = 'block-section';
+    div.dataset.blockIdx = idx;
+    div.dataset.series = series;
+    div.innerHTML =
+      '<div class="block-header">' +
+        '<input type="text" class="ctrl-name-input" value="' + escHtml(block.name) + '" data-idx="' + idx + '" title="Edit controller name">' +
+        '<input type="text" class="ctrl-ip-input" value="' + escHtml(block.ip || '') + '" data-idx="' + idx + '" placeholder="192.168.1.X" title="Edit IP address">' +
+        '<span class="badge">' + escHtml(block.controller_type || block.display_model || '') + '</span>' +
+        '<span class="muted-text">' + block.groups.length + ' groups</span>' +
+        '<button class="btn btn-sm btn-outline sort-btn" data-idx="' + idx + '">Sort by Tag Name</button>' +
+      '</div>' +
+      expansionHtml +
+      renderGroupGrid(block.groups, 'group-grid-' + idx, idx);
+    container.appendChild(div);
+
+    initSlotGrid('group-grid-' + idx, idx);
+  });
+
+  // No-controller notices
+  var noticesEl = document.getElementById('no-ctrl-notices');
+  noticesEl.innerHTML = '';
+  noCtrlBlocks.forEach(function(block) {
+    var div = document.createElement('div');
+    div.className = 'no-ctrl-notice';
+    div.innerHTML = '<strong>&#9888; No central controller selected for &ldquo;' + escHtml(block.name || '(unnamed)') + '&rdquo;</strong>' +
+      '<br><span>To include this block, assign a central controller in DSB and re-upload.</span>';
+    noticesEl.appendChild(div);
+  });
+
+  // Show/hide multi-DAT buttons based on session composition
+  var hasCtrlCount = ctrlBlocks.length;
+  var has200CtrlCount = ctrlBlocks.filter(function(b) { return _200_TYPES.has(b.controller_type); }).length;
+  var has400CtrlCount = ctrlBlocks.filter(function(b) { return _400_TYPES.has(b.controller_type); }).length;
+
+  document.getElementById('btn-download-multi').style.display = (!hasMixed && hasCtrlCount > 1) ? '' : 'none';
+  document.getElementById('btn-download-multi-200').style.display = (hasMixed && has200CtrlCount > 1) ? '' : 'none';
+  document.getElementById('btn-download-multi-400').style.display = (hasMixed && has400CtrlCount > 1) ? '' : 'none';
+
+  updateSeriesVisibility();
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
+
+  // Wire expansion UI events
+  document.querySelectorAll('.expansion-row').forEach(function(row) {
+    var idx = row.dataset.idx;
+    var radios = row.querySelectorAll('input[type=radio]');
+    var select = row.querySelector('.expansion-parent-select');
+
+    radios.forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        if (radio.value === 'standalone') {
+          select.disabled = true;
+        } else {
+          select.disabled = false;
+        }
+        saveExpansionMap();
+      });
+    });
+    if (select) {
+      select.addEventListener('change', saveExpansionMap);
+    }
+  });
 }
 
-document.getElementById('btn-download-c400').addEventListener('click', () => downloadDat('AE-C400A'));
-document.getElementById('btn-download-ae200').addEventListener('click', () => downloadDat('AE-200'));
+function updateSeriesVisibility() {
+  if (!state.activeSeries) return;
+  document.querySelectorAll('#blocks-container .block-section').forEach(function(el) {
+    el.style.display = (el.dataset.series === state.activeSeries) ? '' : 'none';
+  });
+}
 
-function downloadDat(version) {
+function saveExpansionMap() {
+  var newMap = {};
+  document.querySelectorAll('.expansion-row').forEach(function(row) {
+    var idx = row.dataset.idx;
+    var standaloneChecked = row.querySelector('input[value="standalone"]').checked;
+    if (standaloneChecked) {
+      newMap[idx] = null;
+    } else {
+      var select = row.querySelector('.expansion-parent-select');
+      newMap[idx] = select ? select.value : null;
+    }
+  });
+
+  fetch('/api/session/' + state.sessionId + '/expansion-map', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+    body: JSON.stringify({ expansion_map: newMap }),
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(result) {
+    if (result.ok) {
+      state.expansionMap = newMap;
+      state.multiDatValid = true;
+      clearExpansionErrors();
+      document.getElementById('btn-download-multi').disabled = false;
+    } else if (result.data.error === 'over_limit') {
+      state.multiDatValid = false;
+      showExpansionErrors(result.data.over_limit || []);
+      document.getElementById('btn-download-multi').disabled = true;
+    }
+  })
+  .catch(function() {});
+}
+
+function clearExpansionErrors() {
+  document.querySelectorAll('.expansion-limit-msg').forEach(function(el) {
+    el.style.display = 'none';
+    el.textContent = '';
+  });
+  document.querySelectorAll('.expansion-row').forEach(function(row) {
+    row.style.outline = '';
+  });
+}
+
+function showExpansionErrors(overLimitParents) {
+  clearExpansionErrors();
+  var overSet = new Set(overLimitParents.map(String));
+  document.querySelectorAll('.expansion-row').forEach(function(row) {
+    var select = row.querySelector('.expansion-parent-select');
+    if (!select) return;
+    if (overSet.has(String(select.value))) {
+      var msg = row.querySelector('.expansion-limit-msg');
+      if (msg) { msg.textContent = 'Max 3 expansions per AE-200'; msg.style.display = ''; }
+    }
+  });
+}
+
+document.getElementById('chk-generate-blocks').addEventListener('change', function() {
+  state.generateBlocks = this.checked;
+});
+
+async function downloadDat(endpoint, extraParams) {
   if (!state.sessionId) return;
-  window.location.href = `/api/download/dsbx-to-dat/${state.sessionId}?version=${version}`;
+  var errEl = document.getElementById('download-error');
+  errEl.style.display = 'none';
+
+  var params = 'generate_blocks=' + (document.getElementById('chk-generate-blocks').checked ? '1' : '0');
+  if (extraParams) params += '&' + extraParams;
+  var url = endpoint + state.sessionId + '?' + params;
+
+  // Flush pending grid orders before downloading
+  var saves = Object.entries(state.gridCols || {}).map(function(entry) {
+    return _persistSlotOrder(parseInt(entry[0]), entry[1].col1, entry[1].col2);
+  });
+  await Promise.all(saves);
+
+  window.location.href = url;
 }
+
+document.getElementById('btn-download-multi').addEventListener('click', function() {
+  downloadDat('/api/download/dsbx-to-multi-dat/');
+});
+document.getElementById('btn-download-multi-200').addEventListener('click', function() {
+  downloadDat('/api/download/dsbx-to-multi-dat/', 'series=200');
+});
+document.getElementById('btn-download-multi-400').addEventListener('click', function() {
+  downloadDat('/api/download/dsbx-to-multi-dat/', 'series=400');
+});
+document.getElementById('btn-download-individual').addEventListener('click', function() {
+  downloadDat('/api/download/dsbx-to-dat/');
+});
 
 if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);
 </script>

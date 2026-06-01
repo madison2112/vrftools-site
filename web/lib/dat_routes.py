@@ -127,16 +127,20 @@ def _gather_export_state(s: dict) -> list:
     for i, ctrl in enumerate(controllers):
         xml = ctrl["xml_bytes"]
 
-        # 1. Apply controller name
+        # 1. Apply controller name and IP address
         name = controller_names.get(str(i)) or (
             blocks[i].get("name", "") if i < len(blocks) else ""
         )
-        if name:
+        ip = blocks[i].get("ip", "") if i < len(blocks) else ""
+        if name or ip:
             try:
                 root = ET.fromstring(xml)
                 sd = root.find(".//SystemData")
                 if sd is not None:
-                    sd.set("Name", name)
+                    if name:
+                        sd.set("Name", name)
+                    if ip:
+                        sd.set("IPAdrsLan", ip)
                 buf = io.BytesIO()
                 ET.ElementTree(root).write(buf, encoding="utf-8", xml_declaration=True)
                 xml = buf.getvalue()
@@ -260,6 +264,7 @@ def api_upload_dat():
             {
                 "name": ctrl["name"],
                 "controller_type": ctrl["controller_type"],
+                "ip": ctrl.get("ip", ""),
                 "groups": cards,
                 "warnings": _check_warnings(cards),
             }
@@ -414,6 +419,26 @@ def api_update_controller_name(sid):
     sessions.update(sid, {"blocks": blocks, "controller_names": names})
 
     return jsonify({"ok": True, "name": new_name})
+
+
+@dat_bp.route("/api/session/<sid>/controller-ip", methods=["POST"])
+def api_update_controller_ip(sid):
+    s = require_session(sid)
+
+    body = request.get_json(force=True) or {}
+    block_idx = body.get("block_index", 0)
+    new_ip = str(body.get("ip", "")).strip()
+
+    if not new_ip:
+        abort(400, "IP address cannot be empty.")
+
+    blocks = s.get("blocks", [])
+    if block_idx >= len(blocks):
+        abort(400, "Invalid block index.")
+
+    blocks[block_idx]["ip"] = new_ip
+    sessions.update(sid, {"blocks": blocks})
+    return jsonify({"ok": True, "ip": new_ip})
 
 
 @dat_bp.route("/api/session/<sid>/group-name", methods=["POST"])

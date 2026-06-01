@@ -117,8 +117,61 @@ def get_groupof50_list(dsb_root: ET.Element):
     return project.findall("Groupof50")
 
 
-def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
-    """Build the <ControlGroup> XML element from a Groupof50 DSB block."""
+def get_dsbx_project_lan(dsb_root: ET.Element) -> bool:
+    """Return True if LanConnection is enabled at the project level."""
+    project = dsb_root.find("Project")
+    if project is None:
+        return False
+    val = project.findtext("LanConnection") or ""
+    return val.strip().lower() == "true"
+
+
+def get_groupof50_controller_info(groupof50: ET.Element, ip_override: str = "") -> dict:
+    """
+    Extract controller metadata from a Groupof50 element.
+
+    Returns:
+      {
+        "has_controller": bool,      # False when no SystemRemoteController element
+        "controller_type": str,      # canonical type from MODEL_PREFIX_MAP
+        "display_model": str,        # raw ModelNumber as stored in DSB
+        "ip": str,                   # IPAddress from DSB (or ip_override)
+        "is_master": bool,           # IsBacnetMaster == "true"
+      }
+    """
+    from .dat_utils import _model_to_ctrl_type
+
+    src = groupof50.find("SystemRemoteController")
+    if src is None:
+        return {
+            "has_controller": False,
+            "controller_type": "",
+            "display_model": "",
+            "ip": ip_override,
+            "is_master": False,
+        }
+
+    model = _text(src, "ModelNumber")
+    ip = ip_override if ip_override else (_text(src, "IPAddress") or "")
+    is_master = (_text(src, "IsBacnetMaster") or "false").lower() == "true"
+    ctrl_type = _model_to_ctrl_type(model.upper(), False, False)
+
+    return {
+        "has_controller": True,
+        "controller_type": ctrl_type,
+        "display_model": model,
+        "ip": ip,
+        "is_master": is_master,
+    }
+
+
+def build_control_group(groupof50: ET.Element, mapping: dict, generate_blocks: bool = True) -> ET.Element:
+    """Build the <ControlGroup> XML element from a Groupof50 DSB block.
+
+    generate_blocks: when False, AreaGroupList and AreaList are emitted empty.
+    Some third-party integrations (e.g. SC Plus) misbehave when block assignments
+    are present; passing False lets callers suppress them.
+    """
     icon_rules = mapping["icon_rules"]
     default_icon = mapping["default_icon"]
 
@@ -220,19 +273,19 @@ def build_control_group(groupof50: ET.Element, mapping: dict) -> ET.Element:
     ET.SubElement(cg, "InterlockList")
 
     agl = ET.SubElement(cg, "AreaGroupList")
-    max_area = len(valid_systems) + (1 if any(gt == "Lossnay" for _, gt, _, _ in groups) else 0)
-    for area_num in range(1, max_area + 1):
-        for gnum, gtype, tid, iug in groups:
-            if group_area.get(gnum) == area_num:
-                ET.SubElement(
-                    agl, "AreaGroupRecord", Area=str(area_num), Group=str(gnum), ModelID="MNET"
-                )
-
     al = ET.SubElement(cg, "AreaList")
-    for i, sys_elem in enumerate(valid_systems, start=1):
-        ET.SubElement(al, "AreaRecord", Area=str(i), AreaName=_text(sys_elem, "SystemName"))
-    if any(gt == "Lossnay" for _, gt, _, _ in groups):
-        ET.SubElement(al, "AreaRecord", Area=str(len(valid_systems) + 1), AreaName="ERVs")
+    if generate_blocks:
+        max_area = len(valid_systems) + (1 if any(gt == "Lossnay" for _, gt, _, _ in groups) else 0)
+        for area_num in range(1, max_area + 1):
+            for gnum, gtype, tid, iug in groups:
+                if group_area.get(gnum) == area_num:
+                    ET.SubElement(
+                        agl, "AreaGroupRecord", Area=str(area_num), Group=str(gnum), ModelID="MNET"
+                    )
+        for i, sys_elem in enumerate(valid_systems, start=1):
+            ET.SubElement(al, "AreaRecord", Area=str(i), AreaName=_text(sys_elem, "SystemName"))
+        if any(gt == "Lossnay" for _, gt, _, _ in groups):
+            ET.SubElement(al, "AreaRecord", Area=str(len(valid_systems) + 1), AreaName="ERVs")
 
     for tag in ("OcNameList", "McNameList", "ModbusList"):
         ET.SubElement(cg, tag)
@@ -295,12 +348,14 @@ def extract_group_cards(groupof50: ET.Element, mapping: dict) -> list:
     return cards
 
 
-def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list:
+def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A", generate_blocks: bool = True) -> list:
     """
     Convert a .dsbx to one or more .dat files.
     target_family: "AE-C400A" (default) or "AE-200"
+    generate_blocks: when False, AreaGroupList/AreaList are emitted empty (C1 block toggle).
 
     Returns list of {"name": str, "controller": str, "data": bytes}
+    Skips Groupof50 entries with no SystemRemoteController (no-controller edge case).
     """
     mapping = load_mapping()
     dsb_root = parse_dsbx_bytes(dsbx_data)
@@ -309,8 +364,14 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
 
     results = []
     for groupof50 in g50_list:
+        # Skip blocks with no central controller selected
+        if groupof50.find("SystemRemoteController") is None:
+            continue
+
         src_model = _text(groupof50.find("SystemRemoteController"), "ModelNumber") or ""
-        controller = family["EW"] if src_model.upper().startswith("EW") else family["AE"]
+        _m = src_model.upper()
+        _is_ew = _m.startswith(("EW-50", "EW50", "AE-50", "AE50", "EW-C50", "EWC50", "AE-C50", "AEC50"))
+        controller = family["EW"] if _is_ew else family["AE"]
 
         template_path = os.path.join(TEMPLATES_DIR, f"{controller}.xml")
         if not os.path.exists(template_path):
@@ -327,7 +388,7 @@ def dsbx_to_dat_bytes(dsbx_data: bytes, target_family: str = "AE-C400A") -> list
         old_cg = db.find("ControlGroup")
         idx = list(db).index(old_cg)
         db.remove(old_cg)
-        db.insert(idx, build_control_group(groupof50, mapping))
+        db.insert(idx, build_control_group(groupof50, mapping, generate_blocks=generate_blocks))
 
         out_buf = io.BytesIO()
         tmpl_tree.write(out_buf, encoding="utf-8", xml_declaration=True)

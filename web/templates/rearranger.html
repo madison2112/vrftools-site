@@ -56,6 +56,7 @@ function onUploaded(data) {
     div.innerHTML = `
       <div class="block-header">
         <input type="text" class="ctrl-name-input" value="${escHtml(block.name)}" data-idx="${idx}" title="Edit controller name — saved to .dat and JSON exports">
+        <input type="text" class="ctrl-ip-input" value="${escHtml(block.ip || '')}" data-idx="${idx}" placeholder="192.168.1.X" title="Edit IP address — saved to .dat export">
         <span class="badge">${escHtml(block.controller_type)}</span>
         <span class="muted-text">${block.groups.length} groups</span>
         <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>
