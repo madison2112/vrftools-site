@@ -270,12 +270,17 @@ def api_upload_dat():
             }
         )
 
+    dat_file_name = safe_filename(
+        os.path.splitext(request.files.get("file").filename or "")[0]
+    ) or "rearranged"
+
     sid = sessions.create(
         {
             "type": "dat",
             "dat_data": data,
             "blocks": blocks,
             "multi": len(controllers) > 1,
+            "dat_file_name": dat_file_name,
         }
     )
 
@@ -302,12 +307,16 @@ def api_download_rearrange(sid):
     dat_data = _package_export_dat(export_blocks, s.get("dat_data", b""))
     blocks = s.get("blocks", [])
 
+    # Name outputs after the uploaded .dat file (e.g. "MySite rearranged.dat"),
+    # falling back to the first controller name for legacy sessions.
+    base = s.get("dat_file_name") or (safe_filename(blocks[0]["name"]) if blocks else "rearranged")
+
     try:
         if export == "individual":
             results = rearrange_and_split_dat_bytes(dat_data, {})
             if len(results) == 1:
-                return _send_dat(results[0]["data"], f"{results[0]['name']}_rearranged.dat")
-            return _send_zip(_zip_results(results), "rearranged_controllers.zip")
+                return _send_dat(results[0]["data"], f"{results[0]['name']} rearranged.dat")
+            return _send_zip(_zip_results(results), f"{base} rearranged.zip")
 
         elif export == "converted":
             results = rearrange_and_convert_dat_bytes(dat_data, {})
@@ -317,9 +326,7 @@ def api_download_rearrange(sid):
 
         else:  # packaged (default)
             result = rearrange_and_repackage_dat_bytes(dat_data, {})
-            base = safe_filename(blocks[0]["name"]) if blocks else "rearranged"
-            fname = f"{base}_rearranged.dat" if len(blocks) == 1 else "rearranged.dat"
-            return _send_dat(result, fname)
+            return _send_dat(result, f"{base} rearranged.dat")
 
     except Exception:
         logger.error("DAT export failed", exc_info=True)
@@ -506,13 +513,8 @@ def api_export_json():
     # Canonical export state — names, group tags, and order all applied
     export_blocks = _gather_export_state(s)
 
-    secret = (
-        current_app.secret_key
-        if isinstance(current_app.secret_key, bytes)
-        else current_app.secret_key.encode()
-    )
     try:
-        json_bytes = export_session_json(export_blocks, s, tool, secret)
+        json_bytes = export_session_json(export_blocks, s, tool)
     except Exception:
         logger.error("JSON export failed", exc_info=True)
         abort(500, "Export failed. Please try again or contact support.")

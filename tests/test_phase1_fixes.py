@@ -42,6 +42,54 @@ def _upload_dsbx(client, data: bytes):
     return resp.get_json()
 
 
+def _upload_file(client, data, fname, ctype):
+    resp = client.post(
+        "/api/upload/config-hub",
+        data={"file": (io.BytesIO(data), fname)},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 200
+    return resp.get_json()
+
+
+class TestSessionJsonRoundTrip:
+    def test_dsbx_switch_survives_json_round_trip(self, app_client, sample_mixed_dsbx_bytes):
+        """A site switched to AE-C400 must still be 400-series after export+import
+        (this was reverting to AE-200 on re-import)."""
+        j = _upload_file(app_client, sample_mixed_dsbx_bytes, "m.dsbx", "dsbx")
+        sid = j["session_id"]
+        app_client.post(f"/api/session/{sid}/switch-series")
+
+        export = app_client.post("/api/export-json", json={"session_id": sid, "tool": "dsbx-to-dat"})
+        assert export.status_code == 200
+
+        ri = _upload_file(app_client, export.data, "m.json", "json")
+        sid2 = ri["session_id"]
+        dl = app_client.get(f"/api/download/dsbx-to-dat/{sid2}")
+        assert dl.status_code == 200
+        z = zipfile.ZipFile(io.BytesIO(dl.data))
+        models = []
+        for n in z.namelist():
+            models += [_first_entry_model(z.read(n))]
+        assert models and all(m in _400_MODELS for m in models), models
+
+    def test_dat_round_trip_preserves_output(self, app_client, sample_multi_central_dat_bytes):
+        j = _upload_file(app_client, sample_multi_central_dat_bytes, "s.dat", "dat")
+        sid = j["session_id"]
+        orig = app_client.get(f"/api/download/rearrange/{sid}?export=packaged").data
+
+        export = app_client.post("/api/export-json", json={"session_id": sid, "tool": "rearranger"})
+        # Readable, not a base64 wall.
+        import json as _json
+        payload = _json.loads(export.data)
+        assert payload["version"] == 2 and "source_b64" not in payload
+
+        ri = _upload_file(app_client, export.data, "s.json", "json")
+        rt = app_client.get(f"/api/download/rearrange/{ri['session_id']}?export=packaged").data
+        # First-entry model is preserved through the round trip.
+        assert _first_entry_model(orig) == _first_entry_model(rt)
+
+
 class TestConfigHubDatIp:
     def test_dat_upload_populates_ip(self, app_client, sample_multi_central_dat_bytes):
         """Each controller block returned from a .dat upload carries its IP."""

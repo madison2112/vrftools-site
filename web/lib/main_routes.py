@@ -223,24 +223,20 @@ def api_upload_config_hub():
 
     data, ext = _validate_upload(request.files.get("file"), {".dsbx", ".dat", ".json"})
 
-    secret = (
-        current_app.secret_key
-        if isinstance(current_app.secret_key, bytes)
-        else current_app.secret_key.encode()
-    )
-
     # --- .json: restore session, return redirect to originating tool ---
     if ext == ".json":
         try:
-            payload = import_session_json(data, secret)
+            payload = import_session_json(data)
         except ValueError as e:
             abort(400, str(e))
 
         tool = payload.get("tool", "dat-json")
-        source_bytes = base64.b64decode(payload.get("source_b64", ""))
+        source_bytes = payload["source_bytes"]
         orders = payload.get("orders", {})
         controller_names = payload.get("controller_names", {})
         group_names = payload.get("group_names", {})
+        readable_ctrls = payload.get("controllers", [])
+        force_family = payload.get("force_family")
 
         if tool == "dsbx-to-dat":
             if not source_bytes[:4] == b"PK\x03\x04":
@@ -278,13 +274,28 @@ def api_upload_config_hub():
                         "warnings": _check_warnings(cards),
                     }
                 )
+            # Re-apply a saved AE-200/EW-50 -> AE-C400/EW-C50 switch so the
+            # restored session matches what was exported (else it reverts to 200).
+            if force_family == "AE-C400A":
+                _upgrade = {"AE-200": "AE-C400A", "EW-50": "EW-C50"}
+                for b in blocks:
+                    nt = _upgrade.get(b["controller_type"])
+                    if nt:
+                        b["controller_type"] = nt
+                        b["display_model"] = nt
+
+            exp_map = payload.get("expansion_map")
             session_data = {
                 "type": "dsbx",
                 "dsbx_data": source_bytes,
                 "blocks": blocks,
-                "expansion_map": _compute_default_expansion_map(blocks),
+                "expansion_map": exp_map if exp_map is not None else _compute_default_expansion_map(blocks),
                 "lan_enabled": lan_enabled,
             }
+            if force_family:
+                session_data["force_family"] = force_family
+            if payload.get("generate_blocks") is not None:
+                session_data["generate_blocks"] = payload["generate_blocks"]
         else:
             if not source_bytes[:4] == b"PK\x03\x04":
                 abort(400, "Stored source data does not appear to be a valid .dat archive.")
@@ -307,6 +318,7 @@ def api_upload_config_hub():
                     {
                         "name": ctrl["name"],
                         "controller_type": ctrl["controller_type"],
+                        "ip": ctrl.get("ip", ""),
                         "groups": cards,
                         "warnings": _check_warnings(cards),
                     }
@@ -319,6 +331,11 @@ def api_upload_config_hub():
                 "blocks": blocks,
                 "multi": len(controllers) > 1,
             }
+
+        # Overlay editable IP values from the readable controller fields (v2).
+        for i, c in enumerate(readable_ctrls):
+            if i < len(session_data["blocks"]) and c.get("ip"):
+                session_data["blocks"][i]["ip"] = c["ip"]
 
         for idx_str, order in orders.items():
             session_data[f"order_{idx_str}"] = order
@@ -440,12 +457,17 @@ def api_upload_config_hub():
             }
         )
 
+    dat_file_name = safe_filename(
+        os.path.splitext(request.files.get("file").filename or "")[0]
+    ) or "rearranged"
+
     sid = sessions.create(
         {
             "type": "dat",
             "dat_data": data,
             "blocks": blocks,
             "multi": len(controllers) > 1,
+            "dat_file_name": dat_file_name,
         }
     )
     return jsonify(

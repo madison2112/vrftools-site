@@ -226,10 +226,33 @@ function switchToNewerControllers() {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data && data.ok) {
-      // Re-render the page with the upgraded (now 400-series) blocks.
-      onUploaded({ session_id: state.sessionId, blocks: data.blocks, expansion_map: {} });
-    }
+    if (!data || !data.ok) return;
+    // Update in place rather than re-rendering, so the user's group reorder
+    // (and any inline edits) are preserved when switching to 400-series.
+    state.blocks = data.blocks;
+    state.expansionMap = {};
+    state.hasMixed = false;
+    state.activeSeries = null;
+
+    data.blocks.forEach(function(b, idx) {
+      var section = document.querySelector('.block-section[data-block-idx="' + idx + '"]');
+      if (!section) return;
+      section.dataset.series = '400';
+      var badge = section.querySelector('.block-header .badge');
+      if (badge) badge.textContent = b.controller_type || b.display_model || '';
+    });
+
+    // 400-series controllers are all standalone — drop the EW-50 expansion rows.
+    document.querySelectorAll('.expansion-row').forEach(function(el) { el.remove(); });
+
+    // No more mixed-series gate; show everything.
+    document.getElementById('series-selector-card').style.display = 'none';
+    document.getElementById('review-card').style.display = '';
+    document.getElementById('download-card').style.display = '';
+    document.querySelectorAll('#blocks-container .block-section').forEach(function(el) {
+      el.style.display = '';
+    });
+    updateDownloadButtons();
   })
   .catch(function() {});
 }
