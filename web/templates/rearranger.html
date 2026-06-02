@@ -68,12 +68,12 @@ function onUploaded(data) {
   const bugLink = '<a href="/contact?type=issue&tool=rearranger" class="bug-link bug-link--inline">🐜 Report a Bug</a>';
   if (data.blocks.length === 1) {
     dlRow.innerHTML = `<button class="btn btn-primary" id="btn-dl-single">Download DAT File</button>${bugLink}`;
-    document.getElementById('btn-dl-single').addEventListener('click', () => doDownload('packaged'));
+    document.getElementById('btn-dl-single').addEventListener('click', function () { startDownloadCountdown(() => doDownload('packaged'), this); });
   } else {
     dlRow.innerHTML = `<button class="btn btn-primary" id="btn-dl-packaged">Download Single DAT File</button>` +
-      `<button class="btn btn-outline" id="btn-dl-individual">Download One File per Controller</button>${bugLink}`;
-    document.getElementById('btn-dl-packaged').addEventListener('click', () => doDownload('packaged'));
-    document.getElementById('btn-dl-individual').addEventListener('click', () => doDownload('individual'));
+      `<button class="btn btn-gray" id="btn-dl-individual">Download One File per Controller</button>${bugLink}`;
+    document.getElementById('btn-dl-packaged').addEventListener('click', function () { startDownloadCountdown(() => doDownload('packaged'), this); });
+    document.getElementById('btn-dl-individual').addEventListener('click', function () { startDownloadCountdown(() => doDownload('individual'), this); });
   }
 
   document.getElementById('results-section').style.display = '';

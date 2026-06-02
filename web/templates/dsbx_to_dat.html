@@ -26,7 +26,6 @@
 
   <div class="card" id="review-card">
     <div class="card-title">1. Review &amp; Optionally Rearrange Groups</div>
-    <div id="series-breadcrumb" style="display:none"></div>
     <div id="blocks-container"></div>
     <div id="no-ctrl-notices"></div>
   </div>
@@ -181,6 +180,58 @@ function onUploaded(data) {
       select.addEventListener('change', saveExpansionMap);
     }
   });
+
+  maybePromptLegacySwitch();
+}
+
+// If the DSB still uses the older AE-200/EW-50 generation, offer a one-time
+// prompt to convert the whole site to AE-C400/EW-C50 (no longer-sold 200-series).
+function maybePromptLegacySwitch() {
+  var hasLegacy = (state.blocks || []).some(function(b) {
+    return b.has_controller !== false &&
+      (b.controller_type === 'AE-200' || b.controller_type === 'EW-50');
+  });
+  if (!hasLegacy || state.keptLegacy) return;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'info-popup-overlay';
+  overlay.innerHTML =
+    '<div class="info-popup">' +
+      '<h3>Older central controllers detected</h3>' +
+      '<p>This DSB file uses <strong>AE-200</strong> and/or <strong>EW-50</strong> controllers — ' +
+      'an older generation that is no longer sold. You can switch this configuration to the current ' +
+      '<strong>AE-C400</strong> and <strong>EW-C50</strong> controllers instead. Your group names, ' +
+      'tags, and M-Net addresses are preserved.</p>' +
+      '<div class="btn-row" style="margin-top:18px">' +
+        '<button class="btn btn-primary" id="btn-legacy-switch">Switch to AE-C400 / EW-C50</button>' +
+        '<button class="btn btn-gray" id="btn-legacy-keep">Keep AE-200 / EW-50</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#btn-legacy-keep').addEventListener('click', function() {
+    state.keptLegacy = true;
+    overlay.remove();
+  });
+  overlay.querySelector('#btn-legacy-switch').addEventListener('click', function() {
+    overlay.remove();
+    switchToNewerControllers();
+  });
+}
+
+function switchToNewerControllers() {
+  fetch('/api/session/' + state.sessionId + '/switch-series', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data && data.ok) {
+      // Re-render the page with the upgraded (now 400-series) blocks.
+      onUploaded({ session_id: state.sessionId, blocks: data.blocks, expansion_map: {} });
+    }
+  })
+  .catch(function() {});
 }
 
 function applySeriesSelection(series) {
@@ -188,22 +239,6 @@ function applySeriesSelection(series) {
   document.getElementById('series-selector-card').style.display = 'none';
   document.getElementById('review-card').style.display = '';
   document.getElementById('download-card').style.display = '';
-
-  var label = series === '200' ? '200-Series Controllers' : '400-Series Controllers';
-  var breadcrumb = document.getElementById('series-breadcrumb');
-  breadcrumb.style.display = '';
-  breadcrumb.innerHTML = '<div class="series-breadcrumb-row">' +
-    '<span class="series-breadcrumb-label">' + label + '</span>' +
-    '<a href="#" class="series-breadcrumb-change" id="link-change-series">Change series</a>' +
-  '</div>';
-  document.getElementById('link-change-series').addEventListener('click', function(e) {
-    e.preventDefault();
-    state.activeSeries = null;
-    document.getElementById('review-card').style.display = 'none';
-    document.getElementById('download-card').style.display = 'none';
-    breadcrumb.style.display = 'none';
-    document.getElementById('series-selector-card').style.display = '';
-  });
 
   updateSeriesVisibility();
   updateDownloadButtons();
@@ -232,7 +267,31 @@ function updateDownloadButtons() {
   var btnIndividual = document.getElementById('btn-download-individual');
   btnMulti.style.display = (count > 1) ? '' : 'none';
   btnIndividual.textContent = (count === 1) ? 'Download DAT File' : 'Download One File per Controller';
+  // With one controller this is the primary action (red); with several it is the
+  // secondary "per-controller" action, styled gray to match the group cards.
+  btnIndividual.className = (count === 1) ? 'btn btn-primary' : 'btn btn-gray';
 }
+
+// Called by main.js after a controller name is saved. Rebuilds the EW-50
+// "Expansion of:" parent dropdowns so renamed AE-200 controllers show their
+// new name immediately, preserving each select's current choice.
+window.refreshExpansionDropdowns = function(changedIdx, newName) {
+  if (changedIdx !== undefined && state.blocks[changedIdx]) {
+    state.blocks[changedIdx].name = newName;
+  }
+  var ae200List = [];
+  state.blocks.forEach(function(b, i) {
+    if (b.controller_type === 'AE-200' && b.has_controller !== false) ae200List.push([i, b]);
+  });
+  document.querySelectorAll('.expansion-parent-select').forEach(function(select) {
+    var current = select.value;
+    select.innerHTML = ae200List.map(function(pair) {
+      var pIdx = pair[0], pBlock = pair[1];
+      return '<option value="' + pIdx + '"' + (String(pIdx) === String(current) ? ' selected' : '') + '>' + escHtml(pBlock.name) + '</option>';
+    }).join('');
+    select.value = current;
+  });
+};
 
 function saveExpansionMap() {
   var newMap = {};
@@ -322,10 +381,15 @@ async function downloadDat(endpoint, extraParams) {
 
 document.getElementById('btn-download-multi').addEventListener('click', function() {
   var seriesParam = state.activeSeries ? 'series=' + state.activeSeries : '';
-  downloadDat('/api/download/dsbx-to-multi-dat/', seriesParam);
+  startDownloadCountdown(function() {
+    downloadDat('/api/download/dsbx-to-multi-dat/', seriesParam);
+  }, this);
 });
 document.getElementById('btn-download-individual').addEventListener('click', function() {
-  downloadDat('/api/download/dsbx-to-dat/');
+  var seriesParam = state.activeSeries ? 'series=' + state.activeSeries : '';
+  startDownloadCountdown(function() {
+    downloadDat('/api/download/dsbx-to-dat/', seriesParam);
+  }, this);
 });
 
 if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);

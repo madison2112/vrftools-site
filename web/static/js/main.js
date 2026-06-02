@@ -454,6 +454,11 @@ document.addEventListener('change', function(e) {
         e.target.style.borderColor = '';
         e.target.style.background = '';
       }, 1200);
+      // Let the page refresh any UI that displays controller names (e.g. the
+      // DSBX tool's EW-50 "Expansion of:" dropdowns) so they don't go stale.
+      if (typeof window.refreshExpansionDropdowns === 'function') {
+        window.refreshExpansionDropdowns(idx, newName);
+      }
     }
   })
   .catch(function() {});

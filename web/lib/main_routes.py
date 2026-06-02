@@ -434,6 +434,7 @@ def api_upload_config_hub():
             {
                 "name": ctrl["name"],
                 "controller_type": ctrl["controller_type"],
+                "ip": ctrl.get("ip", ""),
                 "groups": cards,
                 "warnings": _check_warnings(cards),
             }

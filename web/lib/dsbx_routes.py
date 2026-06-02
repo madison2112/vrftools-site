@@ -264,6 +264,29 @@ def api_update_expansion_map(sid):
     return jsonify({"ok": True})
 
 
+@dsbx_bp.route("/api/session/<sid>/switch-series", methods=["POST"])
+def api_switch_series(sid):
+    """Convert in place from the older AE-200/EW-50 generation to AE-C400/EW-C50.
+
+    Re-types the session's controller blocks to their 400-series equivalents and
+    records force_family so downloads emit AE-C400A/EW-C50 .dat files. The source
+    DSBX is untouched; dsbx_to_dat_bytes regenerates from target_family on download.
+    """
+    s = require_session(sid, "dsbx")
+
+    UPGRADE = {"AE-200": "AE-C400A", "EW-50": "EW-C50"}
+    blocks = s.get("blocks", [])
+    for b in blocks:
+        new_type = UPGRADE.get(b.get("controller_type"))
+        if new_type:
+            b["controller_type"] = new_type
+            b["display_model"] = new_type
+
+    # 400-series controllers have no EW-50 expansion hierarchy — all are standalone.
+    sessions.update(sid, {"blocks": blocks, "force_family": "AE-C400A", "expansion_map": {}})
+    return jsonify({"ok": True, "blocks": blocks})
+
+
 # ---------------------------------------------------------------------------
 # API — Download DSBX→DAT
 # ---------------------------------------------------------------------------
@@ -274,11 +297,26 @@ def api_download_dsbx_to_dat(sid):
     s = require_session(sid, "dsbx")
 
     generate_blocks = request.args.get("generate_blocks", "1") != "0"
+    # series=200 or series=400 limits the output to that family; unset = auto-detect.
+    # Without this, selecting one series still leaked the other series' controllers
+    # into the per-controller zip.
+    series_filter = request.args.get("series")
 
-    # Determine target family from block controller types (auto-detect, no manual version selector)
     blocks = s.get("blocks", [])
-    has_400 = any(b.get("controller_type") in {"AE-C400A", "EW-C50"} for b in blocks)
-    target_family = "AE-C400A" if has_400 else "AE-200"
+    _400_TYPES = {"AE-C400A", "EW-C50"}
+    _200_TYPES = {"AE-200", "EW-50"}
+
+    if series_filter == "200":
+        target_family = "AE-200"
+    elif series_filter == "400":
+        target_family = "AE-C400A"
+    elif s.get("force_family"):
+        # User chose to switch the older AE-200/EW-50 site to AE-C400/EW-C50.
+        target_family = s["force_family"]
+    else:
+        # Auto-detect: if any 400-series block exists, use the 400 family
+        has_400 = any(b.get("controller_type") in _400_TYPES for b in blocks)
+        target_family = "AE-C400A" if has_400 else "AE-200"
 
     try:
         results = dsbx_to_dat_bytes(s["dsbx_data"], target_family, generate_blocks=generate_blocks)
@@ -286,20 +324,32 @@ def api_download_dsbx_to_dat(sid):
         logger.error("Conversion failed", exc_info=True)
         abort(500, "Conversion failed. Please try again or contact support.")
 
+    # Map results → session blocks. dsbx_to_dat_bytes skips no-controller blocks,
+    # so result index j does NOT equal block index — use has_ctrl_indices to recover
+    # the real block index for per-block edits (names/tags/order) and series filtering.
+    has_ctrl_indices = [i for i, b in enumerate(blocks) if b.get("has_controller", True)]
+
     # Apply user edits in correct order: names FIRST, then rearrangement.
     # Names must be written to the original Group numbers before
     # apply_rearrangement remaps them — otherwise renames hit wrong records.
     controller_names = s.get("controller_names", {})
     group_names = s.get("group_names", {})
 
-    for i, r in enumerate(results):
+    for j, r in enumerate(results):
+        block_idx = has_ctrl_indices[j] if j < len(has_ctrl_indices) else j
+        # Record the controller's NATIVE block type for series filtering below.
+        r["block_type"] = (
+            blocks[block_idx].get("controller_type", r.get("controller", ""))
+            if block_idx < len(blocks)
+            else r.get("controller", "")
+        )
         try:
             controllers = parse_dat_controllers(r["data"])
             if controllers:
                 xml = controllers[0]["xml_bytes"]
 
                 # 1. Apply controller name
-                name = controller_names.get(str(i))
+                name = controller_names.get(str(block_idx))
                 if name:
                     root = ET.fromstring(xml)
                     sd = root.find(".//SystemData")
@@ -310,13 +360,13 @@ def api_download_dsbx_to_dat(sid):
                     xml = buf.getvalue()
 
                 # 2. Apply group tag names (on original Group numbers)
-                tag_map = group_names.get(str(i), {})
+                tag_map = group_names.get(str(block_idx), {})
                 int_map = {int(k): v for k, v in tag_map.items()}
                 if int_map:
                     xml = apply_group_names(xml, int_map)
 
                 # 3. Apply rearrangement (remaps Group numbers AFTER names)
-                order = s.get(f"order_{i}")
+                order = s.get(f"order_{block_idx}")
                 if isinstance(order, list) and order:
                     xml = apply_rearrangement(xml, order)
 
@@ -326,13 +376,27 @@ def api_download_dsbx_to_dat(sid):
                 if name:
                     r["name"] = f"{name} {r['controller']}"
         except Exception:
-            logger.warning("DSBX→DAT export edit failed for block %d", i, exc_info=True)
+            logger.warning("DSBX→DAT export edit failed for block %d", block_idx, exc_info=True)
+
+    # Filter to the requested series by each controller's NATIVE block type, so a
+    # 200-series download excludes (not converts) the 400-native controllers and vice versa.
+    if series_filter == "200":
+        results = [r for r in results if r.get("block_type") in _200_TYPES]
+    elif series_filter == "400":
+        results = [r for r in results if r.get("block_type") in _400_TYPES]
+
+    if not results:
+        abort(400, "No controllers of the requested series found in this session.")
 
     if len(results) == 1:
+        # Single controller keeps its own (possibly renamed) controller name.
         r = results[0]
         return _send_dat(r["data"], r["name"] + ".dat")
 
-    return _send_zip(_zip_results(results), "dsbx_export.zip")
+    # Multiple controllers: name the zip after the site generation, not a controller.
+    base_name = s.get("dsbx_file_name", "export")
+    site = "AE-C400" if target_family == "AE-C400A" else "AE-200"
+    return _send_zip(_zip_results(results), f"{base_name} - {site} site.zip")
 
 
 # ---------------------------------------------------------------------------
@@ -358,6 +422,10 @@ def api_download_dsbx_to_multi_dat(sid):
     elif series_filter == "400":
         active_blocks = blocks
         target_family = "AE-C400A"
+    elif s.get("force_family"):
+        # User chose to switch the older AE-200/EW-50 site to AE-C400/EW-C50.
+        target_family = s["force_family"]
+        active_blocks = blocks
     else:
         # Auto-detect: if any 400-series block exists, use 400 family
         has_400 = any(b.get("controller_type") in _400_TYPES for b in blocks)
@@ -443,7 +511,8 @@ def api_download_dsbx_to_multi_dat(sid):
         abort(500, "Multi-DAT packaging failed. Please try again or contact support.")
 
     base_name = s.get("dsbx_file_name", "export")
-    return _send_dat(dat_bytes, f"{base_name}_central_controller.dat")
+    site = "AE-C400" if use_400 else "AE-200"
+    return _send_dat(dat_bytes, f"{base_name} - {site} site.dat")
 
 
 def _build_200_multi_dat(processed: list, blocks: list, expansion_map: dict) -> bytes:
