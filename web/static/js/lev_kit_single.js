@@ -1,3 +1,4 @@
+/* Scoping: IIFE — self-contained wizard, no global dependencies. */
 'use strict';
 
 function csrfToken() {

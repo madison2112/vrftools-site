@@ -34,14 +34,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  window.MTDZ_PAGES = {
-    index:     '/mtdz/',
-    viewer:    '/mtdz/viewer',
-    report:    '/mtdz/report',
-    sysconfig: '/mtdz/sysinfo',
-  };
-</script>
+{% include 'mtdz/_pages.html' %}
 <script src="{{ url_for('static', filename='js/shared.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mtdz/common.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mtdz/sysinfo.js') }}"></script>

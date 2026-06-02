@@ -1,12 +1,10 @@
 :root {
-  --red:        #cc0000;
   --dark:       #1a1a1a;
   --gray:       #444;
   --light-gray: #f5f5f5;
   --border:     #ddd;
   --white:      #fff;
   --muted:      #666;
-  --green:      #2e7d32;
   --warn-bg:    #fff8e1;
   --warn-border:#f9a825;
 }
@@ -306,7 +304,7 @@ footer a:hover { text-decoration: underline; }
   border-radius: 5px;
   transition: color 0.15s, border-color 0.15s;
 }
-.bug-link:hover { color: var(--danger); border-color: #e88; }
+.bug-link:hover { color: var(--red); border-color: #e88; }
 .bug-link--inline { margin-left: auto; }
 
 /* ── Spinner ── */
@@ -411,19 +409,6 @@ footer a:hover { text-decoration: underline; }
 .tool-card-square .info-btn:hover {
   background: var(--dark);
   color: var(--white);
-}
-
-/* Info popup close button — kept in style.css due to font-family divergence (HC-03d candidate) */
-.info-popup .close-popup {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 8px 20px;
-  background: var(--dark);
-  color: var(--white);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
 }
 
 /* Resume Session card (wide, short, above tool grid on hub page) */
