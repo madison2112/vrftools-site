@@ -137,6 +137,20 @@
   gap: 24px;
 }
 
+/* ----- Switch position guide ------------------------------------------- */
+
+.lks-switch-guide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.lks-capture-guide { margin-bottom: 12px; font-size: 12px; }
+
 /* ----- DIP bank visual (hardware-faithful; do not recolor) ------------- */
 
 .lks-bank-wrapper { margin-bottom: 4px; }
