@@ -42,11 +42,27 @@ def _validate_upload(file, allowed=None):
 
 
 def _zip_results(results: list) -> bytes:
-    """Package a list of {"name", "data"} dicts into a ZIP archive."""
+    """Package a list of {"name", "data"} dicts into a ZIP archive.
+
+    Colliding entry names (e.g. two controllers both named "EW-50") would
+    otherwise silently overwrite each other in the zip, so names that appear
+    more than once are disambiguated with a -1, -2, … suffix.
+    """
+    name_counts: dict = {}
+    for r in results:
+        name_counts[r["name"]] = name_counts.get(r["name"], 0) + 1
+
     buf = _io.BytesIO()
+    used: dict = {}
     with _zipfile.ZipFile(buf, "w", _zipfile.ZIP_DEFLATED) as zf:
         for r in results:
-            zf.writestr(r["name"] + ".dat", r["data"])
+            base = r["name"]
+            if name_counts[base] > 1:
+                used[base] = used.get(base, 0) + 1
+                entry = f"{base}-{used[base]}"
+            else:
+                entry = base
+            zf.writestr(entry + ".dat", r["data"])
     return buf.getvalue()
 
 

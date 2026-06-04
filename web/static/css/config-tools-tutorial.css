@@ -1,0 +1,137 @@
+/* config-tools-tutorial.css — mock layout + animations for the DSBX→DAT
+   walkthrough. Reuses real classes from base.css/style.css where possible;
+   only adds what those files don't provide on a base.html page. */
+
+/* The two mock phases; JS toggles display. */
+#mock-dsbx { display: none; }
+
+/* Draggable "file" chip for step 2 — the user drags it onto the drop zone. */
+.mock-file-tray { margin-top: 12px; display: flex; }
+.mock-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  user-select: none;
+  font-size: 0.9rem;
+}
+.mock-file-chip:active { cursor: grabbing; }
+.mock-file-ico { font-size: 1.2rem; }
+.mock-file-name { font-weight: 600; }
+
+/* Compact single-column slot list with fixed slot numbers (the production
+   grid is two columns of 25; the mock shows just six for clarity). Slot
+   numbers are CSS counters tied to DOM position, so they stay put while the
+   cards inside move. */
+#mock-slots {
+  counter-reset: slot;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+  margin-top: 12px;
+}
+#mock-slots .slot-item {
+  counter-increment: slot;
+  position: relative;
+  padding-left: 30px;
+}
+#mock-slots .slot-item::before {
+  content: counter(slot);
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+/* Empty slots read as clear, generous drop targets (not faded), so the drag
+   lands first try. */
+#mock-slots .slot-empty-card {
+  min-height: 40px;
+  border: 2px dashed var(--border);
+  border-radius: 5px;
+  opacity: 1;
+}
+/* No red over-highlight while dragging — the mock matches the demo, which
+   shows none (the drag handlers no longer add .drag-over). */
+
+/* The inline tag editor intentionally has NO override here: it inherits the
+   real tool's .group-tag-edit (style.css) — position:absolute/inset:0/z-index
+   over a .group-tag that keeps its text — so the mock edit looks and behaves
+   exactly like production (white box, red border, "cut into" the grey card). */
+
+/* Drop-zone "file falling in" demo. */
+.mock-drop-demo { position: relative; }
+.mock-drop-demo::after {
+  content: '📄';
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  font-size: 1.8rem;
+  transform: translateX(-50%);
+  animation: tut-drop 1.1s ease;
+  pointer-events: none;
+}
+@keyframes tut-drop {
+  0%   { transform: translate(-50%, -34px); opacity: 0; }
+  55%  { transform: translate(-50%, 0);     opacity: 1; }
+  100% { transform: translate(-50%, 6px);   opacity: 0; }
+}
+
+/* Floating clone used for the drag preview. */
+.tut-drag-ghost {
+  z-index: 3200;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  opacity: 0.92;
+}
+
+/* Attention pulse for the Sort button demo. */
+.tut-pulse { animation: tut-pulse 0.9s ease; }
+@keyframes tut-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+  50%      { box-shadow: 0 0 0 5px rgba(192, 57, 43, 0.35); }
+}
+
+/* Mock floating save button (production builds this via JS). */
+#mock-float-save { position: fixed; bottom: 28px; right: 28px; z-index: 900; }
+
+/* Animated demo cursor (oversized pointer/hand) used by the "Show me how"
+   demos. Positioned via transform from the top-left; the JS subtracts each
+   glyph's hotspot so the tip lands on the target. Sits above the overlay. */
+.tut-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 3300;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+.tut-cursor svg { display: block; }
+.tut-cursor.grabbing svg { transform: scale(0.85); }
+/* Click ripple anchored near the glyph tip. */
+.tut-cursor.clicking::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--red);
+  transform: translate(-50%, -50%);
+  animation: tut-cursor-click 0.42s ease-out;
+}
+@keyframes tut-cursor-click {
+  0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(0.4); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) scale(3.2); }
+}

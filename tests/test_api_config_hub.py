@@ -54,8 +54,7 @@ class TestConfigHubJsonImport:
                 }
             )
 
-        secret = b"testing-session-secret"  # TestingConfig.SECRET_KEY
-        json_bytes = export_session_json(blocks, session_data, "rearranger", secret)
+        json_bytes = export_session_json(blocks, session_data, "rearranger")
         return json_bytes
 
     def test_json_import_returns_redirect(self, app_client, valid_export_json):

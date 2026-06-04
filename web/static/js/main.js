@@ -402,7 +402,7 @@ function preloadSession(sid, onSuccess) {
     .then(r => r.json())
     .then(data => {
       if (data.blocks) {
-        onSuccess({ session_id: sid, blocks: data.blocks, multi: data.blocks.length > 1 });
+        onSuccess({ session_id: sid, ...data });
       }
     })
     .catch(() => {});
@@ -451,8 +451,39 @@ document.addEventListener('change', function(e) {
       e.target.style.borderColor = 'var(--green)';
       e.target.style.background = '#f1f8f1';
       setTimeout(function() {
-        e.target.style.borderColor = 'transparent';
-        e.target.style.background = 'transparent';
+        e.target.style.borderColor = '';
+        e.target.style.background = '';
+      }, 1200);
+      // Let the page refresh any UI that displays controller names (e.g. the
+      // DSBX tool's EW-50 "Expansion of:" dropdowns) so they don't go stale.
+      if (typeof window.refreshExpansionDropdowns === 'function') {
+        window.refreshExpansionDropdowns(idx, newName);
+      }
+    }
+  })
+  .catch(function() {});
+});
+
+// IP address auto-save on change
+document.addEventListener('change', function(e) {
+  if (!e.target.classList.contains('ctrl-ip-input')) return;
+  const idx = parseInt(e.target.dataset.idx);
+  const newIp = e.target.value.trim();
+  if (!newIp || !(window.state && window.state.sessionId)) return;
+
+  fetch('/api/session/' + window.state.sessionId + '/controller-ip', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+    body: JSON.stringify({ block_index: idx, ip: newIp }),
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(result) {
+    if (result.ok) {
+      e.target.style.borderColor = 'var(--green)';
+      e.target.style.background = '#f1f8f1';
+      setTimeout(function() {
+        e.target.style.borderColor = '';
+        e.target.style.background = '';
       }, 1200);
     }
   })

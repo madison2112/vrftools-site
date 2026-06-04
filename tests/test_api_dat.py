@@ -145,11 +145,13 @@ class TestDatJsonExport:
         assert resp.content_type == "application/json"
         body = resp.data
         assert len(body) > 0
-        # Should be valid JSON
+        # Should be valid, readable v2 JSON (no signature, no base64 wall)
         import json
         payload = json.loads(body)
-        assert "v" in payload
-        assert "hmac" in payload
+        assert payload["version"] == 2
+        assert "hmac" not in payload
+        assert "source_b64" not in payload
+        assert payload["_readme"]
 
     def test_export_json_invalid_tool_returns_400(self, app_client, sample_dat_bytes):
         """POST /api/export-json with invalid tool returns 400."""

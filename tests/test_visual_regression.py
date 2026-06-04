@@ -73,6 +73,11 @@ def test_route_visual_baseline(live_server: str, path: str, slug: str, tmp_path:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 800})
+        # Suppress the one-time "take the tutorial?" prompt so the hub baseline
+        # captures the steady-state page, not the modal. No-op on other routes.
+        context.add_init_script(
+            "try{localStorage.setItem('vrftools_tutorial_seen_dsbx-to-dat','1')}catch(e){}"
+        )
         page = context.new_page()
 
         # Block external hosts (analytics, CDNs, etc.) for deterministic

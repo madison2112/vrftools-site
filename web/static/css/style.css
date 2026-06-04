@@ -501,6 +501,103 @@ footer a:hover { text-decoration: underline; }
   background: var(--white);
 }
 
+/* ── IP address input (block header) ── */
+.ctrl-ip-input {
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--light-gray);
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: 130px;
+  transition: border-color 0.15s, background 0.15s;
+  color: var(--dark);
+  font-family: monospace;
+}
+.ctrl-ip-input:hover { border-color: var(--gray); background: #e8e8e8; }
+.ctrl-ip-input:focus { outline: none; border-color: var(--red); background: var(--white); }
+
+/* ── Expansion controller toggle row ── */
+.expansion-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+.expansion-opt { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.expansion-parent-select {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.85rem;
+  background: var(--white);
+}
+.expansion-limit-msg { font-size: 0.8rem; font-weight: 600; }
+
+/* ── No-controller ghost notice ── */
+.no-ctrl-notice {
+  padding: 10px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+.no-ctrl-notice strong { color: var(--dark); }
+
+/* ── Generate-blocks toggle ── */
+.generate-blocks-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+
+/* ── Series tab bar (mixed 200+400 sessions) ── */
+.series-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+}
+.series-tab {
+  padding: 8px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted);
+  transition: color 0.15s, border-color 0.15s;
+}
+.series-tab.active { color: var(--red); border-bottom-color: var(--red); }
+.series-tab:hover:not(.active) { color: var(--dark); }
+
+/* ── Series breadcrumb (shown after series selection in mixed sessions) ── */
+.series-breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.series-breadcrumb-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--dark);
+}
+.series-breadcrumb-change {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.series-breadcrumb-change:hover { color: var(--red); text-decoration: underline; }
+
 /* ── Inline group tag editing ── */
 .group-tag {
   position: relative;

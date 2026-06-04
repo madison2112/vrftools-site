@@ -68,9 +68,11 @@ function onUploaded(data) {
   showFloatingSaveButton();
 }
 
-document.getElementById('btn-download').addEventListener('click', () => {
+document.getElementById('btn-download').addEventListener('click', function () {
   if (!state.sessionId) return;
-  window.location.href = `/api/download/convert/${state.sessionId}`;
+  startDownloadCountdown(function () {
+    window.location.href = `/api/download/convert/${state.sessionId}`;
+  }, this);
 });
 
 if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);

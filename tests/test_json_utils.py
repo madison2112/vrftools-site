@@ -1,171 +1,121 @@
-"""Unit tests for web.lib.json_utils — HMAC-signed JSON export/import."""
+"""Unit tests for web.lib.json_utils — readable v2 session export/import.
+
+v2 is unsigned and human-readable: readable controller/group fields plus the
+original config carried as readable XML (no base64 blob, no HMAC). Old v1 files
+still import (signature not enforced).
+"""
 
 from __future__ import annotations
+
+import base64
+import io
+import json
+import zipfile
+from pathlib import Path
 
 import pytest
 
 from web.lib.json_utils import export_session_json, import_session_json
 
+FIX = Path(__file__).parent / "fixtures"
+DAT = (FIX / "sample_multi_central.dat").read_bytes()
+DSBX = (FIX / "sample_multi_central_mixed.dsbx").read_bytes()
 
-# A fixed secret for deterministic test HMACs
-TEST_SECRET = b"test-secret-key-12345"
+
+def _dat_session():
+    return {
+        "type": "dat",
+        "dat_data": DAT,
+        "multi": True,
+        "blocks": [{"name": "Floor 1", "controller_type": "AE-200", "ip": "192.168.2.1", "groups": []}],
+    }
 
 
-class TestExportSessionJson:
-    """Tests for export_session_json."""
-
-    def test_returns_bytes(self):
-        export_blocks = [
-            {
-                "name": "Controller-1",
-                "controller_type": "AE-200",
-                "groups": [
-                    {"slot": 1, "tag": "Floor-01", "mnet_addresses": ["50"], "unit_types": ["IC"], "icon": 10},
-                ],
-            },
-        ]
-        session_data = {
-            "type": "dat",
-            "dat_data": b"dummy-dat-bytes",
-            "multi": False,
+def _export_blocks():
+    return [
+        {
+            "name": "Floor 1",
+            "controller_type": "AE-200",
+            "ip": "192.168.2.1",
+            "groups": [{"slot": 1, "tag": "Lobby", "mnet_addresses": ["50"], "unit_types": ["IC"], "icon": 10}],
         }
-        result = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        assert isinstance(result, bytes)
-
-    def test_output_is_valid_json(self):
-        export_blocks = []
-        session_data = {"type": "dat", "dat_data": b"hello", "multi": False}
-        result = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        import json
-        parsed = json.loads(result)
-        assert isinstance(parsed, dict)
-
-    def test_output_contains_hmac(self):
-        export_blocks = []
-        session_data = {"type": "dat", "dat_data": b"hello", "multi": False}
-        result = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        import json
-        parsed = json.loads(result)
-        assert "hmac" in parsed
-        assert isinstance(parsed["hmac"], str)
-        assert len(parsed["hmac"]) == 64  # SHA-256 hex digest
-
-    def test_handles_orders_from_session_data(self):
-        export_blocks = [
-            {"name": "Ctrl-1", "controller_type": "AE-200", "groups": []},
-        ]
-        session_data = {
-            "type": "dat",
-            "dat_data": b"hello",
-            "multi": False,
-            "order_0": [1, 2],
-            "order_1": [3],
-        }
-        result = export_session_json(export_blocks, session_data, "dat-rearrange", TEST_SECRET)
-        import json
-        parsed = json.loads(result)
-        assert "orders" in parsed
-        assert parsed["orders"] == {"0": [1, 2], "1": [3]}
-
-    def test_handles_dsbx_type(self):
-        export_blocks = [
-            {"name": "DSBX-Project", "controller_type": "AE-C400A", "groups": []},
-        ]
-        session_data = {
-            "type": "dsbx",
-            "dsbx_data": b"dsbx-raw-bytes-here",
-            "multi": True,
-        }
-        result = export_session_json(export_blocks, session_data, "dsbx-configure", TEST_SECRET)
-        import json
-        parsed = json.loads(result)
-        assert parsed["tool"] == "dsbx-configure"
-        assert parsed["multi"] is True
-
-    def test_controller_names_in_output(self):
-        export_blocks = [
-            {"name": "MyCtrl", "controller_type": "AE-200", "groups": []},
-        ]
-        session_data = {
-            "type": "dat",
-            "dat_data": b"hello",
-            "multi": False,
-            "controller_names": {"0": "OriginalName"},
-        }
-        result = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        import json
-        parsed = json.loads(result)
-        assert "controller_names" in parsed
-        # Block name should be captured if not already in controller_names
-        assert "0" in parsed["controller_names"]
+    ]
 
 
-class TestImportSessionJson:
-    """Tests for import_session_json."""
+class TestExportV2:
+    def test_readable_json_no_base64_no_hmac(self):
+        p = json.loads(export_session_json(_export_blocks(), _dat_session(), "rearranger"))
+        assert p["version"] == 2
+        assert p["format"] == "vrftools-session"
+        assert "hmac" not in p and "source_b64" not in p
+        assert p["_readme"]
+        assert p["source"]["kind"] == "dat"
+        assert p["controllers"][0]["name"] == "Floor 1"
+        assert p["controllers"][0]["ip"] == "192.168.2.1"
 
-    def test_valid_round_trip(self):
-        """export → import should return the same payload."""
-        export_blocks = [
-            {
-                "name": "RoundTrip-Test",
-                "controller_type": "AE-C400A",
-                "groups": [
-                    {"slot": 1, "tag": "Floor-01", "mnet_addresses": ["50"], "unit_types": ["IC"], "icon": 10},
-                ],
-            },
-        ]
-        session_data = {
-            "type": "dat",
-            "dat_data": b"roundtrip-data",
-            "multi": False,
-            "order_0": [1, 2, 3],
-            "controller_names": {"0": "RoundTrip-Test"},
-            "group_names": {},
-        }
-        exported = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        imported = import_session_json(exported, TEST_SECRET)
-        assert imported["tool"] == "dat-configure"
-        assert imported["v"] == 1
-        assert imported["multi"] is False
-        assert "orders" in imported
-        assert imported["blocks"] == [
-            {"name": "RoundTrip-Test", "controller_type": "AE-C400A", "groups": [
-                {"slot": 1, "tag": "Floor-01", "mnet_addresses": ["50"], "unit_types": ["IC"], "icon": 10}
-            ]},
-        ]
+    def test_orders_captured(self):
+        s = _dat_session()
+        s["order_0"] = [1, 2, 3]
+        p = json.loads(export_session_json(_export_blocks(), s, "rearranger"))
+        assert p["edits"]["orders"] == {"0": [1, 2, 3]}
 
-    def test_tampered_hmac_raises(self):
-        export_blocks = [{"name": "Test", "controller_type": "AE-200", "groups": []}]
-        session_data = {"type": "dat", "dat_data": b"data", "multi": False}
-        exported = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        # Tamper: replace the HMAC
-        import json
-        payload = json.loads(exported)
-        payload["hmac"] = "0" * 64  # obviously wrong
-        tampered = json.dumps(payload).encode()
-        with pytest.raises(ValueError, match="modified"):
-            import_session_json(tampered, TEST_SECRET)
+    def test_dsbx_source_is_readable_xml(self):
+        s = {"type": "dsbx", "dsbx_data": DSBX, "multi": True, "force_family": "AE-C400A", "blocks": []}
+        p = json.loads(export_session_json([], s, "dsbx-to-dat"))
+        assert p["source"]["kind"] == "dsbx"
+        assert "<" in p["source"]["xml"]  # readable XML, not base64 gibberish
+        assert p["site_series"] == "AE-C400"
+        assert p["edits"]["force_family"] == "AE-C400A"
 
-    def test_missing_hmac_raises(self):
-        import json
-        payload = {"v": 1, "tool": "test", "blocks": []}
-        raw = json.dumps(payload).encode()
-        with pytest.raises(ValueError, match="missing integrity"):
-            import_session_json(raw, TEST_SECRET)
+
+class TestImportV2:
+    def test_round_trip_rebuilds_valid_source(self):
+        out = export_session_json(_export_blocks(), _dat_session(), "rearranger")
+        imp = import_session_json(out)
+        assert imp["version"] == 2
+        assert imp["tool"] == "rearranger"
+        assert imp["source_bytes"][:2] == b"PK"  # a valid zip was rebuilt
+        z = zipfile.ZipFile(io.BytesIO(imp["source_bytes"]))
+        # numbered XML entries decrypt with the MELCO password
+        entry = next(n for n in z.namelist() if not n.endswith("/"))
+        assert z.read(entry, pwd=b"MELCO")[:1] in (b"<", b"\xef")
+
+    def test_rejects_bad_ip(self):
+        p = json.loads(export_session_json(_export_blocks(), _dat_session(), "rearranger"))
+        p["controllers"][0]["ip"] = "999.999.x"
+        with pytest.raises(ValueError, match="IP"):
+            import_session_json(json.dumps(p).encode())
+
+    def test_rejects_unknown_controller_type(self):
+        p = json.loads(export_session_json(_export_blocks(), _dat_session(), "rearranger"))
+        p["controllers"][0]["type"] = "AE-999"
+        with pytest.raises(ValueError, match="controller type"):
+            import_session_json(json.dumps(p).encode())
 
     def test_invalid_json_raises(self):
         with pytest.raises(ValueError, match="Invalid JSON"):
-            import_session_json(b"not json at all {{{{{", TEST_SECRET)
+            import_session_json(b"not json at all {{{")
 
-    def test_non_dict_json_raises(self):
-        import json
-        raw = json.dumps([1, 2, 3]).encode()
-        with pytest.raises(ValueError, match="must be an object"):
-            import_session_json(raw, TEST_SECRET)
+    def test_non_dict_raises(self):
+        with pytest.raises(ValueError, match="object"):
+            import_session_json(json.dumps([1, 2, 3]).encode())
 
-    def test_different_secret_fails(self):
-        export_blocks = [{"name": "Test", "controller_type": "AE-200", "groups": []}]
-        session_data = {"type": "dat", "dat_data": b"data", "multi": False}
-        exported = export_session_json(export_blocks, session_data, "dat-configure", TEST_SECRET)
-        with pytest.raises(ValueError, match="modified"):
-            import_session_json(exported, b"different-secret-key")
+
+class TestV1BackCompat:
+    def test_v1_file_imports_without_signature_check(self):
+        v1 = {
+            "v": 1,
+            "tool": "rearranger",
+            "multi": True,
+            "source_b64": base64.b64encode(DAT).decode(),
+            "orders": {},
+            "controller_names": {"0": "X"},
+            "group_names": {},
+            "blocks": [],
+            "hmac": "deadbeef" * 8,  # wrong/foreign signature — must NOT block import
+        }
+        imp = import_session_json(json.dumps(v1).encode())
+        assert imp["version"] == 1
+        assert imp["tool"] == "rearranger"
+        assert imp["source_bytes"][:2] == b"PK"
+        assert imp["controller_names"] == {"0": "X"}

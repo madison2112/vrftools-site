@@ -24,12 +24,8 @@
 
   <div class="card">
     <div class="card-title">2. Download</div>
-    <p class="muted-text" style="margin-bottom:16px">Choose how to export the rearranged configuration.</p>
-    <div class="btn-row">
-      <button class="btn btn-primary"  id="btn-dl-packaged">Download Packaged .dat</button>
-      <button class="btn btn-outline"  id="btn-dl-individual">Download Individual .dat Files</button>
-      <button class="btn btn-outline"  id="btn-dl-converted">Download Converted .dat Files</button>
-      <a href="/contact?type=issue&tool=rearranger" class="bug-link bug-link--inline">🐜 Report a Bug</a>
+    <div class="btn-row" id="download-btn-row">
+      <!-- populated dynamically in onUploaded -->
     </div>
     <div id="download-error" class="alert alert-error" style="display:none"></div>
   </div>
@@ -56,7 +52,8 @@ function onUploaded(data) {
     div.innerHTML = `
       <div class="block-header">
         <input type="text" class="ctrl-name-input" value="${escHtml(block.name)}" data-idx="${idx}" title="Edit controller name — saved to .dat and JSON exports">
-        <span class="badge">${escHtml(block.controller_type)}</span>
+        <input type="text" class="ctrl-ip-input" value="${escHtml(block.ip || '')}" data-idx="${idx}" placeholder="192.168.1.X" title="Edit IP address — saved to .dat export">
+        <span class="badge">${escHtml(block.controller_type || '')}</span>
         <span class="muted-text">${block.groups.length} groups</span>
         <button class="btn btn-sm btn-outline sort-btn" data-idx="${idx}">Sort by Tag Name</button>
       </div>
@@ -65,6 +62,19 @@ function onUploaded(data) {
 
     initSlotGrid(`group-grid-${idx}`, idx);
   });
+
+  // Build download buttons dynamically based on block count
+  const dlRow = document.getElementById('download-btn-row');
+  const bugLink = '<a href="/contact?type=issue&tool=rearranger" class="bug-link bug-link--inline">🐜 Report a Bug</a>';
+  if (data.blocks.length === 1) {
+    dlRow.innerHTML = `<button class="btn btn-primary" id="btn-dl-single">Download DAT File</button>${bugLink}`;
+    document.getElementById('btn-dl-single').addEventListener('click', function () { startDownloadCountdown(() => doDownload('packaged'), this); });
+  } else {
+    dlRow.innerHTML = `<button class="btn btn-primary" id="btn-dl-packaged">Download Single DAT File</button>` +
+      `<button class="btn btn-gray" id="btn-dl-individual">Download One File per Controller</button>${bugLink}`;
+    document.getElementById('btn-dl-packaged').addEventListener('click', function () { startDownloadCountdown(() => doDownload('packaged'), this); });
+    document.getElementById('btn-dl-individual').addEventListener('click', function () { startDownloadCountdown(() => doDownload('individual'), this); });
+  }
 
   document.getElementById('results-section').style.display = '';
   showFloatingSaveButton();
@@ -80,10 +90,6 @@ async function doDownload(exportType) {
   await Promise.all(saves);
   window.location.href = `/api/download/rearrange/${state.sessionId}?export=${exportType}`;
 }
-
-document.getElementById('btn-dl-packaged').addEventListener('click', () => doDownload('packaged'));
-document.getElementById('btn-dl-individual').addEventListener('click', () => doDownload('individual'));
-document.getElementById('btn-dl-converted').addEventListener('click', () => doDownload('converted'));
 
 if (PRELOADED_SESSION) preloadSession(PRELOADED_SESSION, onUploaded);
 </script>

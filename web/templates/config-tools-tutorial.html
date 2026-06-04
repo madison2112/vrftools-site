@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Take the Tutorial{% endblock %}
+{% block breadcrumb %} / <span>Tutorial</span>{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial-engine.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/config-tools-tutorial.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Interactive Tutorial</h1>
+<p class="page-subtitle">A hands-on practice run through the DSBX → DAT workflow. Nothing here affects real files.</p>
+
+<!-- ───────────────────────── HUB PHASE ───────────────────────── -->
+<div id="mock-hub">
+  <div class="card" id="mock-upload-card">
+    <div class="card-title">Upload a File to Get Started</div>
+    <div class="drop-zone" id="mock-drop-zone" data-accept=".dsbx, .dat, or .json">
+      <div class="icon">&#128196;</div>
+      <p>Drag &amp; drop a <strong>.dsbx</strong>, <strong>.dat</strong>, or <strong>.json</strong> file here, or click to browse</p>
+      <small>Upload a file to see which tools are applicable. Maximum 5 MB.</small>
+    </div>
+    <div class="mock-file-tray">
+      <div class="mock-file-chip" id="mock-file-chip" draggable="true" title="Drag me onto the upload box">
+        <span class="mock-file-ico">&#128196;</span>
+        <span class="mock-file-name">VRFtools-Demo.dsbx</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tool-grid-square">
+    <div class="tool-card-square mock-tool-card" data-tool="dsbx-to-dat">
+      <div class="tool-icon-sq">&#8594;</div>
+      <div class="tool-name-sq">DSBX to DAT</div>
+      <div class="tool-formats-sq"><span class="badge">.dsbx</span> &rarr; <span class="badge">.dat</span></div>
+    </div>
+    <div class="tool-card-square" data-tool="rearranger">
+      <div class="tool-icon-sq">&#8645;</div>
+      <div class="tool-name-sq">Group Rearranger</div>
+      <div class="tool-formats-sq"><span class="badge">.dat</span> &rarr; <span class="badge">.dat</span></div>
+    </div>
+    <div class="tool-card-square" data-tool="convert">
+      <div class="tool-icon-sq">&#8646;</div>
+      <div class="tool-name-sq">Generation Change</div>
+      <div class="tool-formats-sq"><span class="badge">AE-200</span> &#8644; <span class="badge">AE-C400A</span></div>
+    </div>
+    <div class="tool-card-square" data-tool="split">
+      <div class="tool-icon-sq">&#9003;</div>
+      <div class="tool-name-sq">Database Decoupler</div>
+      <div class="tool-formats-sq"><span class="badge">multi .dat</span> &rarr; <span class="badge">.dat</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────────── DSBX PHASE ───────────────────────── -->
+<div id="mock-dsbx">
+  <a href="#" id="mock-back-link" class="back-link">&larr; Back to Tools</a>
+
+  <div class="card">
+    <div class="card-title">1. Review &amp; Optionally Rearrange Groups</div>
+    <div class="block-section" data-block-idx="0" data-series="200">
+      <div class="block-header">
+        <input type="text" class="ctrl-name-input" id="mock-ctrl-name" value="Centralized System - 1" title="Controller name" readonly>
+        <input type="text" class="ctrl-ip-input" id="mock-ctrl-ip" value="192.168.1.1" placeholder="192.168.1.X" title="IP address" readonly>
+        <span class="badge">AE-200</span>
+        <span class="muted-text">4 groups</span>
+        <button class="btn btn-sm btn-outline sort-btn" id="mock-sort-btn">Sort by Tag Name</button>
+      </div>
+
+      <div id="mock-slots">
+        <div class="slot-item">
+          <div class="slot-empty-card"></div>
+        </div>
+        <div class="slot-item">
+          <div class="group-card" data-home="2" draggable="true" tabindex="0" role="option">
+            <span class="group-tag">IDU-3</span>
+            <span class="group-mnets">2</span>
+            <span class="group-types">IC</span>
+          </div>
+        </div>
+        <div class="slot-item">
+          <div class="group-card" id="mock-card-idu4" data-home="3" draggable="true" tabindex="0" role="option">
+            <span class="group-tag">IDU</span>
+            <span class="group-mnets">3</span>
+            <span class="group-types">IC</span>
+          </div>
+        </div>
+        <div class="slot-item">
+          <div class="slot-empty-card"></div>
+        </div>
+        <div class="slot-item">
+          <div class="group-card" id="mock-card-idu1" data-home="5" draggable="true" tabindex="0" role="option">
+            <span class="group-tag">IDU-1</span>
+            <span class="group-mnets">5</span>
+            <span class="group-types">IC</span>
+          </div>
+        </div>
+        <div class="slot-item">
+          <div class="group-card" data-home="6" draggable="true" tabindex="0" role="option">
+            <span class="group-tag">IDU-2</span>
+            <span class="group-mnets">6</span>
+            <span class="group-types">IC</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">2. Download</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="mock-btn-download">Download DAT File</button>
+    </div>
+  </div>
+
+  <button type="button" id="mock-float-save" class="float-save-btn visible">
+    <span class="save-icon">&#128190;</span> Save Session / Share
+  </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/tutorial-engine.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/config-tools-tutorial.js') }}"></script>
+{% endblock %}

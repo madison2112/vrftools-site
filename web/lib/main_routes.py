@@ -33,8 +33,16 @@ from flask import (
 from extensions import csrf
 from . import sessions
 from .dat_routes import _TOOL_ROUTES
-from .dat_utils import extract_groups_from_xml, parse_dat_controllers, _check_warnings
-from .dsbx_utils import extract_group_cards, get_groupof50_list, load_mapping, parse_dsbx_bytes
+from .dat_utils import extract_groups_from_xml, parse_dat_controllers, safe_filename, _check_warnings
+from .dsbx_routes import _compute_default_expansion_map
+from .dsbx_utils import (
+    extract_group_cards,
+    get_dsbx_project_lan,
+    get_groupof50_controller_info,
+    get_groupof50_list,
+    load_mapping,
+    parse_dsbx_bytes,
+)
 from .json_utils import import_session_json
 from .route_helpers import _validate_upload
 
@@ -90,6 +98,12 @@ def index():
 @main_bp.route("/config-tools")
 def page_config_tools():
     return render_template("index.html")
+
+
+@main_bp.route("/config-tools/tutorial")
+def page_config_tools_tutorial():
+    """Self-contained interactive walkthrough — fully static, no session."""
+    return render_template("config-tools-tutorial.html")
 
 
 @main_bp.route("/contact")
@@ -215,24 +229,20 @@ def api_upload_config_hub():
 
     data, ext = _validate_upload(request.files.get("file"), {".dsbx", ".dat", ".json"})
 
-    secret = (
-        current_app.secret_key
-        if isinstance(current_app.secret_key, bytes)
-        else current_app.secret_key.encode()
-    )
-
     # --- .json: restore session, return redirect to originating tool ---
     if ext == ".json":
         try:
-            payload = import_session_json(data, secret)
+            payload = import_session_json(data)
         except ValueError as e:
             abort(400, str(e))
 
         tool = payload.get("tool", "dat-json")
-        source_bytes = base64.b64decode(payload.get("source_b64", ""))
+        source_bytes = payload["source_bytes"]
         orders = payload.get("orders", {})
         controller_names = payload.get("controller_names", {})
         group_names = payload.get("group_names", {})
+        readable_ctrls = payload.get("controllers", [])
+        force_family = payload.get("force_family")
 
         if tool == "dsbx-to-dat":
             if not source_bytes[:4] == b"PK\x03\x04":
@@ -248,17 +258,50 @@ def api_upload_config_hub():
                     "Could not restore the session from the stored source. Please try re-uploading the file.",
                 )
 
+            lan_enabled = get_dsbx_project_lan(dsb_root)
             blocks = []
+            ip_counter = [1]
             for g50 in g50_list:
                 cards = extract_group_cards(g50, mapping)
+                default_ip = f"192.168.1.{ip_counter[0]}"
+                ip_counter[0] += 1
+                ctrl_info = get_groupof50_controller_info(
+                    g50, ip_override="" if lan_enabled else default_ip
+                )
                 blocks.append(
                     {
                         "name": g50.findtext("Name") or "",
+                        "controller_type": ctrl_info["controller_type"],
+                        "display_model": ctrl_info["display_model"],
+                        "ip": ctrl_info["ip"] if lan_enabled else default_ip,
+                        "has_controller": ctrl_info["has_controller"],
+                        "is_master": ctrl_info["is_master"],
                         "groups": cards,
                         "warnings": _check_warnings(cards),
                     }
                 )
-            session_data = {"type": "dsbx", "dsbx_data": source_bytes, "blocks": blocks}
+            # Re-apply a saved AE-200/EW-50 -> AE-C400/EW-C50 switch so the
+            # restored session matches what was exported (else it reverts to 200).
+            if force_family == "AE-C400A":
+                _upgrade = {"AE-200": "AE-C400A", "EW-50": "EW-C50"}
+                for b in blocks:
+                    nt = _upgrade.get(b["controller_type"])
+                    if nt:
+                        b["controller_type"] = nt
+                        b["display_model"] = nt
+
+            exp_map = payload.get("expansion_map")
+            session_data = {
+                "type": "dsbx",
+                "dsbx_data": source_bytes,
+                "blocks": blocks,
+                "expansion_map": exp_map if exp_map is not None else _compute_default_expansion_map(blocks),
+                "lan_enabled": lan_enabled,
+            }
+            if force_family:
+                session_data["force_family"] = force_family
+            if payload.get("generate_blocks") is not None:
+                session_data["generate_blocks"] = payload["generate_blocks"]
         else:
             if not source_bytes[:4] == b"PK\x03\x04":
                 abort(400, "Stored source data does not appear to be a valid .dat archive.")
@@ -281,6 +324,7 @@ def api_upload_config_hub():
                     {
                         "name": ctrl["name"],
                         "controller_type": ctrl["controller_type"],
+                        "ip": ctrl.get("ip", ""),
                         "groups": cards,
                         "warnings": _check_warnings(cards),
                     }
@@ -293,6 +337,11 @@ def api_upload_config_hub():
                 "blocks": blocks,
                 "multi": len(controllers) > 1,
             }
+
+        # Overlay editable IP values from the readable controller fields (v2).
+        for i, c in enumerate(readable_ctrls):
+            if i < len(session_data["blocks"]) and c.get("ip"):
+                session_data["blocks"][i]["ip"] = c["ip"]
 
         for idx_str, order in orders.items():
             session_data[f"order_{idx_str}"] = order
@@ -342,22 +391,41 @@ def api_upload_config_hub():
             logger.warning("Could not parse .dsbx file (config hub)", exc_info=True)
             abort(400, "Could not parse the .dsbx file. Please verify it is a valid DSBX export.")
 
+        dsbx_file_name = safe_filename(
+            os.path.splitext(request.files.get("file").filename or "")[0]
+        ) or "export"
+        lan_enabled = get_dsbx_project_lan(dsb_root)
         blocks = []
+        ip_counter = [1]
         for g50 in g50_list:
             cards = extract_group_cards(g50, mapping)
+            default_ip = f"192.168.1.{ip_counter[0]}"
+            ip_counter[0] += 1
+            ctrl_info = get_groupof50_controller_info(
+                g50, ip_override="" if lan_enabled else default_ip
+            )
             blocks.append(
                 {
                     "name": g50.findtext("Name") or "",
+                    "controller_type": ctrl_info["controller_type"],
+                    "display_model": ctrl_info["display_model"],
+                    "ip": ctrl_info["ip"] if lan_enabled else default_ip,
+                    "has_controller": ctrl_info["has_controller"],
+                    "is_master": ctrl_info["is_master"],
                     "groups": cards,
                     "warnings": _check_warnings(cards),
                 }
             )
+        expansion_map = _compute_default_expansion_map(blocks)
 
         sid = sessions.create(
             {
                 "type": "dsbx",
                 "dsbx_data": data,
                 "blocks": blocks,
+                "expansion_map": expansion_map,
+                "lan_enabled": lan_enabled,
+                "dsbx_file_name": dsbx_file_name,
             }
         )
         return jsonify(
@@ -365,6 +433,7 @@ def api_upload_config_hub():
                 "session_id": sid,
                 "applicable_tools": ["dsbx-to-dat"],
                 "blocks": blocks,
+                "expansion_map": expansion_map,
             }
         )
 
@@ -388,10 +457,15 @@ def api_upload_config_hub():
             {
                 "name": ctrl["name"],
                 "controller_type": ctrl["controller_type"],
+                "ip": ctrl.get("ip", ""),
                 "groups": cards,
                 "warnings": _check_warnings(cards),
             }
         )
+
+    dat_file_name = safe_filename(
+        os.path.splitext(request.files.get("file").filename or "")[0]
+    ) or "rearranged"
 
     sid = sessions.create(
         {
@@ -399,6 +473,7 @@ def api_upload_config_hub():
             "dat_data": data,
             "blocks": blocks,
             "multi": len(controllers) > 1,
+            "dat_file_name": dat_file_name,
         }
     )
     return jsonify(

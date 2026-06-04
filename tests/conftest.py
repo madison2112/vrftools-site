@@ -40,6 +40,20 @@ def sample_dat_bytes():
     return (FIXTURES_DIR / "sample_ae_c400_empty.dat").read_bytes()
 
 
+@pytest.fixture
+def sample_mixed_dsbx_bytes():
+    """A real .dsbx with both 200-series (AE-200/EW-50) and 400-series
+    (AE-C400A/EW-C50) controllers — exercises series filtering + legacy switch."""
+    return (FIXTURES_DIR / "sample_multi_central_mixed.dsbx").read_bytes()
+
+
+@pytest.fixture
+def sample_multi_central_dat_bytes():
+    """A multi-controller .dat whose SystemData entries carry IPAdrsLan values —
+    used to verify IPs survive the config-hub upload path."""
+    return (FIXTURES_DIR / "sample_multi_central.dat").read_bytes()
+
+
 # ---------------------------------------------------------------------------
 # HC-08 — Live server fixture for Playwright visual regression tests
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}Central Controller Config Tools{% endblock %} — VRFTools</title>
+  <title>{% block title %}Central Controller Config Tools{% endblock %} — VRF Tools</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -22,6 +22,7 @@
     {% block nav_links %}
     <a href="{{ url_for('main.page_config_tools') }}">Config Tools</a>
     <a href="{{ url_for('dat.page_docs') }}">How to Use</a>
+    <a href="{{ url_for('main.page_config_tools_tutorial') }}">Take the Tutorial</a>
     <a href="/">Home</a>
     {% endblock %}
   </nav>
